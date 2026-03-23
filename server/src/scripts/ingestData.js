@@ -6,6 +6,7 @@ import { createVectorStore } from "../services/rag/vectorStore.js";
 import { HashEmbeddings } from "../services/rag/embeddingService.js";
 
 async function run() {
+  console.log(`Ingesting data from ${env.dataDir}...`);
   const chunks = await loadChunksFromDirectory(env.dataDir);
   if (!chunks.length) {
     console.log(`No supported dataset files found in ${env.dataDir}`);

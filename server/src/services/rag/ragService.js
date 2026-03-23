@@ -39,7 +39,13 @@ class RAGService {
       const parsed = JSON.parse(file);
       chunks = parsed.chunks || [];
     } catch {
-      chunks = await loadChunksFromDirectory(env.dataDir);
+      try {
+        await fs.access(env.dataDir);
+        chunks = await loadChunksFromDirectory(env.dataDir);
+      } catch (error) {
+        console.warn(`Data directory not found at ${env.dataDir}. Starting with empty knowledge base.`);
+        chunks = [];
+      }
     }
 
     try {
