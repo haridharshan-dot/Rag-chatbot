@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StatusDashboard from "../components/StatusDashboard";
 import {
   agentLogin,
   fetchAgentQueue,
@@ -188,6 +189,9 @@ export default function AgentDashboard() {
             Send
           </button>
         </div>
+      </section>
+      <section className="status-panel">
+        <StatusDashboard />
       </section>
     </div>
   );

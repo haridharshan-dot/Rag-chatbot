@@ -7,6 +7,7 @@ import { env } from "./config/env.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import agentRoutes from "./routes/agentRoutes.js";
 import healthRoutes from "./routes/healthRoutes.js";
+import statusRoutes from "./routes/statusRoutes.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 export function buildApp() {
@@ -34,6 +35,7 @@ export function buildApp() {
   app.use("/api", healthRoutes);
   app.use("/api/chat", chatRoutes);
   app.use("/api/agent", agentRoutes);
+  app.use("/api/status", statusRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -95,3 +95,8 @@ export async function resolveSession(sessionId, agentId) {
   );
   return response.data.data;
 }
+
+export async function fetchStatusLogs() {
+  const response = await api.get('/api/status/status-logs');
+  return response.data.data;
+}

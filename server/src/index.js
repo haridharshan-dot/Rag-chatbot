@@ -8,7 +8,8 @@ import { ragService } from "./services/rag/ragService.js";
 
 async function bootstrap() {
   await connectDatabase();
-  await ragService.init();
+  // ragService.init() is now called within the status check or on first use
+  // This ensures it doesn't block server startup if data ingestion is slow or fails
 
   const app = buildApp();
   const server = http.createServer(app);

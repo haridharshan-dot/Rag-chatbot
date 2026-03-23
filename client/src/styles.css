@@ -367,3 +367,40 @@ body {
     opacity: 1;
   }
 }
+_# Status Dashboard Styles #_#_AGENT_TASK_BOUNDARY_#_.status-panel {
+  flex: 1;
+  padding: 20px;
+  background-color: #f9fafb;
+  border-left: 1px solid #e5e7eb;
+  overflow-y: auto;
+}
+
+.status-dashboard h2 {
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.status-dashboard ul {
+  list-style: none;
+  padding: 0;
+}
+
+.status-dashboard li {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.status-dashboard .chart-container {
+  margin-top: 30px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
