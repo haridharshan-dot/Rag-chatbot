@@ -1,0 +1,369 @@
+:root {
+  --bg: #f6f3eb;
+  --ink: #1f2833;
+  --accent: #0f766e;
+  --accent-soft: #d2f4ef;
+  --panel: #ffffff;
+  --shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 15% 10%, #fff4d0 0, transparent 35%),
+    radial-gradient(circle at 90% 20%, #d2f4ef 0, transparent 35%),
+    var(--bg);
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.top-nav h1 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.top-nav nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.top-nav a {
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.student-page {
+  padding: 2rem;
+}
+
+.hero-card {
+  max-width: 760px;
+  background: var(--panel);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  animation: rise 0.45s ease;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+
+.chat-fab {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.8rem 1.2rem;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.chat-widget {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 4.8rem;
+  width: min(420px, calc(100vw - 2rem));
+  height: min(72vh, 620px);
+  background: var(--panel);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 1rem;
+  background: var(--accent-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  font-size: 0.95rem;
+}
+
+.bubble p {
+  margin: 0;
+}
+
+.bubble small {
+  opacity: 0.7;
+}
+
+.bubble.student {
+  align-self: flex-end;
+  background: #dcecff;
+}
+
+.bubble.bot,
+.bubble.system {
+  align-self: flex-start;
+  background: #eef3f6;
+}
+
+.bubble.agent {
+  align-self: flex-start;
+  background: #d7fbe8;
+}
+
+.agent-btn {
+  margin: 0.6rem 1rem;
+  border: 0;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+}
+
+.agent-live {
+  margin: 0.4rem 1rem;
+  color: #047857;
+  font-weight: 600;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.9rem;
+}
+
+.chat-input-row input,
+.agent-composer input {
+  flex: 1;
+  border: 1px solid #cfd7de;
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+}
+
+.chat-input-row button,
+.agent-composer button,
+.agent-chat-header button {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+}
+
+.agent-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.agent-auth-wrap {
+  min-height: calc(100vh - 88px);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.agent-auth-card {
+  width: min(460px, 100%);
+  background: linear-gradient(165deg, #10263d 0%, #0e1c2f 100%);
+  color: #e7eef7;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba(8, 20, 34, 0.35);
+  padding: 1.4rem;
+}
+
+.agent-auth-card h2 {
+  margin: 0;
+}
+
+.agent-auth-card p {
+  color: #b8c8d9;
+}
+
+.agent-auth-form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.agent-auth-form input {
+  border: 1px solid #29435e;
+  border-radius: 10px;
+  background: #0c1b2c;
+  color: #f3f8ff;
+  padding: 0.75rem 0.85rem;
+}
+
+.agent-auth-form button {
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #16a34a, #0ea5a6);
+  color: #fff;
+  font-weight: 600;
+  padding: 0.72rem 0.9rem;
+  cursor: pointer;
+}
+
+.agent-error {
+  margin: 0;
+  color: #fca5a5;
+}
+
+.queue-panel,
+.agent-chat-panel {
+  background: var(--panel);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 1rem;
+}
+
+.queue-panel {
+  background: linear-gradient(170deg, #f6f9fc 0%, #eef3f7 100%);
+  border: 1px solid #d8e1ea;
+}
+
+.queue-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.queue-head h3 {
+  margin: 0;
+}
+
+.ghost-btn {
+  border: 1px solid #b7c6d3;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #30465c;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+}
+
+.queue-item {
+  width: 100%;
+  border: 1px solid #dbe4eb;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  margin-top: 0.6rem;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 0.7rem;
+  cursor: pointer;
+}
+
+.queue-item:hover {
+  border-color: #9fb6cc;
+  background: #f8fbfe;
+}
+
+.agent-chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
+  border: 1px solid #dce5ed;
+}
+
+.agent-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.agent-chat-log {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.agent-chat-log .bubble {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.agent-chat-log .bubble.student {
+  background: #e6efff;
+}
+
+.agent-chat-log .bubble.bot,
+.agent-chat-log .bubble.system {
+  background: #f4f7fa;
+}
+
+.agent-chat-log .bubble.agent {
+  background: #ddf7ef;
+}
+
+.agent-composer {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .agent-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-widget {
+    right: 0.5rem;
+    bottom: 4.2rem;
+  }
+
+  .chat-fab {
+    right: 0.5rem;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
