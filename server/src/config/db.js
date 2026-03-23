@@ -8,6 +8,10 @@ export async function connectDatabase() {
     console.log("Connecting to MongoDB...");
     await mongoose.connect(env.mongoUri, {
       serverSelectionTimeoutMS: 5000,
+      maxPoolSize: env.mongoConnectionPoolSize,
+      minPoolSize: 1,
+      maxIdleTimeMS: env.mongoMaxIdleTime,
+      socketTimeoutMS: 45000,
     });
     console.log("MongoDB connected successfully");
   } catch (error) {

@@ -19,13 +19,16 @@ export const env = {
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
   mongoUri:
     process.env.MONGO_URI || "mongodb://localhost:27017/college_rag_chatbot",
+  // Free-tier optimized rate limiting: 30 requests per minute
   rateLimitWindowMs: asNumber(process.env.RATE_LIMIT_WINDOW_MS, 60000),
-  rateLimitMax: asNumber(process.env.RATE_LIMIT_MAX, 100),
+  rateLimitMax: asNumber(process.env.RATE_LIMIT_MAX, 30),
   googleApiKey: process.env.GOOGLE_API_KEY || "",
+  // Use faster, lighter models for free tier
   geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
-  claudeModel: process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514",
-  ragTopK: asNumber(process.env.RAG_TOP_K, 5),
+  claudeModel: process.env.CLAUDE_MODEL || "claude-3-haiku-20240307",
+  // Free-tier optimized: fetch fewer chunks to reduce memory usage
+  ragTopK: asNumber(process.env.RAG_TOP_K, 3),
   ragConfidenceThreshold: asNumber(process.env.RAG_CONFIDENCE_THRESHOLD, 0.55),
   vectorDbProvider: process.env.VECTOR_DB_PROVIDER || "local",
   pineconeApiKey: process.env.PINECONE_API_KEY || "",
@@ -39,6 +42,10 @@ export const env = {
   agentUsername: process.env.AGENT_USERNAME || "agent",
   agentPassword: process.env.AGENT_PASSWORD || "agent123",
   agentJwtExpiry: process.env.AGENT_JWT_EXPIRY || "12h",
+  // Free-tier optimizations
+  mongoConnectionPoolSize: asNumber(process.env.MONGO_POOL_SIZE, 2),
+  mongoMaxIdleTime: asNumber(process.env.MONGO_MAX_IDLE_TIME, 30000),
+  cacheStatusLogs: process.env.CACHE_STATUS_LOGS !== "false", // Cache for 5 minutes by default
 };
 
 export const isProd = env.nodeEnv === "production";

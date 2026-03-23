@@ -1,0 +1,236 @@
+/* Navigation Links */
+.top-nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-link {
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.nav-link:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Status Page Styles */
+.status-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.status-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.nav-btn {
+  padding: 0.7rem 1.2rem;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.nav-btn.agent-btn {
+  background: var(--accent);
+  color: white;
+}
+
+.nav-btn.agent-btn:hover {
+  background: #0d5d5a;
+}
+
+.status-container {
+  background: var(--panel);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 2rem;
+}
+
+.status-container h1 {
+  text-align: center;
+  color: var(--ink);
+  margin-bottom: 2rem;
+}
+
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.status-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-left: 4px solid #999;
+  transition: all 0.3s ease;
+}
+
+.status-card.up {
+  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+  border-left-color: #10b981;
+}
+
+.status-card.down {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  border-left-color: #ef4444;
+}
+
+.status-card.info {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  border-left-color: #0f766e;
+}
+
+.status-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.status-indicator {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: #1f2937;
+}
+
+.response-time {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0.5rem 0 0 0;
+}
+
+.last-updated {
+  font-size: 0.95rem;
+  color: #333;
+  margin: 0;
+}
+
+.chart-wrapper {
+  background: #f9fafb;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  height: 400px;
+}
+
+.status-logs {
+  margin-top: 2rem;
+}
+
+.status-logs h2 {
+  color: var(--ink);
+  margin-bottom: 1rem;
+}
+
+.status-logs table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.status-logs thead {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.status-logs th,
+.status-logs td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.status-logs tbody tr:hover {
+  background: #f9fafb;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.up {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge.down {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .status-page {
+    padding: 1rem;
+  }
+
+  .status-container {
+    padding: 1rem;
+  }
+
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .status-nav {
+    flex-direction: column;
+  }
+
+  .nav-btn {
+    width: 100%;
+  }
+
+  .top-nav-links {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .nav-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+
+  .status-logs table {
+    font-size: 0.85rem;
+  }
+
+  .status-logs th,
+  .status-logs td {
+    padding: 0.75rem 0.5rem;
+  }
+}
