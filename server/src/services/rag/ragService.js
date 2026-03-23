@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { env } from "../../config/env.js";
+import { GeminiService } from "./geminiService.js";
 import { ClaudeService } from "./claudeService.js";
 import { createVectorStore } from "./vectorStore.js";
 import { HashEmbeddings } from "./embeddingService.js";
@@ -18,10 +19,14 @@ function normalizeScore(rawScore) {
 class RAGService {
   constructor() {
     this.vectorStore = createVectorStore(new HashEmbeddings({}));
+    this.gemini = new GeminiService({
+      apiKey: env.googleApiKey,
+      model: env.geminiModel,
+    });
     this.claude = new ClaudeService({
       apiKey: env.anthropicApiKey,
       model: env.claudeModel,
-    });
+    }); // fallback
     this.ready = false;
   }
 
@@ -80,7 +85,9 @@ class RAGService {
       };
     }
 
-    const modelAnswer = await this.claude.answer({ question, contextChunks });
+    const modelAnswer = env.googleApiKey
+      ? await this.gemini.answer({ question, contextChunks })
+      : await this.claude.answer({ question, contextChunks });
 
     return {
       answer: modelAnswer.content,

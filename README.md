@@ -3,7 +3,7 @@
 Production-style full-stack chatbot for college admissions support with:
 
 - Student chat widget (React)
-- RAG-powered bot answers (Node + LangChain + Anthropic)
+- RAG-powered bot answers (Node + LangChain + Gemini)
 - Live human handoff (Socket.IO)
 - Agent handoff APIs and realtime events for your existing staff dashboard
 - MongoDB-backed chat sessions and history
@@ -20,7 +20,7 @@ Production-style full-stack chatbot for college admissions support with:
 
 1. Student sends a question.
 2. Backend retrieves similar dataset chunks from vector store.
-3. Claude generates a context-grounded reply.
+3. Gemini generates a context-grounded reply.
 4. If confidence is low, UI suggests escalation.
 5. Student requests live help.
 6. Agent queue updates in real time.
@@ -52,7 +52,7 @@ Production-style full-stack chatbot for college admissions support with:
 - Frontend: React + Vite
 - Backend: Node.js + Express
 - Real-time: Socket.IO
-- AI: Anthropic Claude API via LangChain
+- AI: Google Gemini API via LangChain
 - RAG Framework: LangChain (splitter, embeddings interface, vector retrieval, prompting)
 - Vector Retrieval: LangChain MemoryVectorStore
 - Database: MongoDB
@@ -130,7 +130,8 @@ cp .env.example .env
 
 Important keys:
 
-- `ANTHROPIC_API_KEY`: Required for live Claude responses.
+- `GOOGLE_API_KEY`: Required for live Gemini responses (primary model).
+- `GEMINI_MODEL`: Gemini model name, defaults to `gemini-2.5-flash-lite`.
 - `MONGO_URI`: MongoDB connection string.
 - `CLIENT_URL`: Frontend URL used by CORS and Socket.IO.
 - `RAG_CONFIDENCE_THRESHOLD`: Lower threshold reduces escalations.
@@ -209,7 +210,8 @@ Set backend env vars:
 - `PORT=5001`
 - `MONGO_URI=<your mongo uri>`
 - `CLIENT_URL=<your vercel frontend url>`
-- `ANTHROPIC_API_KEY=<your anthropic key>`
+- `GOOGLE_API_KEY=<your google ai studio key>`
+- `GEMINI_MODEL=gemini-2.5-flash-lite`
 - `JWT_SECRET=<strong random secret>`
 - `AGENT_USERNAME=<agent username>`
 - `AGENT_PASSWORD=<agent password>`
@@ -274,7 +276,7 @@ Deploy and note frontend URL:
 
 ## Development Phases Map
 
-1. RAG pipeline: implemented with ingest + retrieval + Claude answer generation.
+1. RAG pipeline: implemented with ingest + retrieval + Gemini answer generation.
 2. Student widget: implemented with escalation UX.
 3. Escalation logic: implemented via confidence and manual action.
 4. Agent dashboard + live messaging: implemented with Socket.IO.
