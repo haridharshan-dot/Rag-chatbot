@@ -57,6 +57,44 @@ Production-style full-stack chatbot for college admissions support with:
 - Vector Retrieval: LangChain MemoryVectorStore
 - Database: MongoDB
 
+## Pinecone: What It Is and When To Use It
+
+Pinecone is a managed vector database used to store and search embeddings for your RAG knowledge base.
+
+### What Pinecone is used for in this project
+
+- Stores vectorized chunks from your college dataset.
+- Runs fast similarity search to find relevant context for each student question.
+- Improves retrieval quality and latency when your dataset grows.
+- Supports production deployments where in-memory vector storage is not enough.
+
+### Typical use cases
+
+1. Large dataset retrieval
+	- You have many JSON/TXT/MD records (for example courses, fees, cutoffs, department FAQs), and local memory becomes slow or insufficient.
+2. Multi-instance backend scaling
+	- You run multiple API/server instances and need one shared vector index across all instances.
+3. Persistent retrieval across restarts
+	- You want vectors to remain available after server restarts/redeploys without rebuilding in-memory index every time.
+4. Faster production search
+	- You need lower latency semantic search for real student traffic.
+5. Environment separation
+	- You want separate namespaces or indexes for dev/staging/prod datasets.
+
+### When local vector store is enough
+
+- Small dataset.
+- Single server instance.
+- Local testing or quick demo.
+
+### How to enable Pinecone
+
+1. Set `VECTOR_DB_PROVIDER=pinecone`.
+2. Add `PINECONE_API_KEY`, `PINECONE_INDEX`, and optional `PINECONE_NAMESPACE`.
+3. Run ingestion again (`npm run ingest`) after configuring environment.
+
+Note: if Pinecone is unavailable at startup, this project falls back to local retrieval to keep chatbot service online.
+
 ## Existing Dashboard Integration
 
 If your student dashboard is already built, mount only the chatbot widget component:
