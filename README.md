@@ -143,6 +143,71 @@ Services:
 - Server API: `http://localhost:5001`
 - MongoDB: `localhost:27017`
 
+## Hosted Testing (Recommended)
+
+For the quickest real-world test with live agent handoff:
+
+1. Host backend on Render (supports WebSockets).
+2. Host frontend on Vercel.
+3. Use MongoDB Atlas or Render managed Mongo.
+
+### Why this combo
+
+- Socket.IO live chat works reliably on Render web services.
+- Vercel gives fast static hosting for the Vite client.
+- Easy environment variable setup on both platforms.
+
+### Deploy backend (Render)
+
+Create a Web Service pointing to this repo and use:
+
+- Root Directory: `server`
+- Build Command: `npm install`
+- Start Command: `npm start`
+
+Set backend env vars:
+
+- `NODE_ENV=production`
+- `PORT=5001`
+- `MONGO_URI=<your mongo uri>`
+- `CLIENT_URL=<your vercel frontend url>`
+- `ANTHROPIC_API_KEY=<your anthropic key>`
+- `JWT_SECRET=<strong random secret>`
+- `AGENT_USERNAME=<agent username>`
+- `AGENT_PASSWORD=<agent password>`
+- `VECTOR_DB_PROVIDER=local` (or `pinecone` with pinecone keys)
+
+After deploy, note your API host:
+
+- `https://<render-service>.onrender.com`
+
+### Deploy frontend (Vercel)
+
+Create a Vercel project with:
+
+- Root Directory: `client`
+- Framework: `Vite`
+
+Set frontend env vars:
+
+- `VITE_API_BASE_URL=https://<render-service>.onrender.com/api`
+- `VITE_SOCKET_URL=https://<render-service>.onrender.com`
+
+Deploy and note frontend URL:
+
+- `https://<your-app>.vercel.app`
+
+### Final wiring check
+
+1. Update Render `CLIENT_URL` to your final Vercel URL.
+2. Open Vercel app and send a student message.
+3. Visit `/agent`, log in with `AGENT_USERNAME`/`AGENT_PASSWORD`, and verify live handoff.
+
+### Alternative hosts
+
+- Railway (backend + Mongo), Vercel (frontend)
+- Fly.io (backend), MongoDB Atlas, Netlify/Vercel (frontend)
+
 ## API Summary
 
 ### Chat
