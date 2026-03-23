@@ -17,6 +17,7 @@ const StatusPage = () => {
       try {
         const logs = await fetchStatusLogs();
         setStatusLogs(logs);
+        setError(null);
       } catch (err) {
         setError('Failed to fetch status logs.');
         console.error(err);
@@ -88,8 +89,6 @@ const StatusPage = () => {
 
   const latestStatus = getLatestStatus();
 
-  if (loading) return <div className="status-page"><p>Loading status...</p></div>;
-
   const chartData = processChartData();
 
   const options = {
@@ -98,10 +97,6 @@ const StatusPage = () => {
     plugins: {
       legend: {
         position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'API and LLM Status Over Last 7 Days',
       },
     },
     scales: {
@@ -116,74 +111,90 @@ const StatusPage = () => {
   };
 
   return (
-    <div className="status-page">
-      <div className="status-nav">
-        <button onClick={() => navigate('/')} className="nav-btn">← Back to Chat</button>
-        <button onClick={() => navigate('/agent')} className="nav-btn agent-btn">Agent Dashboard</button>
-      </div>
+    <div className="status-layout">
+      {/* Left Sidebar - Status Summary */}
+      <aside className="status-sidebar">
+        <div className="sidebar-header">
+          <div>
+            <p className="eyebrow">System Health</p>
+            <h3>Status Monitor</h3>
+          </div>
+        </div>
 
-      <div className="status-container">
-        <h1>System Status Dashboard</h1>
-
-        {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
-
-        <div className="status-cards">
-          <div className={`status-card ${latestStatus?.apiStatus === 'up' ? 'up' : 'down'}`}>
-            <h3>API Server</h3>
-            <p className="status-indicator">{latestStatus?.apiStatus.toUpperCase() || 'UNKNOWN'}</p>
+        <div className="status-summary">
+          <div className={`status-item ${latestStatus?.apiStatus === 'up' ? 'up' : 'down'}`}>
+            <h4>API Server</h4>
+            <p className="status-value">{latestStatus?.apiStatus.toUpperCase() || 'UNKNOWN'}</p>
             {latestStatus?.apiResponseTime && <p className="response-time">{latestStatus.apiResponseTime}ms</p>}
           </div>
 
-          <div className={`status-card ${latestStatus?.llmStatus === 'up' ? 'up' : 'down'}`}>
-            <h3>LLM Service</h3>
-            <p className="status-indicator">{latestStatus?.llmStatus.toUpperCase() || 'UNKNOWN'}</p>
+          <div className={`status-item ${latestStatus?.llmStatus === 'up' ? 'up' : 'down'}`}>
+            <h4>LLM Service</h4>
+            <p className="status-value">{latestStatus?.llmStatus.toUpperCase() || 'UNKNOWN'}</p>
             {latestStatus?.llmResponseTime && <p className="response-time">{latestStatus.llmResponseTime}ms</p>}
           </div>
 
-          <div className="status-card info">
-            <h3>Last Updated</h3>
+          <div className="status-item info">
+            <h4>Last Updated</h4>
             <p className="last-updated">{latestStatus ? new Date(latestStatus.timestamp).toLocaleString() : 'N/A'}</p>
           </div>
         </div>
 
-        <div className="chart-wrapper">
-          {statusLogs.length === 0 ? (
-            <p style={{ textAlign: 'center', padding: '20px' }}>No status logs available yet. Status will be tracked over time.</p>
-          ) : (
-            <Bar data={chartData} options={options} />
-          )}
+        <button className="nav-btn" onClick={() => navigate('/')}>
+          ← Back to Chat
+        </button>
+      </aside>
+
+      {/* Main Content - Chart and Logs */}
+      <section className="status-main">
+        <div className="status-header">
+          <h2>System Status Dashboard</h2>
+          <button className="nav-btn agent-btn" onClick={() => navigate('/agent')}>
+            Agent Dashboard
+          </button>
         </div>
 
-        <div className="status-logs">
-          <h2>Recent Status Logs (Last 10)</h2>
-          {statusLogs.length === 0 ? (
-            <p>No logs available.</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>API Status</th>
-                  <th>API Response (ms)</th>
-                  <th>LLM Status</th>
-                  <th>LLM Response (ms)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statusLogs.slice().reverse().slice(0, 10).map((log) => (
-                  <tr key={log._id}>
-                    <td>{new Date(log.timestamp).toLocaleString()}</td>
-                    <td><span className={`badge ${log.apiStatus}`}>{log.apiStatus}</span></td>
-                    <td>{log.apiResponseTime || 'N/A'}</td>
-                    <td><span className={`badge ${log.llmStatus}`}>{log.llmStatus}</span></td>
-                    <td>{log.llmResponseTime || 'N/A'}</td>
+        {error && <div className="error-message">{error}</div>}
+
+        {loading ? (
+          <div className="loading-state">Loading status data...</div>
+        ) : statusLogs.length === 0 ? (
+          <div className="empty-state">No status logs available yet. Status will be tracked over time.</div>
+        ) : (
+          <>
+            <div className="chart-container">
+              <h3>7-Day Status Trend</h3>
+              <Bar data={chartData} options={options} />
+            </div>
+
+            <div className="status-logs">
+              <h3>Recent Status Logs</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>API Status</th>
+                    <th>API Response</th>
+                    <th>LLM Status</th>
+                    <th>LLM Response</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+                </thead>
+                <tbody>
+                  {statusLogs.slice().reverse().slice(0, 15).map((log) => (
+                    <tr key={log._id}>
+                      <td>{new Date(log.timestamp).toLocaleString()}</td>
+                      <td><span className={`badge ${log.apiStatus}`}>{log.apiStatus}</span></td>
+                      <td>{log.apiResponseTime ? `${log.apiResponseTime}ms` : 'N/A'}</td>
+                      <td><span className={`badge ${log.llmStatus}`}>{log.llmStatus}</span></td>
+                      <td>{log.llmResponseTime ? `${log.llmResponseTime}ms` : 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 };
