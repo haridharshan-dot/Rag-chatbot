@@ -21,6 +21,8 @@ export const env = {
     process.env.MONGO_URI || "mongodb://localhost:27017/college_rag_chatbot",
   rateLimitWindowMs: asNumber(process.env.RATE_LIMIT_WINDOW_MS, 60000),
   rateLimitMax: asNumber(process.env.RATE_LIMIT_MAX, 100),
+  googleApiKey: process.env.GOOGLE_API_KEY || "",
+  geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
   claudeModel: process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514",
   ragTopK: asNumber(process.env.RAG_TOP_K, 5),
