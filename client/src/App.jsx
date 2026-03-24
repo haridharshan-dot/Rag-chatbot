@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import StudentPage from "./pages/StudentPage";
 import AgentDashboard from "./pages/AgentDashboard";
 import StatusPage from "./pages/StatusPage";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<StudentPage />} />
         <Route path="/status" element={<StatusPage />} />
         <Route path="/agent" element={<AgentDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </div>
   );

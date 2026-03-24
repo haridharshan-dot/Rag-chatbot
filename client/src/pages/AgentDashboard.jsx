@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import StatusDashboard from "../components/StatusDashboard";
+import { useNavigate } from "react-router-dom";
 import {
   agentLogin,
   agentMicrosoftLogin,
@@ -30,6 +30,7 @@ function getWaitMinutes(escalationRequestedAt) {
 }
 
 export default function AgentDashboard() {
+  const navigate = useNavigate();
   const [authToken, setAuthToken] = useState(() => getAgentToken());
   const [agentId, setAgentId] = useState("agent");
   const [username, setUsername] = useState("agent");
@@ -252,9 +253,11 @@ export default function AgentDashboard() {
             <p className="eyebrow">Live Operations</p>
             <h3>Support Command Center</h3>
           </div>
-          <button className="ghost-btn" onClick={onLogout}>
-            Logout
-          </button>
+          <div className="agent-head-actions">
+            <button className="pill-btn" onClick={() => navigate("/admin")}>Admin</button>
+            <button className="pill-btn" onClick={() => navigate("/status")}>Status</button>
+            <button className="ghost-btn" onClick={onLogout}>Logout</button>
+          </div>
         </div>
 
         <div className="ops-kpis">
@@ -334,9 +337,6 @@ export default function AgentDashboard() {
             Send
           </button>
         </div>
-      </section>
-      <section className="status-panel">
-        <StatusDashboard />
       </section>
     </div>
   );

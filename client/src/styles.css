@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg: #f6f3eb;
   --ink: #1f2833;
   --accent: #0f766e;
@@ -20,10 +20,6 @@ body {
     radial-gradient(circle at 90% 20%, #d2f4ef 0, transparent 35%),
     var(--bg);
   min-height: 100vh;
-}
-
-.top-nav h1 {
-  font-size: 1rem;
 }
 
 .app-shell {
@@ -54,13 +50,6 @@ body {
   font-weight: 600;
 }
 
-
-.chat-input-row button:disabled,
-.agent-composer button:disabled,
-.agent-chat-header button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 .student-page {
   padding: 2rem;
 }
@@ -74,18 +63,6 @@ body {
   animation: rise 0.45s ease;
 }
 
-
-@media (max-width: 1100px) {
-  .agent-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .status-panel {
-    border-left: 0;
-    border-top: 1px solid #e5e7eb;
-    border-radius: 12px;
-  }
-}
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -93,113 +70,11 @@ body {
   color: var(--accent);
   margin-bottom: 0.3rem;
 }
-    width: calc(100vw - 1rem);
-    height: min(76vh, 640px);
 
 .chat-fab {
   position: fixed;
   right: 1.4rem;
   bottom: 1.4rem;
-
-@media (max-width: 768px) {
-  .top-nav {
-    padding: 0.8rem 0.9rem;
-  }
-
-  .student-page {
-    padding: 0.9rem;
-  }
-
-  .hero-card {
-    padding: 1.1rem;
-    border-radius: 14px;
-  }
-
-  .chat-header {
-    padding: 0.75rem;
-  }
-
-  .chat-brand h3 {
-    font-size: 0.9rem;
-  }
-
-  .chat-list {
-    padding: 0.75rem;
-  }
-
-  .bubble {
-    max-width: 92%;
-    font-size: 0.9rem;
-    padding: 0.62rem 0.7rem;
-  }
-
-  .chat-input-row {
-    padding: 0.7rem;
-  }
-
-  .chat-input-row input,
-  .chat-input-row button {
-    min-height: 40px;
-  }
-
-  .queue-panel,
-  .agent-chat-panel {
-    padding: 0.8rem;
-  }
-
-  .agent-chat-panel {
-    min-height: 56vh;
-  }
-
-  .agent-chat-header {
-    gap: 0.5rem;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .agent-composer {
-    flex-direction: column;
-  }
-
-  .agent-composer input,
-  .agent-composer button {
-    width: 100%;
-    min-height: 40px;
-  }
-}
-
-@media (max-width: 520px) {
-  .chat-widget {
-    right: 0;
-    left: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 82vh;
-    border-radius: 16px 16px 0 0;
-  }
-
-  .chat-fab {
-    bottom: 0.7rem;
-    right: 0.7rem;
-    padding: 0.7rem 1rem;
-  }
-
-  .modern-auth-card {
-    border-radius: 14px;
-  }
-
-  .auth-form-panel {
-    padding: 1rem;
-  }
-
-  .auth-visual-panel {
-    padding: 1rem;
-  }
-
-  .status-panel {
-    padding: 12px;
-  }
-}
   border: 0;
   background: var(--accent);
   color: #fff;
@@ -264,13 +139,6 @@ body {
   gap: 0.5rem;
 }
 
-.bubble {
-  max-width: 85%;
-  padding: 0.7rem 0.8rem;
-  border-radius: 14px;
-  font-size: 0.95rem;
-}
-
 .bubble-row {
   display: flex;
   align-items: flex-end;
@@ -290,6 +158,13 @@ body {
   margin-bottom: 0.2rem;
 }
 
+.bubble {
+  max-width: 85%;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  font-size: 0.95rem;
+}
+
 .bubble p {
   margin: 0;
 }
@@ -299,18 +174,15 @@ body {
 }
 
 .bubble.student {
-  align-self: flex-end;
   background: #dcecff;
 }
 
 .bubble.bot,
 .bubble.system {
-  align-self: flex-start;
   background: #eef3f6;
 }
 
 .bubble.agent {
-  align-self: flex-start;
   background: #d7fbe8;
 }
 
@@ -353,6 +225,13 @@ body {
   border-radius: 10px;
   padding: 0.7rem 0.9rem;
   cursor: pointer;
+}
+
+.chat-input-row button:disabled,
+.agent-composer button:disabled,
+.agent-chat-header button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .agent-layout {
@@ -590,6 +469,28 @@ body {
   cursor: pointer;
 }
 
+.pill-btn {
+  border: 1px solid #d0dae4;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d3b55;
+  padding: 0.38rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pill-btn:hover {
+  background: #e9f3fb;
+  border-color: #9fb8cf;
+}
+
+.agent-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .queue-item {
   width: 100%;
   border: 1px solid #dbe4eb;
@@ -606,6 +507,11 @@ body {
 .queue-item.active {
   border-color: #0f766e;
   box-shadow: inset 0 0 0 1px #0f766e;
+}
+
+.queue-item:hover {
+  border-color: #9fb6cc;
+  background: #f8fbfe;
 }
 
 .ops-kpis {
@@ -648,11 +554,6 @@ body {
   margin: 0.25rem 0;
   color: #577086;
   font-size: 0.85rem;
-}
-
-.queue-item:hover {
-  border-color: #9fb6cc;
-  background: #f8fbfe;
 }
 
 .agent-chat-panel {
@@ -711,11 +612,150 @@ body {
   gap: 0.5rem;
 }
 
-@media (max-width: 900px) {
-  .agent-layout {
+.status-panel {
+  flex: 1;
+  padding: 20px;
+  background-color: #f9fafb;
+  border-left: 1px solid #e5e7eb;
+  overflow-y: auto;
+}
+
+.status-dashboard h2 {
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  min-height: calc(100vh - 90px);
+}
+
+.admin-side,
+.admin-main {
+  background: #ffffff;
+  border: 1px solid #dde5ef;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+.admin-side {
+  padding: 1rem;
+  background: linear-gradient(180deg, #f4f9ff 0%, #eef5fb 100%);
+}
+
+.admin-side h2 {
+  margin: 0;
+}
+
+.admin-note {
+  margin-top: 0.6rem;
+  color: #4d6478;
+}
+
+.admin-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin: 0.8rem 0;
+}
+
+.admin-kpi {
+  background: #fff;
+  border: 1px solid #d5e1ec;
+  border-radius: 12px;
+  padding: 0.65rem;
+}
+
+.admin-kpi span {
+  display: block;
+  color: #5d7488;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.admin-kpi strong {
+  font-size: 1.05rem;
+}
+
+.admin-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+}
+
+.admin-main {
+  padding: 1rem;
+}
+
+.admin-main-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-main-head h3 {
+  margin: 0;
+}
+
+.admin-main-head span {
+  color: #587087;
+  font-size: 0.85rem;
+}
+
+.admin-manage-grid {
+  margin: 0.9rem 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.manage-card {
+  background: linear-gradient(180deg, #fcfdff 0%, #f5f9fd 100%);
+  border: 1px solid #d9e4ef;
+  border-radius: 12px;
+  padding: 0.85rem;
+}
+
+.manage-card h4 {
+  margin: 0 0 0.45rem;
+  color: #17344e;
+}
+
+.manage-card p {
+  margin: 0;
+  color: #577085;
+  line-height: 1.5;
+}
+
+.admin-status-block {
+  margin-top: 0.6rem;
+  border: 1px solid #d8e2ec;
+  border-radius: 14px;
+  padding: 0.85rem;
+  background: #fbfdff;
+}
+
+@media (max-width: 1100px) {
+  .agent-layout,
+  .admin-layout {
     grid-template-columns: 1fr;
   }
 
+  .status-panel {
+    border-left: 0;
+    border-top: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 900px) {
   .modern-auth-card {
     grid-template-columns: 1fr;
   }
@@ -735,10 +775,122 @@ body {
   .chat-widget {
     right: 0.5rem;
     bottom: 4.2rem;
+    width: calc(100vw - 1rem);
+    height: min(76vh, 640px);
   }
 
   .chat-fab {
     right: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .top-nav h1 {
+    font-size: 1rem;
+  }
+
+  .student-page {
+    padding: 0.9rem;
+  }
+
+  .hero-card {
+    padding: 1.1rem;
+    border-radius: 14px;
+  }
+
+  .chat-header {
+    padding: 0.75rem;
+  }
+
+  .chat-brand h3 {
+    font-size: 0.9rem;
+  }
+
+  .chat-list {
+    padding: 0.75rem;
+  }
+
+  .bubble {
+    max-width: 92%;
+    font-size: 0.9rem;
+    padding: 0.62rem 0.7rem;
+  }
+
+  .chat-input-row {
+    padding: 0.7rem;
+  }
+
+  .chat-input-row input,
+  .chat-input-row button {
+    min-height: 40px;
+  }
+
+  .queue-panel,
+  .agent-chat-panel {
+    padding: 0.8rem;
+  }
+
+  .agent-chat-panel {
+    min-height: 56vh;
+  }
+
+  .agent-chat-header {
+    gap: 0.5rem;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .agent-head-actions {
+    flex-wrap: wrap;
+  }
+
+  .agent-composer {
+    flex-direction: column;
+  }
+
+  .agent-composer input,
+  .agent-composer button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .admin-kpi-grid,
+  .admin-manage-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .chat-widget {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 82vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .chat-fab {
+    bottom: 0.7rem;
+    right: 0.7rem;
+    padding: 0.7rem 1rem;
+  }
+
+  .modern-auth-card {
+    border-radius: 14px;
+  }
+
+  .auth-form-panel,
+  .auth-visual-panel {
+    padding: 1rem;
+  }
+
+  .status-panel {
+    padding: 12px;
   }
 }
 
@@ -751,41 +903,4 @@ body {
     transform: translateY(0);
     opacity: 1;
   }
-}
-.status-panel {
-  flex: 1;
-  padding: 20px;
-  background-color: #f9fafb;
-  border-left: 1px solid #e5e7eb;
-  overflow-y: auto;
-}
-
-.status-dashboard h2 {
-  font-size: 1.5rem;
-  color: #1f2937;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.status-dashboard ul {
-  list-style: none;
-  padding: 0;
-}
-
-.status-dashboard li {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px 15px;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-  color: #374151;
-}
-
-.status-dashboard .chart-container {
-  margin-top: 30px;
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
