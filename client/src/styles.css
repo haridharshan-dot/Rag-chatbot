@@ -891,6 +891,32 @@ body {
   border-bottom: 1px dotted #8eb7d3;
 }
 
+.ip-map-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ip-map-pop {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  padding: 0.12rem 0.32rem;
+  border-radius: 999px;
+  background: #ecf4fb;
+  color: #1d5f8d;
+  border: 1px solid #c5dbee;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.ip-map-wrap:hover .ip-map-pop {
+  opacity: 1;
+}
+
 .ip-map-link:hover {
   color: #124367;
   border-bottom-color: #5d8fb2;

@@ -123,15 +123,18 @@ export default function AdminUsersPage() {
                   <td>{formatDate(user.lastSeenAt)}</td>
                   <td>
                     {isLikelyPublicIp(user.lastIp) ? (
-                      <a
-                        className="ip-map-link"
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(user.lastIp)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        title="Open approximate geo lookup in Google Maps"
-                      >
-                        {user.lastIp}
-                      </a>
+                      <span className="ip-map-wrap">
+                        <a
+                          className="ip-map-link"
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(user.lastIp)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Open approximate geo lookup in Google Maps"
+                        >
+                          {user.lastIp}
+                        </a>
+                        <span className="ip-map-pop" aria-hidden="true">Maps</span>
+                      </span>
                     ) : (
                       user.lastIp || "-"
                     )}
