@@ -689,6 +689,11 @@ body {
   gap: 0.45rem;
 }
 
+.upload-pill {
+  display: inline-flex;
+  justify-content: center;
+}
+
 .admin-main {
   padding: 1rem;
 }
@@ -774,6 +779,100 @@ body {
   background: #f2fcf7;
   color: #1f5a42;
   font-weight: 600;
+}
+
+.dataset-list {
+  margin-top: 0.55rem;
+  border-top: 1px dashed #d5e2ee;
+  padding-top: 0.45rem;
+}
+
+.dataset-list p {
+  margin: 0.2rem 0;
+  font-size: 0.8rem;
+  color: #4f6880;
+}
+
+.admin-live-queue {
+  margin-top: 0.75rem;
+  border: 1px solid #dbe5ef;
+  border-radius: 12px;
+  background: #fbfdff;
+  padding: 0.8rem;
+}
+
+.queue-controls {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.queue-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.6rem;
+}
+
+.queue-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.queue-table th,
+.queue-table td {
+  border-bottom: 1px solid #e1e9f1;
+  padding: 0.5rem;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+.queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 22, 37, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.admin-modal {
+  width: min(760px, 100%);
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #d8e4ef;
+  padding: 1rem;
+}
+
+.admin-modal h3 {
+  margin: 0;
+}
+
+.admin-modal p {
+  margin: 0.45rem 0;
+}
+
+.admin-modal pre {
+  max-height: 280px;
+  overflow: auto;
+  background: #f5f8fc;
+  border: 1px solid #d4deea;
+  border-radius: 10px;
+  padding: 0.7rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.admin-modal-actions {
+  margin-top: 0.6rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .admin-status-block {
@@ -903,6 +1002,11 @@ body {
   .admin-kpi-grid,
   .admin-manage-grid {
     grid-template-columns: 1fr;
+  }
+
+  .queue-controls {
+    width: 100%;
+    flex-direction: column;
   }
 }
 

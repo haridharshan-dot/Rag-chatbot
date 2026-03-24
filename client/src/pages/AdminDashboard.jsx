@@ -2,11 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StatusDashboard from "../components/StatusDashboard";
 import {
+  downloadTranscript,
+  fetchAdminSessions,
   fetchAdminOverview,
   fetchAdminSettings,
+  fetchDatasets,
   fetchStatusLogs,
+  forceAssignSession,
+  getAgentToken,
+  reopenSession,
   runAdminReindex,
   runAdminStatusCheck,
+  uploadDataset,
   updateAdminSettings,
 } from "../api";
 
@@ -17,10 +24,20 @@ function formatDate(value) {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [authToken] = useState(() => getAgentToken());
   const [readiness, setReadiness] = useState(null);
   const [knowledge, setKnowledge] = useState(null);
   const [settings, setSettings] = useState(null);
   const [statusLogs, setStatusLogs] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [sessionFilter, setSessionFilter] = useState("queued");
+  const [assignAgentId, setAssignAgentId] = useState("agent");
+  const [datasets, setDatasets] = useState([]);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadName, setUploadName] = useState("");
+  const [uploadContent, setUploadContent] = useState("");
+  const [uploadPreview, setUploadPreview] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [runningReindex, setRunningReindex] = useState(false);
@@ -28,17 +45,26 @@ export default function AdminDashboard() {
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
+    if (authToken) return;
+    navigate("/agent", { replace: true });
+  }, [authToken, navigate]);
+
+  useEffect(() => {
     async function load() {
       try {
-        const [overview, runtime, logs] = await Promise.all([
+        const [overview, runtime, logs, queueData, datasetsData] = await Promise.all([
           fetchAdminOverview(),
           fetchAdminSettings(),
           fetchStatusLogs(),
+          fetchAdminSessions(sessionFilter),
+          fetchDatasets(),
         ]);
         setReadiness(overview.readiness);
         setKnowledge(overview.knowledge);
         setSettings(runtime);
         setStatusLogs(logs);
+        setSessions(queueData);
+        setDatasets(datasetsData);
       } catch (error) {
         console.error("Admin dashboard load failed", error);
       } finally {
@@ -49,18 +75,22 @@ export default function AdminDashboard() {
     load();
     const timer = setInterval(load, 30000);
     return () => clearInterval(timer);
-  }, []);
+  }, [sessionFilter]);
 
   async function refreshAll() {
-    const [overview, runtime, logs] = await Promise.all([
+    const [overview, runtime, logs, queueData, datasetsData] = await Promise.all([
       fetchAdminOverview(),
       fetchAdminSettings(),
       fetchStatusLogs(),
+      fetchAdminSessions(sessionFilter),
+      fetchDatasets(),
     ]);
     setReadiness(overview.readiness);
     setKnowledge(overview.knowledge);
     setSettings(runtime);
     setStatusLogs(logs);
+    setSessions(queueData);
+    setDatasets(datasetsData);
   }
 
   async function onSaveSettings() {
@@ -109,6 +139,84 @@ export default function AdminDashboard() {
     }
   }
 
+  async function onForceAssign(sessionId) {
+    if (!assignAgentId.trim()) {
+      setFeedback("Enter an agent id before force-assign.");
+      return;
+    }
+    try {
+      await forceAssignSession(sessionId, assignAgentId.trim());
+      await refreshAll();
+      setFeedback(`Session force-assigned to ${assignAgentId.trim()}.`);
+    } catch (error) {
+      console.error(error);
+      setFeedback("Force-assign failed.");
+    }
+  }
+
+  async function onReopen(sessionId) {
+    try {
+      await reopenSession(sessionId);
+      await refreshAll();
+      setFeedback("Session reopened and moved to queue.");
+    } catch (error) {
+      console.error(error);
+      setFeedback("Reopen failed.");
+    }
+  }
+
+  async function onDownloadTranscript(sessionId, format) {
+    try {
+      const blob = await downloadTranscript(sessionId, format);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `transcript-${sessionId}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      setFeedback("Transcript export failed.");
+    }
+  }
+
+  function onPickFile(file) {
+    if (!file) return;
+    setUploadName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "");
+      setUploadContent(text);
+      setUploadPreview(text.split(/\r?\n/).slice(0, 30).join("\n"));
+      setUploadOpen(true);
+    };
+    reader.readAsText(file);
+  }
+
+  async function onUploadDataset() {
+    if (!uploadName || !uploadContent) {
+      setFeedback("Select a valid dataset file first.");
+      return;
+    }
+    setUploading(true);
+    try {
+      await uploadDataset(uploadName, uploadContent);
+      setUploadOpen(false);
+      setUploadName("");
+      setUploadContent("");
+      setUploadPreview("");
+      await refreshAll();
+      setFeedback("Dataset uploaded. Run re-index to apply new content.");
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "Dataset upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const kpis = useMemo(() => {
     const apiUp = statusLogs.filter((log) => log.apiStatus === "up").length;
     const llmUp = statusLogs.filter((log) => log.llmStatus === "up").length;
@@ -152,6 +260,15 @@ export default function AdminDashboard() {
           <button className="pill-btn" onClick={() => navigate("/agent")}>Agent Dashboard</button>
           <button className="pill-btn" onClick={() => navigate("/status")}>Status Dashboard</button>
           <button className="pill-btn" onClick={() => navigate("/")}>Student Portal</button>
+          <label className="pill-btn upload-pill">
+            Upload Dataset
+            <input
+              type="file"
+              accept=".json,.txt,.md"
+              onChange={(e) => onPickFile(e.target.files?.[0])}
+              hidden
+            />
+          </label>
         </div>
       </aside>
 
@@ -169,6 +286,11 @@ export default function AdminDashboard() {
             <button className="pill-btn" onClick={onReindex} disabled={runningReindex}>
               {runningReindex ? "Re-indexing..." : "Re-index Knowledge Base"}
             </button>
+            <div className="dataset-list">
+              {(datasets || []).slice(0, 5).map((file) => (
+                <p key={`${file.name}-${file.updatedAt}`}>{file.name} • {Math.round((file.size || 0) / 1024)} KB</p>
+              ))}
+            </div>
           </article>
           <article className="manage-card">
             <h4>Agent Access</h4>
@@ -274,12 +396,100 @@ export default function AdminDashboard() {
           </article>
         </div>
 
+        <section className="admin-live-queue">
+          <div className="admin-main-head">
+            <h3>Live Queue Management</h3>
+            <div className="queue-controls">
+              <select
+                className="admin-input"
+                value={sessionFilter}
+                onChange={(e) => setSessionFilter(e.target.value)}
+              >
+                <option value="queued">Queued</option>
+                <option value="active">Active</option>
+                <option value="resolved">Resolved</option>
+                <option value="bot">Bot</option>
+              </select>
+              <input
+                className="admin-input"
+                value={assignAgentId}
+                onChange={(e) => setAssignAgentId(e.target.value)}
+                placeholder="agent id"
+              />
+            </div>
+          </div>
+
+          <div className="queue-table-wrap">
+            <table className="queue-table">
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Student</th>
+                  <th>Status</th>
+                  <th>Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessions.map((session) => {
+                  const sessionId = session._id || session.id;
+                  return (
+                    <tr key={sessionId}>
+                      <td>{sessionId?.slice(-8)}</td>
+                      <td>{session.studentId}</td>
+                      <td>{session.status}</td>
+                      <td>{formatDate(session.updatedAt)}</td>
+                      <td>
+                        <div className="queue-actions">
+                          <button className="pill-btn" onClick={() => onForceAssign(sessionId)}>
+                            Force Assign
+                          </button>
+                          <button className="pill-btn" onClick={() => onReopen(sessionId)}>
+                            Reopen
+                          </button>
+                          <button className="pill-btn" onClick={() => onDownloadTranscript(sessionId, "txt")}>
+                            Export TXT
+                          </button>
+                          <button className="pill-btn" onClick={() => onDownloadTranscript(sessionId, "json")}>
+                            Export JSON
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!sessions.length && (
+                  <tr>
+                    <td colSpan={5}>No sessions found for this filter.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
         <section className="admin-status-block">
           <StatusDashboard />
         </section>
       </section>
+
+      {uploadOpen && (
+        <div className="admin-modal-backdrop" onClick={() => setUploadOpen(false)}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Upload Dataset Preview</h3>
+            <p>{uploadName}</p>
+            <pre>{uploadPreview || "No preview available"}</pre>
+            <div className="admin-modal-actions">
+              <button className="pill-btn" onClick={() => setUploadOpen(false)}>Cancel</button>
+              <button className="pill-btn" onClick={onUploadDataset} disabled={uploading}>
+                {uploading ? "Uploading..." : "Upload Dataset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

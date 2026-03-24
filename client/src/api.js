@@ -135,3 +135,36 @@ export async function runAdminStatusCheck() {
   const response = await api.post('/admin/actions/record-status', {}, agentAuthConfig());
   return response.data.data;
 }
+
+export async function fetchAdminSessions(status = 'queued', limit = 50) {
+  const response = await api.get(`/admin/sessions?status=${encodeURIComponent(status)}&limit=${limit}`, agentAuthConfig());
+  return response.data.data;
+}
+
+export async function forceAssignSession(sessionId, agentId) {
+  const response = await api.post(`/admin/sessions/${sessionId}/force-assign`, { agentId }, agentAuthConfig());
+  return response.data.data;
+}
+
+export async function reopenSession(sessionId) {
+  const response = await api.post(`/admin/sessions/${sessionId}/reopen`, {}, agentAuthConfig());
+  return response.data.data;
+}
+
+export async function downloadTranscript(sessionId, format = 'txt') {
+  const response = await api.get(`/admin/sessions/${sessionId}/transcript?format=${encodeURIComponent(format)}`, {
+    ...agentAuthConfig(),
+    responseType: 'blob',
+  });
+  return response.data;
+}
+
+export async function fetchDatasets() {
+  const response = await api.get('/admin/datasets', agentAuthConfig());
+  return response.data.data;
+}
+
+export async function uploadDataset(fileName, content) {
+  const response = await api.post('/admin/datasets/upload', { fileName, content }, agentAuthConfig());
+  return response.data.data;
+}
