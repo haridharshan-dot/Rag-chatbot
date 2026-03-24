@@ -71,6 +71,7 @@ router.post("/:sessionId/message", async (req, res, next) => {
       success: true,
       data: {
         sessionId: session.id,
+        sessionStatus: session.status,
         botMessage,
         confidence: ragResponse.confidence,
         escalationSuggested: ragResponse.escalationSuggested,

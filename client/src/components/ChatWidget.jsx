@@ -82,12 +82,20 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
 
     try {
       const response = await sendStudentMessage(sessionId, text);
-      if (response.autoEscalated || response.outOfScope || response.escalationSuggested) {
-        setShowEscalate(true);
-      }
-      if (response.autoEscalated || response.outOfScope) {
-        setHandoffPending(true);
-      }
+      const sessionStatus = String(response.sessionStatus || "bot");
+      const shouldOfferEscalation =
+        response.autoEscalated ||
+        response.outOfScope ||
+        sessionStatus === "queued" ||
+        sessionStatus === "active";
+
+      setShowEscalate(Boolean(shouldOfferEscalation));
+      setAgentConnected(sessionStatus === "active");
+      setHandoffPending(
+        sessionStatus === "queued" ||
+          response.autoEscalated ||
+          false
+      );
     } catch (error) {
       console.error("Failed to send message", error);
     } finally {
