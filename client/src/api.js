@@ -38,6 +38,11 @@ export async function agentLogin(username, password) {
   return response.data.data;
 }
 
+export async function agentMicrosoftLogin(accessToken) {
+  const response = await api.post("/agent/login/microsoft", { accessToken });
+  return response.data.data;
+}
+
 export async function createSession(studentId) {
   const response = await api.post("/chat/session", { studentId });
   return response.data.data;

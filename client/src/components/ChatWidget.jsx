@@ -119,15 +119,25 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
       {open && (
         <aside className="chat-widget">
           <div className="chat-header">
-            <h3>College Concierge</h3>
-            <span>{loading ? "Starting session..." : `Session: ${sessionId?.slice(-6)}`}</span>
+            <div className="chat-brand">
+              <img src="/sonalogo.png" alt="Sona logo" className="ai-avatar" />
+              <div>
+                <h3>Ask AI - Sona Concierge</h3>
+                <span>{loading ? "Starting session..." : `Session: ${sessionId?.slice(-6)}`}</span>
+              </div>
+            </div>
           </div>
 
           <div className="chat-list" ref={listRef}>
             {messages.map((message, index) => (
-              <div key={`${index}-${message.content.slice(0, 8)}`} className={`bubble ${message.sender}`}>
-                <p>{message.content}</p>
-                <small>{formatTime(message.createdAt || Date.now())}</small>
+              <div key={`${index}-${message.content.slice(0, 8)}`} className={`bubble-row ${message.sender}`}>
+                {(message.sender === "bot" || message.sender === "system") && (
+                  <img src="/sonalogo.png" alt="AI profile" className="avatar-mini" />
+                )}
+                <div className={`bubble ${message.sender}`}>
+                  <p>{message.content}</p>
+                  <small>{formatTime(message.createdAt || Date.now())}</small>
+                </div>
               </div>
             ))}
           </div>

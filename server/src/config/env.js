@@ -58,6 +58,9 @@ export const env = {
   agentUsername: process.env.AGENT_USERNAME || "agent",
   agentPassword: process.env.AGENT_PASSWORD || "agent123",
   agentJwtExpiry: process.env.AGENT_JWT_EXPIRY || "12h",
+  microsoftAuthEnabled: process.env.MICROSOFT_AUTH_ENABLED === "true",
+  microsoftAllowedDomains: asList(process.env.MICROSOFT_ALLOWED_DOMAINS),
+  microsoftAllowedEmails: asList(process.env.MICROSOFT_ALLOWED_EMAILS),
   // Free-tier optimizations
   mongoConnectionPoolSize: asNumber(process.env.MONGO_POOL_SIZE, 2),
   mongoMaxIdleTime: asNumber(process.env.MONGO_MAX_IDLE_TIME, 30000),

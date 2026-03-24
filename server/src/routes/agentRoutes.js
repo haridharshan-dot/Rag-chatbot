@@ -28,6 +28,68 @@ router.post("/login", (req, res) => {
   });
 });
 
+router.post("/login/microsoft", async (req, res) => {
+  if (!env.microsoftAuthEnabled) {
+    return res.status(503).json({
+      success: false,
+      message: "Microsoft login is not enabled for this deployment",
+    });
+  }
+
+  const accessToken = String(req.body?.accessToken || "").trim();
+  if (!accessToken) {
+    return res.status(400).json({ success: false, message: "accessToken is required" });
+  }
+
+  try {
+    const graphResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!graphResponse.ok) {
+      return res.status(401).json({ success: false, message: "Invalid Microsoft token" });
+    }
+
+    const profile = await graphResponse.json();
+    const email = String(profile.mail || profile.userPrincipalName || "").toLowerCase();
+    if (!email) {
+      return res.status(401).json({ success: false, message: "Unable to resolve Microsoft account email" });
+    }
+
+    const domain = email.includes("@") ? email.split("@")[1] : "";
+    if (env.microsoftAllowedDomains.length && !env.microsoftAllowedDomains.includes(domain)) {
+      return res.status(403).json({ success: false, message: "Microsoft account domain not allowed" });
+    }
+
+    if (env.microsoftAllowedEmails.length && !env.microsoftAllowedEmails.includes(email)) {
+      return res.status(403).json({ success: false, message: "Microsoft account not allowed" });
+    }
+
+    const agentId = email.split("@")[0] || profile.id || "agent";
+    const token = signAgentToken({
+      role: "agent",
+      agentId,
+      provider: "microsoft",
+      email,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        token,
+        agentId,
+        email,
+        displayName: profile.displayName || agentId,
+        expiresIn: env.agentJwtExpiry,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Microsoft login failed" });
+  }
+});
+
 router.use(requireAgentAuth);
 
 router.get("/queue", async (req, res, next) => {

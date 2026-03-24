@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import StatusDashboard from "../components/StatusDashboard";
 import {
   agentLogin,
+  agentMicrosoftLogin,
   fetchAgentQueue,
   fetchHistory,
   getAgentToken,
@@ -10,6 +11,7 @@ import {
   setAgentToken,
   sendAgentMessage,
 } from "../api";
+import { signInWithMicrosoft } from "../auth/microsoftAuth";
 import { socket } from "../socket";
 
 function normalizeSessionId(session) {
@@ -41,6 +43,7 @@ export default function AgentDashboard() {
   const [queueError, setQueueError] = useState("");
   const [lastSyncAt, setLastSyncAt] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
+  const [microsoftLoading, setMicrosoftLoading] = useState(false);
 
   useEffect(() => {
     if (!authToken) return;
@@ -106,6 +109,24 @@ export default function AgentDashboard() {
     }
   }
 
+  async function onMicrosoftLogin() {
+    setAuthError("");
+    setMicrosoftLoading(true);
+    try {
+      const microsoft = await signInWithMicrosoft();
+      const data = await agentMicrosoftLogin(microsoft.accessToken);
+      setAgentToken(data.token);
+      setAuthToken(data.token);
+      setAgentId(data.agentId || microsoft.username || "agent");
+    } catch (error) {
+      setAuthError(
+        error?.response?.data?.message || error?.message || "Microsoft sign-in failed."
+      );
+    } finally {
+      setMicrosoftLoading(false);
+    }
+  }
+
   function onLogout() {
     setAgentToken("");
     setAuthToken("");
@@ -158,8 +179,23 @@ export default function AgentDashboard() {
     return (
       <div className="agent-auth-wrap">
         <section className="agent-auth-card">
-          <h2>Agent Console Login</h2>
+          <div className="agent-auth-brand">
+            <img src="/sonalogo.png" alt="Sona logo" className="agent-auth-logo" />
+            <div>
+              <p className="eyebrow">Sona Support Desk</p>
+              <h2>Agent Console Login</h2>
+            </div>
+          </div>
           <p>Sign in with staff credentials to handle live student conversations.</p>
+          <button
+            type="button"
+            className="ms-login-btn"
+            onClick={onMicrosoftLogin}
+            disabled={microsoftLoading}
+          >
+            {microsoftLoading ? "Signing in..." : "Continue with Microsoft"}
+          </button>
+          <p className="agent-auth-divider">or use agent credentials</p>
           <form onSubmit={onLogin} className="agent-auth-form">
             <input
               value={username}
