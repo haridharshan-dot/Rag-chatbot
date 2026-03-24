@@ -164,6 +164,11 @@ export async function fetchDatasets() {
   return response.data.data;
 }
 
+export async function fetchDatasetPreview(fileName) {
+  const response = await api.get(`/admin/datasets/${encodeURIComponent(fileName)}/preview`, agentAuthConfig());
+  return response.data.data;
+}
+
 export async function uploadDataset(fileName, content) {
   const response = await api.post('/admin/datasets/upload', { fileName, content }, agentAuthConfig());
   return response.data.data;

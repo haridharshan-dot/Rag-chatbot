@@ -249,6 +249,46 @@ router.get("/datasets", async (req, res, next) => {
   }
 });
 
+router.get("/datasets/:fileName/preview", async (req, res, next) => {
+  try {
+    const requested = String(req.params?.fileName || "").trim();
+    if (!requested) {
+      return res.status(400).json({ success: false, message: "fileName is required" });
+    }
+
+    const safeName = path.basename(requested);
+    const filePath = path.join(env.dataDir, safeName);
+    const resolvedDataDir = path.resolve(env.dataDir);
+    const resolvedFilePath = path.resolve(filePath);
+    if (!resolvedFilePath.startsWith(resolvedDataDir)) {
+      return res.status(400).json({ success: false, message: "Invalid file path" });
+    }
+
+    const stat = await fs.stat(filePath);
+    if (!stat.isFile()) {
+      return res.status(404).json({ success: false, message: "Dataset file not found" });
+    }
+
+    const content = await fs.readFile(filePath, "utf8");
+    const preview = content.slice(0, 12000);
+
+    return res.json({
+      success: true,
+      data: {
+        name: safeName,
+        size: stat.size,
+        updatedAt: stat.mtime.toISOString(),
+        preview,
+      },
+    });
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return res.status(404).json({ success: false, message: "Dataset file not found" });
+    }
+    next(error);
+  }
+});
+
 router.post("/datasets/upload", async (req, res, next) => {
   try {
     const fileName = String(req.body?.fileName || "").trim();

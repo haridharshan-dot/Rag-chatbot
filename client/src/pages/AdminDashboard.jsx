@@ -6,6 +6,7 @@ import {
   fetchAdminSessions,
   fetchAdminOverview,
   fetchAdminSettings,
+  fetchDatasetPreview,
   fetchDatasets,
   fetchStatusLogs,
   forceAssignSession,
@@ -37,6 +38,10 @@ export default function AdminDashboard() {
   const [uploadName, setUploadName] = useState("");
   const [uploadContent, setUploadContent] = useState("");
   const [uploadPreview, setUploadPreview] = useState("");
+  const [datasetPreviewOpen, setDatasetPreviewOpen] = useState(false);
+  const [datasetPreviewMeta, setDatasetPreviewMeta] = useState(null);
+  const [datasetPreviewText, setDatasetPreviewText] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -217,6 +222,26 @@ export default function AdminDashboard() {
     }
   }
 
+  async function onPreviewDataset(fileName) {
+    setPreviewLoading(true);
+    setFeedback("");
+    try {
+      const data = await fetchDatasetPreview(fileName);
+      setDatasetPreviewMeta({
+        name: data.name,
+        size: data.size,
+        updatedAt: data.updatedAt,
+      });
+      setDatasetPreviewText(data.preview || "No preview available");
+      setDatasetPreviewOpen(true);
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "Dataset preview failed.");
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
   const kpis = useMemo(() => {
     const apiUp = statusLogs.filter((log) => log.apiStatus === "up").length;
     const llmUp = statusLogs.filter((log) => log.llmStatus === "up").length;
@@ -287,9 +312,19 @@ export default function AdminDashboard() {
               {runningReindex ? "Re-indexing..." : "Re-index Knowledge Base"}
             </button>
             <div className="dataset-list">
-              {(datasets || []).slice(0, 5).map((file) => (
-                <p key={`${file.name}-${file.updatedAt}`}>{file.name} • {Math.round((file.size || 0) / 1024)} KB</p>
+              {(datasets || []).slice(0, 6).map((file) => (
+                <div className="dataset-item" key={`${file.name}-${file.updatedAt}`}>
+                  <p>{file.name} • {Math.max(1, Math.round((file.size || 0) / 1024))} KB</p>
+                  <button
+                    className="pill-btn"
+                    onClick={() => onPreviewDataset(file.name)}
+                    disabled={previewLoading}
+                  >
+                    {previewLoading ? "Loading..." : "Preview"}
+                  </button>
+                </div>
               ))}
+              {!datasets.length && <p>No dataset files found.</p>}
             </div>
           </article>
           <article className="manage-card">
@@ -485,6 +520,24 @@ export default function AdminDashboard() {
               <button className="pill-btn" onClick={() => setUploadOpen(false)}>Cancel</button>
               <button className="pill-btn" onClick={onUploadDataset} disabled={uploading}>
                 {uploading ? "Uploading..." : "Upload Dataset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {datasetPreviewOpen && (
+        <div className="admin-modal-backdrop" onClick={() => setDatasetPreviewOpen(false)}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Dataset Preview</h3>
+            <p>
+              {datasetPreviewMeta?.name || "-"} • {Math.max(1, Math.round((datasetPreviewMeta?.size || 0) / 1024))} KB
+            </p>
+            <p>Updated: {formatDate(datasetPreviewMeta?.updatedAt)}</p>
+            <pre>{datasetPreviewText || "No preview available"}</pre>
+            <div className="admin-modal-actions">
+              <button className="pill-btn" onClick={() => setDatasetPreviewOpen(false)}>
+                Close
               </button>
             </div>
           </div>

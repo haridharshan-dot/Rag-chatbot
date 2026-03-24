@@ -856,6 +856,23 @@ body {
   color: #4f6880;
 }
 
+.dataset-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.dataset-item p {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .admin-live-queue {
   margin-top: 0.75rem;
   border: 1px solid #dbe5ef;
