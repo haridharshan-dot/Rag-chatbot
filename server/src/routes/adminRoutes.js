@@ -106,6 +106,13 @@ router.get("/overview", async (req, res, next) => {
           rag,
           timestamp: new Date().toISOString(),
         },
+        siteConfig: {
+          backend: {
+            microsoftAuthEnvEnabled: Boolean(env.microsoftAuthEnabled),
+            microsoftAllowedDomainsConfigured: Boolean(env.microsoftAllowedDomains?.length),
+            microsoftAllowedEmailsConfigured: Boolean(env.microsoftAllowedEmails?.length),
+          },
+        },
         settings,
         knowledge,
       },

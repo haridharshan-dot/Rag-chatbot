@@ -959,6 +959,48 @@ body {
   margin: 0.25rem 0;
 }
 
+.config-ready,
+.config-missing {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.config-ready {
+  color: #0f7a48;
+}
+
+.config-missing {
+  color: #9a2d2d;
+}
+
+.site-config-checklist {
+  margin-top: 0.45rem;
+  border-top: 1px dashed #d4dfeb;
+  padding-top: 0.35rem;
+}
+
+.site-config-checklist p {
+  margin: 0.22rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+}
+
+.check-ok strong {
+  color: #0f7a48;
+}
+
+.check-missing strong {
+  color: #9a2d2d;
+}
+
+.check-optional strong {
+  color: #7b6a2d;
+}
+
 .admin-field-grid {
   display: grid;
   grid-template-columns: 1fr;

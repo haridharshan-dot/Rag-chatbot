@@ -421,6 +421,56 @@ export default function AdminDashboard() {
     };
   }, [statusLogs]);
 
+  const frontendConfig = useMemo(
+    () => ({
+      msClientId: Boolean(import.meta.env.VITE_MS_CLIENT_ID),
+      msTenantId: Boolean(import.meta.env.VITE_MS_TENANT_ID),
+      msRedirectUri: Boolean(import.meta.env.VITE_MS_REDIRECT_URI),
+    }),
+    []
+  );
+
+  const siteChecklist = useMemo(() => {
+    const backend = readiness?.siteConfig?.backend || {};
+    const runtimeEnabled = Boolean(settings?.microsoftAuthEnabled);
+
+    const checks = [
+      {
+        key: "runtimeToggle",
+        label: "Runtime toggle (Enable Microsoft SSO)",
+        ok: runtimeEnabled,
+      },
+      {
+        key: "backendEnv",
+        label: "Render MICROSOFT_AUTH_ENABLED",
+        ok: Boolean(backend.microsoftAuthEnvEnabled),
+      },
+      {
+        key: "backendDomains",
+        label: "Render MICROSOFT_ALLOWED_DOMAINS",
+        ok: Boolean(backend.microsoftAllowedDomainsConfigured),
+      },
+      {
+        key: "frontendClient",
+        label: "Vercel VITE_MS_CLIENT_ID",
+        ok: frontendConfig.msClientId,
+      },
+      {
+        key: "frontendTenant",
+        label: "Vercel VITE_MS_TENANT_ID",
+        ok: frontendConfig.msTenantId,
+      },
+      {
+        key: "frontendRedirect",
+        label: "Vercel VITE_MS_REDIRECT_URI",
+        ok: frontendConfig.msRedirectUri,
+      },
+    ];
+
+    const ready = checks.every((item) => item.ok);
+    return { checks, ready };
+  }, [readiness, settings, frontendConfig]);
+
   const previewRender = useMemo(
     () => buildHighlightedPreview(datasetPreviewText || "No preview available", datasetPreviewSearch, datasetCurrentMatch),
     [datasetPreviewText, datasetPreviewSearch, datasetCurrentMatch]
@@ -542,6 +592,9 @@ export default function AdminDashboard() {
           <article className="manage-card">
             <h4>Site Configuration</h4>
             <p>Configure Microsoft SSO controls for the Agent Dashboard at runtime.</p>
+            <p className={siteChecklist.ready ? "config-ready" : "config-missing"}>
+              {siteChecklist.ready ? "Ready to work" : "Setup incomplete"}
+            </p>
             <label className="admin-checkbox">
               <input
                 type="checkbox"
@@ -578,6 +631,18 @@ export default function AdminDashboard() {
               <p><strong>Render (backend)</strong>: MICROSOFT_AUTH_ENABLED, MICROSOFT_ALLOWED_DOMAINS, MICROSOFT_ALLOWED_EMAILS (optional).</p>
               <p><strong>Vercel (frontend)</strong>: VITE_MS_CLIENT_ID, VITE_MS_TENANT_ID, VITE_MS_REDIRECT_URI.</p>
               <p><strong>Entra App</strong>: Add SPA redirect URI for /agent, allow User.Read, enable public client flow for popup login.</p>
+            </div>
+            <div className="site-config-checklist">
+              {siteChecklist.checks.map((item) => (
+                <p key={item.key} className={item.ok ? "check-ok" : "check-missing"}>
+                  <span>{item.label}</span>
+                  <strong>{item.ok ? "Configured" : "Missing"}</strong>
+                </p>
+              ))}
+              <p className="check-optional">
+                <span>Render MICROSOFT_ALLOWED_EMAILS</span>
+                <strong>Optional</strong>
+              </p>
             </div>
           </article>
           <article className="manage-card">
