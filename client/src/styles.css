@@ -257,6 +257,98 @@ body {
   padding: 1.4rem;
 }
 
+.modern-auth-card {
+  width: min(900px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 1.12fr;
+  background: #f8f9ff;
+  color: #213043;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 56px rgba(18, 25, 54, 0.25);
+  padding: 0;
+}
+
+.auth-visual-panel {
+  background: linear-gradient(165deg, #d15cf6 0%, #9747ff 45%, #6d42ef 100%);
+  color: #ffffff;
+  padding: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.auth-visual-top {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+}
+
+.auth-visual-top .agent-auth-logo {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.auth-visual-illustration {
+  height: 200px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 14px;
+}
+
+.shape-main {
+  width: 130px;
+  height: 130px;
+  background: rgba(255, 255, 255, 0.85);
+  left: 24px;
+  top: 34px;
+  transform: rotate(-8deg);
+}
+
+.shape-orbit {
+  width: 118px;
+  height: 118px;
+  border: 5px solid rgba(255, 255, 255, 0.65);
+  right: 22px;
+  top: 30px;
+  border-radius: 50%;
+}
+
+.shape-dot {
+  width: 18px;
+  height: 18px;
+  background: #1b1052;
+  right: 40px;
+  bottom: 32px;
+  border-radius: 50%;
+}
+
+.auth-visual-panel h3 {
+  margin: 0;
+  font-size: 1.16rem;
+}
+
+.auth-visual-panel p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.5;
+}
+
+.auth-form-panel {
+  background: linear-gradient(180deg, #fcfcff 0%, #f6f7ff 100%);
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .agent-auth-brand {
   display: flex;
   align-items: center;
@@ -279,6 +371,11 @@ body {
   color: #b8c8d9;
 }
 
+.auth-form-panel p {
+  margin: 0;
+  color: #5a6a80;
+}
+
 .agent-auth-divider {
   text-align: center;
   margin: 0.75rem 0;
@@ -286,11 +383,16 @@ body {
   font-size: 0.82rem;
 }
 
+.auth-footnote {
+  font-size: 0.75rem;
+  color: #7d8aa2;
+}
+
 .ms-login-btn {
   width: 100%;
-  border: 1px solid #2f5f88;
+  border: 1px solid #1f5f95;
   border-radius: 10px;
-  background: linear-gradient(90deg, #1f4073, #245ea8);
+  background: linear-gradient(90deg, #174a7f, #2271b8);
   color: #fff;
   font-weight: 600;
   padding: 0.72rem 0.9rem;
@@ -308,17 +410,17 @@ body {
 }
 
 .agent-auth-form input {
-  border: 1px solid #29435e;
+  border: 1px solid #d7dff0;
   border-radius: 10px;
-  background: #0c1b2c;
-  color: #f3f8ff;
+  background: #ffffff;
+  color: #203247;
   padding: 0.75rem 0.85rem;
 }
 
 .agent-auth-form button {
   border: 0;
   border-radius: 10px;
-  background: linear-gradient(90deg, #16a34a, #0ea5a6);
+  background: linear-gradient(90deg, #08a59f, #0e8d80);
   color: #fff;
   font-weight: 600;
   padding: 0.72rem 0.9rem;
@@ -327,7 +429,7 @@ body {
 
 .agent-error {
   margin: 0;
-  color: #fca5a5;
+  color: #cf2a3f;
 }
 
 .queue-panel,
@@ -487,6 +589,18 @@ body {
 @media (max-width: 900px) {
   .agent-layout {
     grid-template-columns: 1fr;
+  }
+
+  .modern-auth-card {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-visual-panel {
+    min-height: 220px;
+  }
+
+  .auth-visual-illustration {
+    height: 130px;
   }
 
   .ops-kpis {

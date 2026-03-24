@@ -178,41 +178,67 @@ export default function AgentDashboard() {
   if (!authToken) {
     return (
       <div className="agent-auth-wrap">
-        <section className="agent-auth-card">
-          <div className="agent-auth-brand">
-            <img src="/sonalogo.png" alt="Sona logo" className="agent-auth-logo" />
-            <div>
-              <p className="eyebrow">Sona Support Desk</p>
-              <h2>Agent Console Login</h2>
+        <section className="agent-auth-card modern-auth-card">
+          <aside className="auth-visual-panel">
+            <div className="auth-visual-top">
+              <img src="/sonalogo.png" alt="Sona logo" className="agent-auth-logo" />
+              <span>Sona AI Desk</span>
             </div>
+            <div className="auth-visual-illustration" aria-hidden="true">
+              <div className="shape shape-main" />
+              <div className="shape shape-orbit" />
+              <div className="shape shape-dot" />
+            </div>
+            <h3>Welcome back, agent</h3>
+            <p>
+              Manage escalations, reply in real time, and keep student support seamless across
+              admissions workflows.
+            </p>
+          </aside>
+
+          <div className="auth-form-panel">
+            <div className="agent-auth-brand">
+              <img src="/sonalogo.png" alt="Sona logo" className="agent-auth-logo" />
+              <div>
+                <p className="eyebrow">Sona Support Desk</p>
+                <h2>Agent Sign In</h2>
+              </div>
+            </div>
+            <p>Sign in with Microsoft or use your secure staff credentials.</p>
+
+            <button
+              type="button"
+              className="ms-login-btn"
+              onClick={onMicrosoftLogin}
+              disabled={microsoftLoading}
+            >
+              {microsoftLoading ? "Signing in..." : "Continue with Microsoft"}
+            </button>
+
+            <p className="agent-auth-divider">or continue with username and password</p>
+
+            <form onSubmit={onLogin} className="agent-auth-form">
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Agent username"
+                autoComplete="username"
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                autoComplete="current-password"
+              />
+              {authError ? <p className="agent-error">{authError}</p> : null}
+              <button type="submit">Sign in</button>
+            </form>
+
+            <p className="auth-footnote">
+              By signing in, you agree to student data handling and support audit policies.
+            </p>
           </div>
-          <p>Sign in with staff credentials to handle live student conversations.</p>
-          <button
-            type="button"
-            className="ms-login-btn"
-            onClick={onMicrosoftLogin}
-            disabled={microsoftLoading}
-          >
-            {microsoftLoading ? "Signing in..." : "Continue with Microsoft"}
-          </button>
-          <p className="agent-auth-divider">or use agent credentials</p>
-          <form onSubmit={onLogin} className="agent-auth-form">
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Agent username"
-              autoComplete="username"
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              autoComplete="current-password"
-            />
-            {authError ? <p className="agent-error">{authError}</p> : null}
-            <button type="submit">Sign in</button>
-          </form>
         </section>
       </div>
     );
