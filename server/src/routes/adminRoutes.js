@@ -442,6 +442,10 @@ router.get("/agents", async (req, res, next) => {
 
 router.get("/users", async (req, res, next) => {
   try {
+    const RETAIN_PAGES = 8;
+    const RETAIN_LIMIT = 10;
+    const MAX_RECENT_USERS = RETAIN_PAGES * RETAIN_LIMIT;
+
     const sessions = await ChatSession.find({})
       .select("studentId status updatedAt createdAt clientIp assignedAgentId")
       .sort({ updatedAt: -1 })
@@ -478,6 +482,25 @@ router.get("/users", async (req, res, next) => {
       (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime()
     );
 
+    const keepSet = new Set(data.slice(0, MAX_RECENT_USERS).map((row) => row.studentId));
+    const staleStudentIds = data
+      .slice(MAX_RECENT_USERS)
+      .map((row) => row.studentId)
+      .filter(Boolean);
+
+    if (staleStudentIds.length) {
+      try {
+        await ChatSession.deleteMany({
+          studentId: { $in: staleStudentIds },
+          status: { $in: ["bot", "resolved"] },
+        });
+      } catch {
+        // Best effort cleanup only.
+      }
+    }
+
+    data = data.filter((row) => keepSet.has(row.studentId));
+
     const search = String(req.query?.search || "").trim().toLowerCase();
     if (search) {
       data = data.filter((row) => {
@@ -505,6 +528,7 @@ router.get("/users", async (req, res, next) => {
           total,
           totalPages,
           search,
+          retainedPages: RETAIN_PAGES,
         },
       },
     });

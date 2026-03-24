@@ -7,6 +7,18 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
+function isLikelyPublicIp(value) {
+  const ip = String(value || "").trim();
+  if (!ip || ip === "-") return false;
+  if (ip.startsWith("10.")) return false;
+  if (ip.startsWith("192.168.")) return false;
+  if (ip.startsWith("172.")) {
+    const block = Number(ip.split(".")[1] || 0);
+    if (block >= 16 && block <= 31) return false;
+  }
+  return true;
+}
+
 export default function AdminUsersPage() {
   const PAGE_SIZE = 10;
   const navigate = useNavigate();
@@ -109,7 +121,21 @@ export default function AdminUsersPage() {
                   <td>{user.currentStatus || "-"}</td>
                   <td>{user.assignedAgentId || "-"}</td>
                   <td>{formatDate(user.lastSeenAt)}</td>
-                  <td>{user.lastIp || "-"}</td>
+                  <td>
+                    {isLikelyPublicIp(user.lastIp) ? (
+                      <a
+                        className="ip-map-link"
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(user.lastIp)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Open approximate geo lookup in Google Maps"
+                      >
+                        {user.lastIp}
+                      </a>
+                    ) : (
+                      user.lastIp || "-"
+                    )}
+                  </td>
                 </tr>
               ))}
               {!items.length && !loading && (

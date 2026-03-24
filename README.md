@@ -138,6 +138,21 @@ This project includes a chatbot-only route:
 ></iframe>
 ```
 
+### Option A+ (recommended): Auto-resizing iframe embed
+
+Use the embed helper script so iframe height adapts to mobile and desktop automatically.
+
+```html
+<iframe
+	data-sona-chatbot="true"
+	src="https://your-vercel-app.vercel.app/chatbot"
+	title="College AI Chatbot"
+	style="width:420px; max-width:100%; height:700px; border:0; border-radius:16px;"
+	loading="lazy"
+></iframe>
+<script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
+```
+
 ### Option B: React integration
 
 - Import [client/src/components/EmbeddedStudentChatbot.jsx](client/src/components/EmbeddedStudentChatbot.jsx).
@@ -339,6 +354,17 @@ Quick test flow:
 - Add integration tests (API + socket flows).
 - Add CI/CD with image scans and secret management.
 - Add PII scrubbing and retention policies.
+
+## Production Enhancements Included
+
+- Chatbot mobile close button inside widget header.
+- Admin user and agent directories moved to dedicated pages.
+- Users and agents pages support search and pagination.
+- Users page configured to 10 rows per page.
+- User history retention capped to recent 8 pages (older bot/resolved history is auto-pruned).
+- Dataset remove action in Admin with re-index trigger to remove content from RAG retrieval.
+- Chatbot-only route (`/chatbot`) for official college website embedding.
+- Auto-resizing iframe helper script at `/chatbot-embed.js`.
 
 ## Development Phases Map
 

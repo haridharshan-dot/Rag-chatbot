@@ -137,6 +137,9 @@ export default function ChatWidget({ sessionId, studentId, loading, defaultOpen 
                 <span>{loading ? "Starting session..." : `Session: ${sessionId?.slice(-6)}`}</span>
               </div>
             </div>
+            <button className="chat-close-btn" onClick={() => setOpen(false)} aria-label="Close chatbot">
+              Close
+            </button>
           </div>
 
           <div className="chat-list" ref={listRef}>
