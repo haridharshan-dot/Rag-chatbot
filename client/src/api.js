@@ -164,9 +164,20 @@ export async function fetchDatasets() {
   return response.data.data;
 }
 
-export async function fetchDatasetPreview(fileName) {
-  const response = await api.get(`/admin/datasets/${encodeURIComponent(fileName)}/preview`, agentAuthConfig());
+export async function fetchDatasetPreview(fileName, full = false) {
+  const response = await api.get(
+    `/admin/datasets/${encodeURIComponent(fileName)}/preview?full=${full ? "true" : "false"}`,
+    agentAuthConfig()
+  );
   return response.data.data;
+}
+
+export async function downloadDataset(fileName) {
+  const response = await api.get(`/admin/datasets/${encodeURIComponent(fileName)}/download`, {
+    ...agentAuthConfig(),
+    responseType: 'blob',
+  });
+  return response.data;
 }
 
 export async function uploadDataset(fileName, content) {

@@ -873,6 +873,19 @@ body {
   white-space: nowrap;
 }
 
+.runtime-grid {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 0.55rem;
+}
+
+.runtime-grid p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #4e6578;
+}
+
 .admin-live-queue {
   margin-top: 0.75rem;
   border: 1px solid #dbe5ef;
@@ -923,9 +936,10 @@ body {
 
 .admin-modal {
   width: min(760px, 100%);
-  background: #ffffff;
-  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9fd 100%);
+  border-radius: 18px;
   border: 1px solid #d8e4ef;
+  box-shadow: 0 26px 52px rgba(15, 36, 58, 0.24);
   padding: 1rem;
 }
 
@@ -953,6 +967,30 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.admin-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.modern-preview-modal {
+  width: min(860px, 100%);
+}
+
+.preview-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.45rem;
+  margin: 0.55rem 0;
+}
+
+.preview-note {
+  margin: 0.2rem 0 0.5rem;
+  color: #5a7185;
+  font-size: 0.8rem;
 }
 
 .admin-status-block {
@@ -1080,13 +1118,18 @@ body {
   }
 
   .admin-kpi-grid,
-  .admin-manage-grid {
+  .admin-manage-grid,
+  .runtime-grid {
     grid-template-columns: 1fr;
   }
 
   .queue-controls {
     width: 100%;
     flex-direction: column;
+  }
+
+  .preview-toolbar {
+    grid-template-columns: 1fr;
   }
 }
 

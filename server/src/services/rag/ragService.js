@@ -49,14 +49,23 @@ class RAGService {
   }
 
   getStatus() {
+    const llmProvider = env.googleApiKey
+      ? "gemini"
+      : env.anthropicApiKey
+        ? "claude"
+        : "retrieval-only";
+
     return {
       provider: env.vectorDbProvider,
       initialized: this.ready,
-      llmProvider: env.googleApiKey
-        ? "gemini"
-        : env.anthropicApiKey
-          ? "claude"
-          : "retrieval-only",
+      llmProvider,
+      llmModel:
+        llmProvider === "gemini"
+          ? env.geminiModel
+          : llmProvider === "claude"
+            ? env.claudeModel
+            : "none",
+      llmConfigured: Boolean(env.googleApiKey || env.anthropicApiKey),
     };
   }
 

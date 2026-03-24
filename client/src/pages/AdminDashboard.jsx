@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import StatusDashboard from "../components/StatusDashboard";
 import {
   downloadTranscript,
+  downloadDataset,
   fetchAdminSessions,
   fetchAdminOverview,
   fetchAdminSettings,
@@ -41,6 +42,10 @@ export default function AdminDashboard() {
   const [datasetPreviewOpen, setDatasetPreviewOpen] = useState(false);
   const [datasetPreviewMeta, setDatasetPreviewMeta] = useState(null);
   const [datasetPreviewText, setDatasetPreviewText] = useState("");
+  const [datasetPreviewSearch, setDatasetPreviewSearch] = useState("");
+  const [datasetPreviewExpanded, setDatasetPreviewExpanded] = useState(false);
+  const [datasetPreviewTruncated, setDatasetPreviewTruncated] = useState(false);
+  const [datasetDownloading, setDatasetDownloading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -233,6 +238,9 @@ export default function AdminDashboard() {
         updatedAt: data.updatedAt,
       });
       setDatasetPreviewText(data.preview || "No preview available");
+      setDatasetPreviewTruncated(Boolean(data.truncated));
+      setDatasetPreviewExpanded(false);
+      setDatasetPreviewSearch("");
       setDatasetPreviewOpen(true);
     } catch (error) {
       console.error(error);
@@ -240,6 +248,63 @@ export default function AdminDashboard() {
     } finally {
       setPreviewLoading(false);
     }
+  }
+
+  async function onToggleExpandPreview() {
+    if (!datasetPreviewMeta?.name) return;
+    if (datasetPreviewExpanded) {
+      setDatasetPreviewExpanded(false);
+      return;
+    }
+
+    if (!datasetPreviewTruncated) {
+      setDatasetPreviewExpanded(true);
+      return;
+    }
+
+    setPreviewLoading(true);
+    try {
+      const data = await fetchDatasetPreview(datasetPreviewMeta.name, true);
+      setDatasetPreviewText(data.preview || "No preview available");
+      setDatasetPreviewExpanded(true);
+      setDatasetPreviewTruncated(false);
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "Failed to load full preview.");
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  async function onDownloadDatasetFile() {
+    if (!datasetPreviewMeta?.name) return;
+    setDatasetDownloading(true);
+    try {
+      const blob = await downloadDataset(datasetPreviewMeta.name);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = datasetPreviewMeta.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "Dataset download failed.");
+    } finally {
+      setDatasetDownloading(false);
+    }
+  }
+
+  function getFilteredPreview() {
+    if (!datasetPreviewSearch.trim()) return datasetPreviewText || "No preview available";
+    const term = datasetPreviewSearch.trim().toLowerCase();
+    const lines = (datasetPreviewText || "").split(/\r?\n/);
+    const filtered = lines.filter((line) => line.toLowerCase().includes(term));
+    return filtered.length
+      ? filtered.join("\n")
+      : `No matches for \"${datasetPreviewSearch.trim()}\" in current preview.`;
   }
 
   const kpis = useMemo(() => {
@@ -429,6 +494,20 @@ export default function AdminDashboard() {
               API: {readiness?.apiStatus?.toUpperCase() || "UNKNOWN"} • LLM: {readiness?.llmStatus?.toUpperCase() || "UNKNOWN"}
             </p>
           </article>
+          <article className="manage-card">
+            <h4>AI Runtime</h4>
+            <p>Live model and retrieval stack currently serving chatbot responses.</p>
+            <div className="runtime-grid">
+              <p>LLM Provider: <strong>{readiness?.rag?.llmProvider || "unknown"}</strong></p>
+              <p>LLM Model: <strong>{readiness?.rag?.llmModel || "unknown"}</strong></p>
+              <p>Vector DB: <strong>{readiness?.rag?.provider || "unknown"}</strong></p>
+              <p>RAG Ready: <strong>{readiness?.rag?.initialized ? "yes" : "no"}</strong></p>
+              <p>LLM Configured: <strong>{readiness?.rag?.llmConfigured ? "yes" : "no"}</strong></p>
+              <p>Top K: <strong>{settings?.ragTopK ?? "-"}</strong></p>
+              <p>Confidence Threshold: <strong>{settings?.ragConfidenceThreshold ?? "-"}</strong></p>
+              <p>Out-of-Scope Threshold: <strong>{settings?.ragOutOfScopeThreshold ?? "-"}</strong></p>
+            </div>
+          </article>
         </div>
 
         <section className="admin-live-queue">
@@ -528,16 +607,41 @@ export default function AdminDashboard() {
 
       {datasetPreviewOpen && (
         <div className="admin-modal-backdrop" onClick={() => setDatasetPreviewOpen(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Dataset Preview</h3>
+          <div className="admin-modal modern-preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-head">
+              <h3>Dataset Preview</h3>
+              <button className="pill-btn" onClick={() => setDatasetPreviewOpen(false)}>
+                Close
+              </button>
+            </div>
             <p>
               {datasetPreviewMeta?.name || "-"} • {Math.max(1, Math.round((datasetPreviewMeta?.size || 0) / 1024))} KB
             </p>
             <p>Updated: {formatDate(datasetPreviewMeta?.updatedAt)}</p>
-            <pre>{datasetPreviewText || "No preview available"}</pre>
+
+            <div className="preview-toolbar">
+              <input
+                className="admin-input"
+                value={datasetPreviewSearch}
+                onChange={(e) => setDatasetPreviewSearch(e.target.value)}
+                placeholder="Search in preview"
+              />
+              <button className="pill-btn" onClick={onToggleExpandPreview} disabled={previewLoading}>
+                {previewLoading ? "Loading..." : datasetPreviewExpanded ? "Collapse" : "Expand Full"}
+              </button>
+              <button className="pill-btn" onClick={onDownloadDatasetFile} disabled={datasetDownloading}>
+                {datasetDownloading ? "Downloading..." : "Download"}
+              </button>
+            </div>
+
+            {datasetPreviewTruncated && !datasetPreviewExpanded && (
+              <p className="preview-note">Showing first part only. Click Expand Full to load complete file.</p>
+            )}
+
+            <pre>{getFilteredPreview()}</pre>
             <div className="admin-modal-actions">
-              <button className="pill-btn" onClick={() => setDatasetPreviewOpen(false)}>
-                Close
+              <button className="pill-btn" onClick={() => setDatasetPreviewSearch("")}>
+                Clear Search
               </button>
             </div>
           </div>
