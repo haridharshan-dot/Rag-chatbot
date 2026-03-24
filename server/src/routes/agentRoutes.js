@@ -44,10 +44,11 @@ router.post("/login", (req, res) => {
 });
 
 router.post("/login/microsoft", async (req, res) => {
-  if (!env.microsoftAuthEnabled) {
+  const settings = await getRuntimeSettings();
+  if (!settings.microsoftAuthEnabled) {
     return res.status(503).json({
       success: false,
-      message: "Microsoft login is not enabled for this deployment",
+      message: "Microsoft login is disabled in Site Configuration",
     });
   }
 
@@ -57,7 +58,6 @@ router.post("/login/microsoft", async (req, res) => {
   }
 
   try {
-    const settings = await getRuntimeSettings();
     const graphResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`,

@@ -496,8 +496,18 @@ export default function AdminDashboard() {
             </div>
           </article>
           <article className="manage-card">
-            <h4>Agent Access</h4>
-            <p>Manage Microsoft allow-list to control who can access live support console.</p>
+            <h4>Site Configuration</h4>
+            <p>Configure Microsoft SSO controls for the Agent Dashboard at runtime.</p>
+            <label className="admin-checkbox">
+              <input
+                type="checkbox"
+                checked={Boolean(settings?.microsoftAuthEnabled)}
+                onChange={(e) =>
+                  setSettings((prev) => ({ ...prev, microsoftAuthEnabled: e.target.checked }))
+                }
+              />
+              Enable Microsoft SSO for Agent Dashboard
+            </label>
             <input
               className="admin-input"
               value={(settings?.microsoftAllowedDomains || []).join(",")}
@@ -520,6 +530,11 @@ export default function AdminDashboard() {
               }
               placeholder="allowed emails (optional, comma-separated)"
             />
+            <div className="site-config-list">
+              <p><strong>Render (backend)</strong>: MICROSOFT_AUTH_ENABLED, MICROSOFT_ALLOWED_DOMAINS, MICROSOFT_ALLOWED_EMAILS (optional).</p>
+              <p><strong>Vercel (frontend)</strong>: VITE_MS_CLIENT_ID, VITE_MS_TENANT_ID, VITE_MS_REDIRECT_URI.</p>
+              <p><strong>Entra App</strong>: Add SPA redirect URI for /agent, allow User.Read, enable public client flow for popup login.</p>
+            </div>
           </article>
           <article className="manage-card">
             <h4>Escalation Policy</h4>

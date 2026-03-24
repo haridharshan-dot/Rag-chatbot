@@ -86,6 +86,12 @@ router.get("/overview", async (req, res, next) => {
       loadKnowledgeStats(),
     ]);
 
+    try {
+      await ragService.init();
+    } catch {
+      // Keep overview responsive even when model/vector initialization fails.
+    }
+
     const db = getDatabaseHealth();
     const rag = ragService.getStatus();
 

@@ -23,6 +23,7 @@ function mergeWithDefaults(doc) {
     ragConfidenceThreshold: doc?.ragConfidenceThreshold ?? env.ragConfidenceThreshold,
     ragOutOfScopeThreshold: doc?.ragOutOfScopeThreshold ?? env.ragOutOfScopeThreshold,
     autoEscalationEnabled: doc?.autoEscalationEnabled ?? true,
+    microsoftAuthEnabled: doc?.microsoftAuthEnabled ?? env.microsoftAuthEnabled,
     microsoftAllowedDomains: parseList(doc?.microsoftAllowedDomains?.length ? doc.microsoftAllowedDomains : env.microsoftAllowedDomains),
     microsoftAllowedEmails: parseList(doc?.microsoftAllowedEmails?.length ? doc.microsoftAllowedEmails : env.microsoftAllowedEmails),
   };
@@ -53,6 +54,9 @@ export async function updateRuntimeSettings(patch) {
   }
   if (patch.autoEscalationEnabled !== undefined) {
     update.autoEscalationEnabled = Boolean(patch.autoEscalationEnabled);
+  }
+  if (patch.microsoftAuthEnabled !== undefined) {
+    update.microsoftAuthEnabled = Boolean(patch.microsoftAuthEnabled);
   }
   if (patch.microsoftAllowedDomains !== undefined) {
     update.microsoftAllowedDomains = parseList(Array.isArray(patch.microsoftAllowedDomains) ? patch.microsoftAllowedDomains : String(patch.microsoftAllowedDomains).split(","));

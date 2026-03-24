@@ -16,6 +16,12 @@ router.get("/health", (req, res) => {
 });
 
 router.get("/ready", async (req, res) => {
+  try {
+    await ragService.init();
+  } catch {
+    // Readiness should still return useful degraded details even if RAG warm-up fails.
+  }
+
   const db = getDatabaseHealth();
   const rag = ragService.getStatus();
   const ok = db.ok;

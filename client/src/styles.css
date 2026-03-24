@@ -874,6 +874,18 @@ body {
   line-height: 1.5;
 }
 
+.site-config-list {
+  margin-top: 0.55rem;
+  border-top: 1px dashed #d2dfea;
+  padding-top: 0.45rem;
+}
+
+.site-config-list p {
+  font-size: 0.78rem;
+  color: #4f6980;
+  margin: 0.25rem 0;
+}
+
 .admin-field-grid {
   display: grid;
   grid-template-columns: 1fr;
