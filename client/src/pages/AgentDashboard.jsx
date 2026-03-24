@@ -213,7 +213,13 @@ export default function AgentDashboard() {
               onClick={onMicrosoftLogin}
               disabled={microsoftLoading}
             >
-              {microsoftLoading ? "Signing in..." : "Continue with Microsoft"}
+              <span className="ms-icon" aria-hidden="true">
+                <span className="ms-square ms-red" />
+                <span className="ms-square ms-green" />
+                <span className="ms-square ms-blue" />
+                <span className="ms-square ms-yellow" />
+              </span>
+              <span>{microsoftLoading ? "Signing in..." : "Continue with Microsoft"}</span>
             </button>
 
             <p className="agent-auth-divider">or continue with username and password</p>
