@@ -42,7 +42,7 @@
 
   function applyFloatingStyles(iframe, open, dimensions) {
     var isOpen = typeof open === "boolean" ? open : true;
-    var fallbackClosed = { width: 136, height: 84 };
+    var fallbackClosed = { width: 136, height: 102 };
     var fallbackOpen = {
       width: Number(iframe.dataset.sonaWidth || 420),
       height: Number(iframe.dataset.sonaHeight || 700),
@@ -79,7 +79,7 @@
         iframe.style.left = "auto";
         iframe.style.right = "8px";
         iframe.style.width = "136px";
-        iframe.style.height = "84px";
+        iframe.style.height = "102px";
         iframe.style.bottom = "8px";
         iframe.style.borderRadius = "14px";
       }
@@ -120,7 +120,7 @@
         iframe.style.left = "auto";
         iframe.style.right = "8px";
         iframe.style.width = "136px";
-        iframe.style.height = "84px";
+        iframe.style.height = "102px";
         iframe.style.bottom = "8px";
         iframe.style.borderRadius = "14px";
       }
@@ -148,7 +148,7 @@
     if (mode === "floating") {
       var floatingState = {
         open: false,
-        dimensions: { width: 136, height: 84 },
+        dimensions: { width: 136, height: 102 },
       };
 
       function onFloatingMessage(event) {
@@ -169,7 +169,7 @@
     }
 
     if (mode === "compact") {
-      applyCompactStyles(iframe, false, { width: 136, height: 84 });
+      applyCompactStyles(iframe, false, { width: 136, height: 102 });
 
       function onCompactMessage(event) {
         if (!event || !event.data || event.data.type !== "sona-chatbot:state") return;
@@ -179,7 +179,7 @@
 
       window.addEventListener("message", onCompactMessage);
       window.addEventListener("resize", function () {
-        applyCompactStyles(iframe, iframe.style.height !== "84px", null);
+        applyCompactStyles(iframe, iframe.style.height !== "102px", null);
       });
       return;
     }

@@ -73,7 +73,7 @@ export default function ChatWidget({ sessionId, studentId, loading, defaultOpen 
   }, [messages, open]);
 
   useEffect(() => {
-    const closedDimensions = { width: 136, height: 84 };
+    const closedDimensions = { width: 136, height: 102 };
 
     // Notify parent embed script for compact/floating iframe sizing.
     window.parent?.postMessage(
@@ -144,11 +144,13 @@ export default function ChatWidget({ sessionId, studentId, loading, defaultOpen 
           aria-label="Open Sona chatbot"
         >
           <span className="chat-fab-label">Ask AI</span>
-          <img
-            src={BRANDING.chatbotLogoUrl}
-            alt={BRANDING.chatbotLogoAlt}
-            className="chat-fab-logo-image"
-          />
+          <span className="chat-fab-logo-card">
+            <img
+              src={BRANDING.chatbotLogoUrl}
+              alt={BRANDING.chatbotLogoAlt}
+              className="chat-fab-logo-image"
+            />
+          </span>
         </button>
       )}
 
