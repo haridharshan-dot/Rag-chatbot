@@ -49,13 +49,12 @@ class RAGService {
     }
 
     try {
-      await this.vectorStore.buildFromChunks(chunks);
-    } catch (error) {
-      if (env.vectorDbProvider !== "pinecone") {
-        throw error;
+      if (env.vectorDbProvider === "pinecone") {
+        await this.vectorStore.initPineconeStore();
+      } else {
+        await this.vectorStore.buildFromChunks(chunks);
       }
-
-      // Keep chatbot functional even when Pinecone is unavailable.
+    } catch (error) {
       console.warn("Falling back to local vector store:", error.message);
       const { LangChainVectorStore } = await import("./vectorStore.js");
       this.vectorStore = new LangChainVectorStore(new HashEmbeddings({}), {

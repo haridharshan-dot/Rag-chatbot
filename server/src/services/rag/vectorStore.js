@@ -37,7 +37,7 @@ export class LangChainVectorStore {
     this.store = await PineconeStore.fromExistingIndex(this.embeddings, {
       pineconeIndex: index,
       namespace: this.namespace,
-      textKey: "text",
+      textKey: "pageContent",
     });
   }
 
@@ -60,7 +60,7 @@ export class LangChainVectorStore {
       this.store = await PineconeStore.fromDocuments(docs, this.embeddings, {
         pineconeIndex: index,
         namespace: this.namespace,
-        textKey: "text",
+        textKey: "pageContent",
       });
       return;
     }

@@ -16,8 +16,9 @@ async function bootstrap() {
 
   const io = new SocketServer(server, {
     cors: {
-      origin: env.clientUrl,
+      origin: [env.clientUrl, "http://localhost:5173", "http://localhost:3000"],
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 

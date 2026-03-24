@@ -35,7 +35,7 @@ export const env = {
   pineconeIndex: process.env.PINECONE_INDEX || "",
   pineconeNamespace: process.env.PINECONE_NAMESPACE || "college-knowledge",
   dataDir:
-    process.env.DATA_DIR || path.resolve(__dirname, "../../../data/sample"),
+    process.env.DATA_DIR || path.resolve(__dirname, "../../data/sample"),
   chunksStorePath: path.resolve(__dirname, "../../storage/chunks.json"),
   vectorStorePath: path.resolve(__dirname, "../../storage/vectors.json"),
   jwtSecret: process.env.JWT_SECRET || "replace_me_with_strong_secret",
