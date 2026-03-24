@@ -8,10 +8,47 @@ import { ragService } from "../services/rag/ragService.js";
 import { getRuntimeSettings, updateRuntimeSettings } from "../services/adminSettingsService.js";
 import { checkAndRecordStatus } from "../services/statusService.js";
 import { ChatSession } from "../models/ChatSession.js";
+import { AgentActivity } from "../models/AgentActivity.js";
 
 const router = Router();
 
 router.use(requireAgentAuth);
+
+async function readDatasetPreview(fileName, includeFull = false) {
+  const requested = String(fileName || "").trim();
+  if (!requested) {
+    const error = new Error("fileName is required");
+    error.status = 400;
+    throw error;
+  }
+
+  const safeName = path.basename(requested);
+  const filePath = path.join(env.dataDir, safeName);
+  const resolvedDataDir = path.resolve(env.dataDir);
+  const resolvedFilePath = path.resolve(filePath);
+  if (!resolvedFilePath.startsWith(resolvedDataDir)) {
+    const error = new Error("Invalid file path");
+    error.status = 400;
+    throw error;
+  }
+
+  const stat = await fs.stat(filePath);
+  if (!stat.isFile()) {
+    const error = new Error("Dataset file not found");
+    error.status = 404;
+    throw error;
+  }
+
+  const content = await fs.readFile(filePath, "utf8");
+  return {
+    name: safeName,
+    size: stat.size,
+    updatedAt: stat.mtime.toISOString(),
+    preview: includeFull ? content : content.slice(0, 12000),
+    truncated: !includeFull && content.length > 12000,
+    content,
+  };
+}
 
 async function loadKnowledgeStats() {
   let chunkCount = 0;
@@ -251,39 +288,48 @@ router.get("/datasets", async (req, res, next) => {
 
 router.get("/datasets/:fileName/preview", async (req, res, next) => {
   try {
-    const requested = String(req.params?.fileName || "").trim();
-    if (!requested) {
-      return res.status(400).json({ success: false, message: "fileName is required" });
-    }
-
-    const safeName = path.basename(requested);
-    const filePath = path.join(env.dataDir, safeName);
-    const resolvedDataDir = path.resolve(env.dataDir);
-    const resolvedFilePath = path.resolve(filePath);
-    if (!resolvedFilePath.startsWith(resolvedDataDir)) {
-      return res.status(400).json({ success: false, message: "Invalid file path" });
-    }
-
-    const stat = await fs.stat(filePath);
-    if (!stat.isFile()) {
-      return res.status(404).json({ success: false, message: "Dataset file not found" });
-    }
-
-    const content = await fs.readFile(filePath, "utf8");
     const includeFull = String(req.query?.full || "").toLowerCase() === "true";
-    const preview = includeFull ? content : content.slice(0, 12000);
+    const data = await readDatasetPreview(req.params?.fileName, includeFull);
 
     return res.json({
       success: true,
       data: {
-        name: safeName,
-        size: stat.size,
-        updatedAt: stat.mtime.toISOString(),
-        preview,
-        truncated: !includeFull && content.length > 12000,
+        name: data.name,
+        size: data.size,
+        updatedAt: data.updatedAt,
+        preview: data.preview,
+        truncated: data.truncated,
       },
     });
   } catch (error) {
+    if (error?.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    if (error?.code === "ENOENT") {
+      return res.status(404).json({ success: false, message: "Dataset file not found" });
+    }
+    next(error);
+  }
+});
+
+router.get("/datasets/preview", async (req, res, next) => {
+  try {
+    const includeFull = String(req.query?.full || "").toLowerCase() === "true";
+    const data = await readDatasetPreview(req.query?.fileName, includeFull);
+    return res.json({
+      success: true,
+      data: {
+        name: data.name,
+        size: data.size,
+        updatedAt: data.updatedAt,
+        preview: data.preview,
+        truncated: data.truncated,
+      },
+    });
+  } catch (error) {
+    if (error?.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
     if (error?.code === "ENOENT") {
       return res.status(404).json({ success: false, message: "Dataset file not found" });
     }
@@ -293,20 +339,9 @@ router.get("/datasets/:fileName/preview", async (req, res, next) => {
 
 router.get("/datasets/:fileName/download", async (req, res, next) => {
   try {
-    const requested = String(req.params?.fileName || "").trim();
-    if (!requested) {
-      return res.status(400).json({ success: false, message: "fileName is required" });
-    }
-
-    const safeName = path.basename(requested);
-    const filePath = path.join(env.dataDir, safeName);
-    const resolvedDataDir = path.resolve(env.dataDir);
-    const resolvedFilePath = path.resolve(filePath);
-    if (!resolvedFilePath.startsWith(resolvedDataDir)) {
-      return res.status(400).json({ success: false, message: "Invalid file path" });
-    }
-
-    const content = await fs.readFile(filePath, "utf8");
+    const data = await readDatasetPreview(req.params?.fileName, true);
+    const safeName = data.name;
+    const content = data.content;
     const ext = path.extname(safeName).toLowerCase();
     const contentType = ext === ".json"
       ? "application/json; charset=utf-8"
@@ -319,6 +354,83 @@ router.get("/datasets/:fileName/download", async (req, res, next) => {
     if (error?.code === "ENOENT") {
       return res.status(404).json({ success: false, message: "Dataset file not found" });
     }
+    next(error);
+  }
+});
+
+router.get("/agents", async (req, res, next) => {
+  try {
+    const [activities, activeSessions, resolvedSessions] = await Promise.all([
+      AgentActivity.find({}).sort({ updatedAt: -1 }).lean(),
+      ChatSession.aggregate([
+        { $match: { status: "active", assignedAgentId: { $ne: null } } },
+        { $group: { _id: "$assignedAgentId", activeCount: { $sum: 1 } } },
+      ]),
+      ChatSession.aggregate([
+        { $match: { status: "resolved", assignedAgentId: { $ne: null } } },
+        { $group: { _id: "$assignedAgentId", resolvedCount: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const activeMap = new Map(activeSessions.map((row) => [String(row._id), row.activeCount]));
+    const resolvedMap = new Map(resolvedSessions.map((row) => [String(row._id), row.resolvedCount]));
+
+    const data = activities.map((activity) => ({
+      agentId: activity.agentId,
+      email: activity.email,
+      displayName: activity.displayName,
+      provider: activity.provider,
+      lastLoginAt: activity.lastLoginAt,
+      lastLoginIp: activity.lastLoginIp,
+      activeSessions: activeMap.get(activity.agentId) || 0,
+      resolvedSessions: resolvedMap.get(activity.agentId) || 0,
+    }));
+
+    return res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/users", async (req, res, next) => {
+  try {
+    const sessions = await ChatSession.find({})
+      .select("studentId status updatedAt createdAt clientIp assignedAgentId")
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    const map = new Map();
+    for (const session of sessions) {
+      const key = String(session.studentId || "unknown");
+      if (!map.has(key)) {
+        map.set(key, {
+          studentId: key,
+          sessions: 0,
+          lastSeenAt: session.updatedAt || session.createdAt || null,
+          currentStatus: session.status || "bot",
+          lastIp: session.clientIp || null,
+          assignedAgentId: session.assignedAgentId || null,
+        });
+      }
+
+      const row = map.get(key);
+      row.sessions += 1;
+      const updatedAt = session.updatedAt || session.createdAt || null;
+      if (updatedAt && (!row.lastSeenAt || new Date(updatedAt) > new Date(row.lastSeenAt))) {
+        row.lastSeenAt = updatedAt;
+        row.currentStatus = session.status || row.currentStatus;
+        row.assignedAgentId = session.assignedAgentId || row.assignedAgentId;
+      }
+      if (!row.lastIp && session.clientIp) {
+        row.lastIp = session.clientIp;
+      }
+    }
+
+    const data = Array.from(map.values()).sort(
+      (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime()
+    );
+    return res.json({ success: true, data });
+  } catch (error) {
     next(error);
   }
 });

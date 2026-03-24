@@ -29,6 +29,22 @@ function getWaitMinutes(escalationRequestedAt) {
   return Math.max(0, Math.round(deltaMs / 60000));
 }
 
+function decodeJwtPayload(token) {
+  try {
+    const payload = token.split(".")[1] || "";
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(normalized)
+        .split("")
+        .map((ch) => `%${`00${ch.charCodeAt(0).toString(16)}`.slice(-2)}`)
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return {};
+  }
+}
+
 export default function AgentDashboard() {
   const navigate = useNavigate();
   const [authToken, setAuthToken] = useState(() => getAgentToken());
@@ -45,6 +61,11 @@ export default function AgentDashboard() {
   const [lastSyncAt, setLastSyncAt] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
   const [microsoftLoading, setMicrosoftLoading] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState(true);
+  const [signatureEnabled, setSignatureEnabled] = useState(false);
+  const [displayName, setDisplayName] = useState("Agent");
+  const [signature, setSignature] = useState("Support Desk");
 
   useEffect(() => {
     if (!authToken) return;
@@ -154,7 +175,10 @@ export default function AgentDashboard() {
 
   async function sendMessage() {
     if (!activeSessionId || !draft.trim()) return;
-    const content = draft.trim();
+    const base = draft.trim();
+    const content = signatureEnabled && signature.trim()
+      ? `${base}\n\n- ${signature.trim()}`
+      : base;
     setDraft("");
     await sendAgentMessage(activeSessionId, content, agentId);
   }
@@ -169,6 +193,8 @@ export default function AgentDashboard() {
   }
 
   const activeQueueSession = queue.find((session) => normalizeSessionId(session) === activeSessionId);
+  const authProfile = decodeJwtPayload(authToken || "");
+  const resolvedDisplayName = displayName || authProfile?.agentId || agentId || "Agent";
   const avgWait = queue.length
     ? Math.round(
         queue.reduce((sum, session) => sum + getWaitMinutes(session.escalationRequestedAt), 0) /
@@ -307,7 +333,7 @@ export default function AgentDashboard() {
       <section className="agent-chat-panel modern-agent-chat-panel">
         <div className="agent-chat-header">
           <div>
-            <h3>{activeSessionId ? `Session ${activeSessionId.slice(-6)}` : "Select a student"}</h3>
+            <h3>{activeSessionId ? `Session ${activeSessionId.slice(-6)} • ${resolvedDisplayName}` : "Select a student"}</h3>
             <p className="session-meta">
               {activeQueueSession
                 ? `Student ${activeQueueSession.studentId} • queued ${getWaitMinutes(
@@ -321,11 +347,33 @@ export default function AgentDashboard() {
           </button>
         </div>
 
-        <div className="agent-chat-log">
+        <div className="agent-profile-card">
+          <div className="agent-profile-head">
+            <strong>Agent Profile Settings</strong>
+            <small>{authProfile?.email || authProfile?.agentId || agentId}</small>
+          </div>
+          <div className="agent-profile-grid">
+            <label>
+              Display Name
+              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Agent name" />
+            </label>
+            <label>
+              Signature
+              <input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Support Desk" />
+            </label>
+          </div>
+          <div className="agent-profile-toggles">
+            <label><input type="checkbox" checked={compactMode} onChange={(e) => setCompactMode(e.target.checked)} /> Compact chat mode</label>
+            <label><input type="checkbox" checked={showTimestamps} onChange={(e) => setShowTimestamps(e.target.checked)} /> Show timestamps</label>
+            <label><input type="checkbox" checked={signatureEnabled} onChange={(e) => setSignatureEnabled(e.target.checked)} /> Auto-append signature</label>
+          </div>
+        </div>
+
+        <div className={`agent-chat-log ${compactMode ? "compact-chat" : ""}`}>
           {messages.map((message, index) => (
             <div key={`${index}-${message.content.slice(0, 8)}`} className={`bubble ${message.sender}`}>
               <p>{message.content}</p>
-              <small>{formatDate(message.createdAt)}</small>
+              {showTimestamps ? <small>{formatDate(message.createdAt)}</small> : null}
             </div>
           ))}
         </div>

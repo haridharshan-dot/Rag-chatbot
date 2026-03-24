@@ -11,7 +11,10 @@ router.post("/session", async (req, res, next) => {
       return res.status(400).json({ success: false, message: "studentId is required" });
     }
 
-    const session = await createSession(studentId);
+    const session = await createSession(studentId, {
+      clientIp: req.ip || null,
+      userAgent: req.headers["user-agent"] || null,
+    });
     return res.status(201).json({ success: true, data: session });
   } catch (error) {
     next(error);

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { ChatSession } from "../models/ChatSession.js";
+import { AgentActivity } from "../models/AgentActivity.js";
 import { env } from "../config/env.js";
 import { requireAgentAuth, signAgentToken } from "../middleware/agentAuth.js";
 import { getRuntimeSettings } from "../services/adminSettingsService.js";
@@ -18,6 +19,19 @@ router.post("/login", (req, res) => {
     role: "agent",
     agentId: username,
   });
+
+  AgentActivity.findOneAndUpdate(
+    { agentId: username },
+    {
+      $set: {
+        provider: "local",
+        displayName: username,
+        lastLoginAt: new Date(),
+        lastLoginIp: req.ip || null,
+      },
+    },
+    { upsert: true, new: true }
+  ).catch(() => {});
 
   return res.json({
     success: true,
@@ -76,6 +90,20 @@ router.post("/login/microsoft", async (req, res) => {
       provider: "microsoft",
       email,
     });
+
+    await AgentActivity.findOneAndUpdate(
+      { agentId },
+      {
+        $set: {
+          email,
+          displayName: profile.displayName || agentId,
+          provider: "microsoft",
+          lastLoginAt: new Date(),
+          lastLoginIp: req.ip || null,
+        },
+      },
+      { upsert: true, new: true }
+    );
 
     return res.json({
       success: true,

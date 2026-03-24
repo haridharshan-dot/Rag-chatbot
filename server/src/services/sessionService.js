@@ -2,9 +2,11 @@ import { ChatSession } from "../models/ChatSession.js";
 import { ragService } from "./rag/ragService.js";
 import { getRuntimeSettings } from "./adminSettingsService.js";
 
-export async function createSession(studentId) {
+export async function createSession(studentId, { clientIp = null, userAgent = null } = {}) {
   const session = await ChatSession.create({
     studentId,
+    clientIp,
+    userAgent,
     messages: [
       {
         sender: "system",

@@ -642,6 +642,78 @@ body {
   gap: 0.5rem;
 }
 
+.compact-chat {
+  gap: 0.28rem;
+}
+
+.compact-chat .bubble {
+  max-width: 92%;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  font-size: 0.86rem;
+}
+
+.compact-chat .bubble small {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+}
+
+.agent-profile-card {
+  border: 1px solid #d9e5ef;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 0.7rem;
+  margin-top: 0.55rem;
+}
+
+.agent-profile-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.agent-profile-head small {
+  color: #627a8f;
+  font-size: 0.78rem;
+}
+
+.agent-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+}
+
+.agent-profile-grid label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: #567086;
+}
+
+.agent-profile-grid input {
+  border: 1px solid #cad9e8;
+  border-radius: 9px;
+  padding: 0.46rem 0.55rem;
+  background: #fff;
+}
+
+.agent-profile-toggles {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  font-size: 0.78rem;
+  color: #4f6780;
+}
+
+.agent-profile-toggles label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
 .agent-chat-log .bubble {
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -982,7 +1054,7 @@ body {
 
 .preview-toolbar {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(180px, 1fr) auto auto auto auto auto;
   gap: 0.45rem;
   margin: 0.55rem 0;
 }
@@ -991,6 +1063,23 @@ body {
   margin: 0.2rem 0 0.5rem;
   color: #5a7185;
   font-size: 0.8rem;
+}
+
+.preview-content {
+  max-height: 340px;
+  overflow: auto;
+}
+
+.preview-match {
+  background: #ffef9f;
+  color: #2e2a0c;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.preview-match.current-match {
+  background: #ffd447;
+  outline: 1px solid #d29f00;
 }
 
 .admin-status-block {
@@ -1109,6 +1198,10 @@ body {
 
   .agent-composer {
     flex-direction: column;
+  }
+
+  .agent-profile-grid {
+    grid-template-columns: 1fr;
   }
 
   .agent-composer input,

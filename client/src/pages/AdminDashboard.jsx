@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StatusDashboard from "../components/StatusDashboard";
 import {
   downloadTranscript,
   downloadDataset,
+  fetchAdminAgents,
+  fetchAdminUsers,
   fetchAdminSessions,
   fetchAdminOverview,
   fetchAdminSettings,
@@ -24,6 +26,52 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
+function escapeHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeRegExp(text) {
+  return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildHighlightedPreview(text, query, currentMatchIndex) {
+  const source = String(text || "");
+  const q = String(query || "").trim();
+  if (!q) {
+    return {
+      html: escapeHtml(source),
+      count: 0,
+    };
+  }
+
+  const regex = new RegExp(escapeRegExp(q), "gi");
+  let cursor = 0;
+  let count = 0;
+  let html = "";
+  let match = regex.exec(source);
+
+  while (match) {
+    html += escapeHtml(source.slice(cursor, match.index));
+    const className = count === currentMatchIndex ? "preview-match current-match" : "preview-match";
+    html += `<mark class="${className}">${escapeHtml(match[0])}</mark>`;
+    cursor = match.index + match[0].length;
+    count += 1;
+    match = regex.exec(source);
+  }
+
+  html += escapeHtml(source.slice(cursor));
+
+  return {
+    html,
+    count,
+  };
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [authToken] = useState(() => getAgentToken());
@@ -35,6 +83,8 @@ export default function AdminDashboard() {
   const [sessionFilter, setSessionFilter] = useState("queued");
   const [assignAgentId, setAssignAgentId] = useState("agent");
   const [datasets, setDatasets] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [users, setUsers] = useState([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadName, setUploadName] = useState("");
   const [uploadContent, setUploadContent] = useState("");
@@ -45,6 +95,8 @@ export default function AdminDashboard() {
   const [datasetPreviewSearch, setDatasetPreviewSearch] = useState("");
   const [datasetPreviewExpanded, setDatasetPreviewExpanded] = useState(false);
   const [datasetPreviewTruncated, setDatasetPreviewTruncated] = useState(false);
+  const [datasetCurrentMatch, setDatasetCurrentMatch] = useState(0);
+  const [previewLoadingName, setPreviewLoadingName] = useState("");
   const [datasetDownloading, setDatasetDownloading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -53,6 +105,7 @@ export default function AdminDashboard() {
   const [runningReindex, setRunningReindex] = useState(false);
   const [runningStatusCheck, setRunningStatusCheck] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const previewRef = useRef(null);
 
   useEffect(() => {
     if (authToken) return;
@@ -62,12 +115,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [overview, runtime, logs, queueData, datasetsData] = await Promise.all([
+        const [overview, runtime, logs, queueData, datasetsData, agentsData, usersData] = await Promise.all([
           fetchAdminOverview(),
           fetchAdminSettings(),
           fetchStatusLogs(),
           fetchAdminSessions(sessionFilter),
           fetchDatasets(),
+          fetchAdminAgents(),
+          fetchAdminUsers(),
         ]);
         setReadiness(overview.readiness);
         setKnowledge(overview.knowledge);
@@ -75,8 +130,14 @@ export default function AdminDashboard() {
         setStatusLogs(logs);
         setSessions(queueData);
         setDatasets(datasetsData);
+        setAgents(agentsData);
+        setUsers(usersData);
       } catch (error) {
         console.error("Admin dashboard load failed", error);
+          if (error?.response?.status === 401) {
+            setFeedback("Session expired. Please login again.");
+            return;
+          }
       } finally {
         setLoading(false);
       }
@@ -88,12 +149,14 @@ export default function AdminDashboard() {
   }, [sessionFilter]);
 
   async function refreshAll() {
-    const [overview, runtime, logs, queueData, datasetsData] = await Promise.all([
+    const [overview, runtime, logs, queueData, datasetsData, agentsData, usersData] = await Promise.all([
       fetchAdminOverview(),
       fetchAdminSettings(),
       fetchStatusLogs(),
       fetchAdminSessions(sessionFilter),
       fetchDatasets(),
+      fetchAdminAgents(),
+      fetchAdminUsers(),
     ]);
     setReadiness(overview.readiness);
     setKnowledge(overview.knowledge);
@@ -101,6 +164,8 @@ export default function AdminDashboard() {
     setStatusLogs(logs);
     setSessions(queueData);
     setDatasets(datasetsData);
+    setAgents(agentsData);
+    setUsers(usersData);
   }
 
   async function onSaveSettings() {
@@ -228,6 +293,7 @@ export default function AdminDashboard() {
   }
 
   async function onPreviewDataset(fileName) {
+    setPreviewLoadingName(fileName);
     setPreviewLoading(true);
     setFeedback("");
     try {
@@ -241,12 +307,14 @@ export default function AdminDashboard() {
       setDatasetPreviewTruncated(Boolean(data.truncated));
       setDatasetPreviewExpanded(false);
       setDatasetPreviewSearch("");
+      setDatasetCurrentMatch(0);
       setDatasetPreviewOpen(true);
     } catch (error) {
       console.error(error);
       setFeedback(error?.response?.data?.message || "Dataset preview failed.");
     } finally {
       setPreviewLoading(false);
+      setPreviewLoadingName("");
     }
   }
 
@@ -268,6 +336,7 @@ export default function AdminDashboard() {
       setDatasetPreviewText(data.preview || "No preview available");
       setDatasetPreviewExpanded(true);
       setDatasetPreviewTruncated(false);
+      setDatasetCurrentMatch(0);
     } catch (error) {
       console.error(error);
       setFeedback(error?.response?.data?.message || "Failed to load full preview.");
@@ -297,14 +366,13 @@ export default function AdminDashboard() {
     }
   }
 
-  function getFilteredPreview() {
-    if (!datasetPreviewSearch.trim()) return datasetPreviewText || "No preview available";
-    const term = datasetPreviewSearch.trim().toLowerCase();
-    const lines = (datasetPreviewText || "").split(/\r?\n/);
-    const filtered = lines.filter((line) => line.toLowerCase().includes(term));
-    return filtered.length
-      ? filtered.join("\n")
-      : `No matches for \"${datasetPreviewSearch.trim()}\" in current preview.`;
+  async function onCopyPreview() {
+    try {
+      await navigator.clipboard.writeText(datasetPreviewText || "");
+      setFeedback("Preview copied to clipboard.");
+    } catch {
+      setFeedback("Copy failed. Clipboard permission blocked.");
+    }
   }
 
   const kpis = useMemo(() => {
@@ -317,6 +385,41 @@ export default function AdminDashboard() {
       totalLogs: statusLogs.length,
     };
   }, [statusLogs]);
+
+  const previewRender = useMemo(
+    () => buildHighlightedPreview(datasetPreviewText || "No preview available", datasetPreviewSearch, datasetCurrentMatch),
+    [datasetPreviewText, datasetPreviewSearch, datasetCurrentMatch]
+  );
+
+  useEffect(() => {
+    setDatasetCurrentMatch(0);
+  }, [datasetPreviewSearch, datasetPreviewText]);
+
+  useEffect(() => {
+    if (!previewRender.count) return;
+    if (datasetCurrentMatch < previewRender.count) return;
+    setDatasetCurrentMatch(previewRender.count - 1);
+  }, [previewRender.count, datasetCurrentMatch]);
+
+  useEffect(() => {
+    if (!datasetPreviewOpen) return;
+    const root = previewRef.current;
+    if (!root) return;
+    const marks = root.querySelectorAll("mark.preview-match");
+    if (!marks.length) return;
+    const target = marks[Math.max(0, Math.min(datasetCurrentMatch, marks.length - 1))];
+    target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [datasetCurrentMatch, datasetPreviewOpen, previewRender.html]);
+
+  function onPrevMatch() {
+    if (!previewRender.count) return;
+    setDatasetCurrentMatch((prev) => (prev - 1 + previewRender.count) % previewRender.count);
+  }
+
+  function onNextMatch() {
+    if (!previewRender.count) return;
+    setDatasetCurrentMatch((prev) => (prev + 1) % previewRender.count);
+  }
 
   return (
     <div className="admin-layout">
@@ -383,9 +486,9 @@ export default function AdminDashboard() {
                   <button
                     className="pill-btn"
                     onClick={() => onPreviewDataset(file.name)}
-                    disabled={previewLoading}
+                    disabled={previewLoading && previewLoadingName === file.name}
                   >
-                    {previewLoading ? "Loading..." : "Preview"}
+                    {previewLoading && previewLoadingName === file.name ? "Loading..." : "Preview"}
                   </button>
                 </div>
               ))}
@@ -582,6 +685,84 @@ export default function AdminDashboard() {
           </div>
         </section>
 
+        <section className="admin-live-queue">
+          <div className="admin-main-head">
+            <h3>User Management</h3>
+          </div>
+
+          <div className="queue-table-wrap">
+            <table className="queue-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Sessions</th>
+                  <th>Current Status</th>
+                  <th>Assigned Agent</th>
+                  <th>Last Seen</th>
+                  <th>IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.studentId}>
+                    <td>{user.studentId}</td>
+                    <td>{user.sessions}</td>
+                    <td>{user.currentStatus || "-"}</td>
+                    <td>{user.assignedAgentId || "-"}</td>
+                    <td>{formatDate(user.lastSeenAt)}</td>
+                    <td>{user.lastIp || "-"}</td>
+                  </tr>
+                ))}
+                {!users.length && (
+                  <tr>
+                    <td colSpan={6}>No users found yet.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="admin-live-queue">
+          <div className="admin-main-head">
+            <h3>Agent Management</h3>
+          </div>
+
+          <div className="queue-table-wrap">
+            <table className="queue-table">
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>Provider</th>
+                  <th>Email</th>
+                  <th>Last Login</th>
+                  <th>IP Address</th>
+                  <th>Active</th>
+                  <th>Resolved</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agents.map((agent) => (
+                  <tr key={agent.agentId}>
+                    <td>{agent.displayName || agent.agentId}</td>
+                    <td>{agent.provider || "-"}</td>
+                    <td>{agent.email || "-"}</td>
+                    <td>{formatDate(agent.lastLoginAt)}</td>
+                    <td>{agent.lastLoginIp || "-"}</td>
+                    <td>{agent.activeSessions ?? 0}</td>
+                    <td>{agent.resolvedSessions ?? 0}</td>
+                  </tr>
+                ))}
+                {!agents.length && (
+                  <tr>
+                    <td colSpan={7}>No agent logins recorded yet.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}
 
         <section className="admin-status-block">
@@ -626,19 +807,32 @@ export default function AdminDashboard() {
                 onChange={(e) => setDatasetPreviewSearch(e.target.value)}
                 placeholder="Search in preview"
               />
+              <button className="pill-btn" onClick={onPrevMatch} disabled={!previewRender.count}>
+                Prev
+              </button>
+              <button className="pill-btn" onClick={onNextMatch} disabled={!previewRender.count}>
+                Next
+              </button>
               <button className="pill-btn" onClick={onToggleExpandPreview} disabled={previewLoading}>
                 {previewLoading ? "Loading..." : datasetPreviewExpanded ? "Collapse" : "Expand Full"}
               </button>
               <button className="pill-btn" onClick={onDownloadDatasetFile} disabled={datasetDownloading}>
                 {datasetDownloading ? "Downloading..." : "Download"}
               </button>
+              <button className="pill-btn" onClick={onCopyPreview}>Copy</button>
             </div>
+
+            {datasetPreviewSearch.trim() && (
+              <p className="preview-note">
+                Matches: {previewRender.count ? `${datasetCurrentMatch + 1}/${previewRender.count}` : "0"}
+              </p>
+            )}
 
             {datasetPreviewTruncated && !datasetPreviewExpanded && (
               <p className="preview-note">Showing first part only. Click Expand Full to load complete file.</p>
             )}
 
-            <pre>{getFilteredPreview()}</pre>
+            <pre ref={previewRef} className="preview-content" dangerouslySetInnerHTML={{ __html: previewRender.html }} />
             <div className="admin-modal-actions">
               <button className="pill-btn" onClick={() => setDatasetPreviewSearch("")}>
                 Clear Search

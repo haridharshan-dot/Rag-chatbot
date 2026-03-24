@@ -21,6 +21,8 @@ const messageSchema = new mongoose.Schema(
 const chatSessionSchema = new mongoose.Schema(
   {
     studentId: { type: String, required: true, index: true },
+    clientIp: { type: String, default: null },
+    userAgent: { type: String, default: null },
     status: {
       type: String,
       enum: ["bot", "queued", "active", "resolved"],

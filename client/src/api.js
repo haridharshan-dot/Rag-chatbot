@@ -22,6 +22,22 @@ export function setAgentToken(token) {
   localStorage.setItem(AGENT_TOKEN_KEY, token);
 }
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = String(error?.config?.url || "");
+    if (status === 401 && (url.includes("/admin") || url.includes("/agent"))) {
+      setAgentToken("");
+      localStorage.setItem("agent-session-expired", "true");
+      if (typeof window !== "undefined" && window.location.pathname !== "/agent") {
+        window.location.assign("/agent");
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 function agentAuthConfig() {
   const token = getAgentToken();
   return token
@@ -141,6 +157,16 @@ export async function fetchAdminSessions(status = 'queued', limit = 50) {
   return response.data.data;
 }
 
+export async function fetchAdminAgents() {
+  const response = await api.get('/admin/agents', agentAuthConfig());
+  return response.data.data;
+}
+
+export async function fetchAdminUsers() {
+  const response = await api.get('/admin/users', agentAuthConfig());
+  return response.data.data;
+}
+
 export async function forceAssignSession(sessionId, agentId) {
   const response = await api.post(`/admin/sessions/${sessionId}/force-assign`, { agentId }, agentAuthConfig());
   return response.data.data;
@@ -165,11 +191,22 @@ export async function fetchDatasets() {
 }
 
 export async function fetchDatasetPreview(fileName, full = false) {
-  const response = await api.get(
-    `/admin/datasets/${encodeURIComponent(fileName)}/preview?full=${full ? "true" : "false"}`,
-    agentAuthConfig()
-  );
-  return response.data.data;
+  try {
+    const response = await api.get(
+      `/admin/datasets/${encodeURIComponent(fileName)}/preview?full=${full ? "true" : "false"}`,
+      agentAuthConfig()
+    );
+    return response.data.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      const fallback = await api.get(
+        `/admin/datasets/preview?fileName=${encodeURIComponent(fileName)}&full=${full ? "true" : "false"}`,
+        agentAuthConfig()
+      );
+      return fallback.data.data;
+    }
+    throw error;
+  }
 }
 
 export async function downloadDataset(fileName) {
