@@ -95,6 +95,8 @@ const StatusPage = () => {
   };
 
   const latestStatus = getLatestStatus();
+  const effectiveApiStatus = latestStatus?.apiStatus || readiness?.apiStatus || 'unknown';
+  const effectiveLlmStatus = latestStatus?.llmStatus || readiness?.llmStatus || 'unknown';
 
   const uptimeRatio = statusLogs.length
     ? Math.round((statusLogs.filter((log) => log.apiStatus === 'up').length / statusLogs.length) * 100)
@@ -135,15 +137,15 @@ const StatusPage = () => {
         </div>
 
         <div className="status-summary">
-          <div className={`status-item ${latestStatus?.apiStatus === 'up' ? 'up' : 'down'}`}>
+          <div className={`status-item ${effectiveApiStatus === 'up' ? 'up' : 'down'}`}>
             <h4>API Server</h4>
-            <p className="status-value">{latestStatus?.apiStatus.toUpperCase() || 'UNKNOWN'}</p>
+            <p className="status-value">{effectiveApiStatus.toUpperCase()}</p>
             {latestStatus?.apiResponseTime && <p className="response-time">{latestStatus.apiResponseTime}ms</p>}
           </div>
 
-          <div className={`status-item ${latestStatus?.llmStatus === 'up' ? 'up' : 'down'}`}>
+          <div className={`status-item ${effectiveLlmStatus === 'up' ? 'up' : 'down'}`}>
             <h4>LLM Service</h4>
-            <p className="status-value">{latestStatus?.llmStatus.toUpperCase() || 'UNKNOWN'}</p>
+            <p className="status-value">{effectiveLlmStatus.toUpperCase()}</p>
             {latestStatus?.llmResponseTime && <p className="response-time">{latestStatus.llmResponseTime}ms</p>}
           </div>
 

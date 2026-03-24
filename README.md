@@ -243,6 +243,36 @@ Deploy and note frontend URL:
 2. Open Vercel app and send a student message.
 3. Visit `/agent`, log in with `AGENT_USERNAME`/`AGENT_PASSWORD`, and verify live handoff.
 
+### Microsoft SSO for Agent Dashboard
+
+If you want Microsoft sign-in for `/agent` in production, configure these values.
+
+Render (backend):
+
+- `MICROSOFT_AUTH_ENABLED=true`
+- `MICROSOFT_ALLOWED_DOMAINS=yourcollegedomain.edu` (use your real domain)
+- Optional: `MICROSOFT_ALLOWED_EMAILS=agent1@domain,agent2@domain`
+- Keep existing vars: `GOOGLE_API_KEY`, `GEMINI_MODEL`, `PINECONE_*`, `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, `CLIENT_URLS`
+
+Vercel (frontend):
+
+- `VITE_MS_CLIENT_ID=your Entra app client id`
+- `VITE_MS_TENANT_ID=your tenant id` (or `common`)
+- `VITE_MS_REDIRECT_URI=https://your-vercel-app.vercel.app/agent`
+
+Microsoft Entra app setup:
+
+- Add SPA redirect URI for your `/agent` URL
+- Allow scope `User.Read`
+- Enable SPA/public client flow required for MSAL popup login
+
+Quick test flow:
+
+1. Open `/agent`
+2. Click **Continue with Microsoft**
+3. On success, verify queue panel loads
+4. Open student chat and confirm Ask AI avatar/logo and bot replies are visible
+
 ### Alternative hosts
 
 - Railway (backend + Mongo), Vercel (frontend)

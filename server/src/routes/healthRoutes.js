@@ -19,11 +19,14 @@ router.get("/ready", async (req, res) => {
   const db = getDatabaseHealth();
   const rag = ragService.getStatus();
   const ok = db.ok;
+  const llmConfigured = rag.llmProvider !== "retrieval-only";
 
   return res.status(ok ? 200 : 503).json({
     success: ok,
     data: {
       status: ok ? "ready" : "degraded",
+      apiStatus: ok ? "up" : "down",
+      llmStatus: llmConfigured ? "up" : "down",
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       db,
