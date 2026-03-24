@@ -117,7 +117,7 @@ body {
   width: 100%;
   height: calc(100% - 24px);
   object-fit: contain;
-  background: #000000;
+  background: #ffffff;
   display: block;
 }
 
@@ -175,7 +175,7 @@ body {
   height: 38px;
   border-radius: 50%;
   object-fit: contain;
-  background: #000000;
+  background: #ffffff;
   border: 2px solid #ffffff;
   box-shadow: 0 3px 10px rgba(15, 118, 110, 0.2);
 }
@@ -204,7 +204,7 @@ body {
   height: 24px;
   border-radius: 50%;
   object-fit: contain;
-  background: #000000;
+  background: #ffffff;
   border: 1px solid #d6ebe7;
   margin-bottom: 0.2rem;
 }
