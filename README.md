@@ -153,6 +153,12 @@ Use the embed helper script so iframe height adapts to mobile and desktop automa
 <script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
 ```
 
+Embed troubleshooting:
+
+- If chatbot is blank in iframe, ensure frontend is redeployed after latest changes.
+- Open `https://your-vercel-app.vercel.app/chatbot` directly first and verify it loads.
+- Avoid testing from local `file://` pages; host your page on `http://` or `https://`.
+
 ### Option B: React integration
 
 - Import [client/src/components/EmbeddedStudentChatbot.jsx](client/src/components/EmbeddedStudentChatbot.jsx).
