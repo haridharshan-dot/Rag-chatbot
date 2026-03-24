@@ -73,7 +73,7 @@ export default function ChatWidget({ sessionId, studentId, loading, defaultOpen 
   }, [messages, open]);
 
   useEffect(() => {
-    const closedDimensions = { width: 136, height: 102 };
+    const closedDimensions = { width: 118, height: 86 };
 
     // Notify parent embed script for compact/floating iframe sizing.
     window.parent?.postMessage(
