@@ -60,10 +60,10 @@
     iframe.style.height = size.height + "px";
     iframe.style.maxWidth = "calc(100vw - 16px)";
     iframe.style.border = iframe.style.border || "0";
-    iframe.style.borderRadius = isOpen ? "16px" : "14px";
+    iframe.style.borderRadius = isOpen ? "16px" : "0";
     iframe.style.boxShadow = isOpen
       ? "0 10px 25px rgba(0,0,0,0.14)"
-      : "0 8px 18px rgba(0,0,0,0.16)";
+      : "none";
     iframe.style.zIndex = iframe.style.zIndex || "999999";
     iframe.style.background = iframe.style.background || "transparent";
 
@@ -81,7 +81,7 @@
         iframe.style.width = "118px";
         iframe.style.height = "86px";
         iframe.style.bottom = "8px";
-        iframe.style.borderRadius = "14px";
+        iframe.style.borderRadius = "0";
       }
     } else {
       iframe.style.left = "auto";
@@ -101,10 +101,10 @@
     iframe.style.width = width + "px";
     iframe.style.height = height + "px";
     iframe.style.border = "0";
-    iframe.style.borderRadius = open ? "16px" : "14px";
+    iframe.style.borderRadius = open ? "16px" : "0";
     iframe.style.boxShadow = open
       ? "0 10px 25px rgba(0,0,0,0.14)"
-      : "0 8px 18px rgba(0,0,0,0.16)";
+      : "none";
     iframe.style.zIndex = iframe.style.zIndex || "999999";
     iframe.style.background = "transparent";
 
@@ -122,7 +122,7 @@
         iframe.style.width = "118px";
         iframe.style.height = "86px";
         iframe.style.bottom = "8px";
-        iframe.style.borderRadius = "14px";
+        iframe.style.borderRadius = "0";
       }
     }
   }

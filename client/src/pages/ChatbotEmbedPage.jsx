@@ -7,6 +7,13 @@ export default function ChatbotEmbedPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    document.body.classList.add("chatbot-embed-mode");
+    return () => {
+      document.body.classList.remove("chatbot-embed-mode");
+    };
+  }, []);
+
+  useEffect(() => {
     function postHeight() {
       const height = Math.max(
         document.body.scrollHeight,
