@@ -23,6 +23,7 @@ export const env = {
   rateLimitWindowMs: asNumber(process.env.RATE_LIMIT_WINDOW_MS, 60000),
   rateLimitMax: asNumber(process.env.RATE_LIMIT_MAX, 30),
   googleApiKey: process.env.GOOGLE_API_KEY || "",
+  openaiApiKey: process.env.OPENAI_API_KEY || "",
   // Use faster, lighter models for free tier
   geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",

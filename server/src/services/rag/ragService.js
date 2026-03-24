@@ -3,7 +3,7 @@ import { env } from "../../config/env.js";
 import { GeminiService } from "./geminiService.js";
 import { ClaudeService } from "./claudeService.js";
 import { createVectorStore } from "./vectorStore.js";
-import { HashEmbeddings } from "./embeddingService.js";
+import { createEmbeddings } from "./embeddingService.js";
 import { loadChunksFromDirectory } from "./chunkService.js";
 
 function normalizeScore(rawScore) {
@@ -18,7 +18,7 @@ function normalizeScore(rawScore) {
 
 class RAGService {
   constructor() {
-    this.vectorStore = createVectorStore(new HashEmbeddings({}));
+    this.vectorStore = createVectorStore(createEmbeddings());
     this.gemini = new GeminiService({
       apiKey: env.googleApiKey,
       model: env.geminiModel,
@@ -57,7 +57,7 @@ class RAGService {
     } catch (error) {
       console.warn("Falling back to local vector store:", error.message);
       const { LangChainVectorStore } = await import("./vectorStore.js");
-      this.vectorStore = new LangChainVectorStore(new HashEmbeddings({}), {
+      this.vectorStore = new LangChainVectorStore(createEmbeddings(), {
         provider: "local",
       });
       await this.vectorStore.buildFromChunks(chunks);
