@@ -2,11 +2,15 @@ import { ChatSession } from "../models/ChatSession.js";
 import { ragService } from "./rag/ragService.js";
 import { getRuntimeSettings } from "./adminSettingsService.js";
 
-export async function createSession(studentId, { clientIp = null, userAgent = null } = {}) {
+export async function createSession(
+  studentId,
+  { clientIp = null, userAgent = null, siteContext = null } = {}
+) {
   const session = await ChatSession.create({
     studentId,
     clientIp,
     userAgent,
+    siteContext,
     messages: [
       {
         sender: "system",
@@ -28,7 +32,23 @@ export async function handleStudentMessage(sessionId, content) {
 
   session.messages.push({ sender: "student", content });
 
-  const ragResponse = await ragService.ask(content);
+  const supplementalContext = session.siteContext
+    ? [
+        session.siteContext.title ? `Website Title: ${session.siteContext.title}` : "",
+        session.siteContext.url ? `Website URL: ${session.siteContext.url}` : "",
+        session.siteContext.description
+          ? `Website Description: ${session.siteContext.description}`
+          : "",
+        (session.siteContext.headings || []).length
+          ? `Website Headings: ${(session.siteContext.headings || []).join(" | ")}`
+          : "",
+        session.siteContext.text ? `Website Content: ${session.siteContext.text}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
+
+  const ragResponse = await ragService.ask(content, { supplementalContext });
   const settings = await getRuntimeSettings();
   const shouldAutoEscalate = Boolean(
     settings.autoEscalationEnabled && ragResponse.outOfScope && session.status === "bot"

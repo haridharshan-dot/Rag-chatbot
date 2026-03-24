@@ -59,8 +59,11 @@ export async function agentMicrosoftLogin(accessToken) {
   return response.data.data;
 }
 
-export async function createSession(studentId) {
-  const response = await api.post("/chat/session", { studentId });
+export async function createSession(studentId, siteContext = null) {
+  const response = await api.post("/chat/session", {
+    studentId,
+    siteContext,
+  });
   return response.data.data;
 }
 

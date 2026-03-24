@@ -19,7 +19,12 @@ function getOrCreateStudentId(storageKey) {
   }
 }
 
-export default function EmbeddedStudentChatbot({ studentId: providedStudentId, defaultOpen = false, hideFab = false }) {
+export default function EmbeddedStudentChatbot({
+  studentId: providedStudentId,
+  defaultOpen = false,
+  hideFab = false,
+  siteContext = null,
+}) {
   const studentId = useMemo(
     () => providedStudentId || getOrCreateStudentId("student-id"),
     [providedStudentId]
@@ -32,7 +37,7 @@ export default function EmbeddedStudentChatbot({ studentId: providedStudentId, d
 
     async function startSession() {
       try {
-        const session = await createSession(studentId);
+        const session = await createSession(studentId, siteContext);
         if (mounted) {
           setSessionId(session._id || session.id);
         }
@@ -47,7 +52,7 @@ export default function EmbeddedStudentChatbot({ studentId: providedStudentId, d
     return () => {
       mounted = false;
     };
-  }, [studentId]);
+  }, [studentId, siteContext]);
 
   return (
     <ChatWidget

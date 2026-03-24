@@ -1,4 +1,45 @@
 (function () {
+  function getHostContext() {
+    var title = document.title || "";
+    var url = window.location.href || "";
+    var metaDescription = "";
+    var descriptionTag = document.querySelector('meta[name="description"]');
+    if (descriptionTag && descriptionTag.content) {
+      metaDescription = descriptionTag.content;
+    }
+
+    var headings = Array.prototype.slice
+      .call(document.querySelectorAll("h1, h2"))
+      .map(function (el) {
+        return (el.textContent || "").trim();
+      })
+      .filter(Boolean)
+      .slice(0, 12);
+
+    var bodyText = (document.body && document.body.innerText) || "";
+    bodyText = bodyText.replace(/\s+/g, " ").trim().slice(0, 7000);
+
+    return {
+      title: title,
+      url: url,
+      description: metaDescription,
+      headings: headings,
+      text: bodyText,
+      capturedAt: new Date().toISOString(),
+    };
+  }
+
+  function sendHostContext(iframe) {
+    if (!iframe || !iframe.contentWindow) return;
+    iframe.contentWindow.postMessage(
+      {
+        type: "sona-chatbot:hostContext",
+        context: getHostContext(),
+      },
+      "*"
+    );
+  }
+
   function applyFloatingStyles(iframe) {
     var width = Number(iframe.dataset.sonaWidth || 420);
     var height = Number(iframe.dataset.sonaHeight || 700);
@@ -72,6 +113,18 @@
   function bindIframe(iframe) {
     if (!iframe || iframe.dataset.sonaBound === "1") return;
     iframe.dataset.sonaBound = "1";
+
+    iframe.addEventListener("load", function () {
+      sendHostContext(iframe);
+    });
+
+    function onHostContextRequest(event) {
+      if (!event || !event.data || event.data.type !== "sona-chatbot:requestHostContext") return;
+      if (!iframe.contentWindow || event.source !== iframe.contentWindow) return;
+      sendHostContext(iframe);
+    }
+
+    window.addEventListener("message", onHostContextRequest);
 
     var mode = String(iframe.dataset.sonaMode || "inline").toLowerCase();
 

@@ -187,6 +187,12 @@ This behaves like the original frontend widget:
 <script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
 ```
 
+Website knowledge support in embed mode:
+
+- The embed script captures host page context (title, URL, description, headings, visible text).
+- Context is sent to chatbot session and used as supplemental grounding.
+- This allows the chatbot to answer based on both college RAG data and the current website page content.
+
 Embed troubleshooting:
 
 - If chatbot is blank in iframe, ensure frontend is redeployed after latest changes.

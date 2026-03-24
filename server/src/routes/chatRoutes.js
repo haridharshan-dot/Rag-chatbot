@@ -4,6 +4,30 @@ import { createSession, handleStudentMessage } from "../services/sessionService.
 
 const router = Router();
 
+function sanitizeSiteContext(raw) {
+  if (!raw || typeof raw !== "object") return null;
+
+  const title = String(raw.title || "").trim().slice(0, 240);
+  const url = String(raw.url || "").trim().slice(0, 1000);
+  const description = String(raw.description || "").trim().slice(0, 1200);
+  const headings = Array.isArray(raw.headings)
+    ? raw.headings.map((item) => String(item || "").trim().slice(0, 180)).filter(Boolean).slice(0, 20)
+    : [];
+  const text = String(raw.text || "").replace(/\s+/g, " ").trim().slice(0, 7000);
+  const capturedAt = raw.capturedAt ? new Date(raw.capturedAt) : null;
+
+  if (!title && !description && !headings.length && !text) return null;
+
+  return {
+    title: title || null,
+    url: url || null,
+    description: description || null,
+    headings,
+    text: text || null,
+    capturedAt: capturedAt && !Number.isNaN(capturedAt.getTime()) ? capturedAt : null,
+  };
+}
+
 router.post("/session", async (req, res, next) => {
   try {
     const studentId = String(req.body?.studentId || "").trim();
@@ -14,6 +38,7 @@ router.post("/session", async (req, res, next) => {
     const session = await createSession(studentId, {
       clientIp: req.ip || null,
       userAgent: req.headers["user-agent"] || null,
+      siteContext: sanitizeSiteContext(req.body?.siteContext),
     });
     return res.status(201).json({ success: true, data: session });
   } catch (error) {

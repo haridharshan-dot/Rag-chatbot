@@ -120,13 +120,14 @@ class RAGService {
     return { provider: "local", chunkCount: chunks.length };
   }
 
-  async ask(question) {
+  async ask(question, options = {}) {
     await this.init();
     const settings = await getRuntimeSettings();
+    const supplementalContext = String(options?.supplementalContext || "").trim();
 
     const results = await this.vectorStore.similaritySearch(question, settings.ragTopK);
     const topScores = results.map((item) => normalizeScore(item.score));
-    const confidence = topScores.length
+    let confidence = topScores.length
       ? topScores.reduce((a, b) => a + b, 0) / topScores.length
       : 0;
 
@@ -135,6 +136,17 @@ class RAGService {
       text: item.text,
       score: item.score,
     }));
+
+    if (supplementalContext) {
+      contextChunks.unshift({
+        source: "embedded-site-context",
+        text: supplementalContext,
+        score: 1,
+      });
+      if (!results.length) {
+        confidence = Math.max(confidence, settings.ragConfidenceThreshold + 0.05);
+      }
+    }
 
     if (!contextChunks.length) {
       return {
