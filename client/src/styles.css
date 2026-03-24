@@ -976,6 +976,22 @@ body {
   white-space: nowrap;
 }
 
+.dataset-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.danger-pill {
+  border-color: #e8b8b8;
+  color: #8c1d1d;
+  background: #fff5f5;
+}
+
+.danger-pill:hover {
+  border-color: #de8f8f;
+  background: #ffe8e8;
+}
+
 .runtime-grid {
   margin-top: 0.5rem;
   display: grid;

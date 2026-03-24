@@ -4,6 +4,7 @@ import StatusDashboard from "../components/StatusDashboard";
 import {
   downloadTranscript,
   downloadDataset,
+  removeDataset,
   fetchAdminSessions,
   fetchAdminOverview,
   fetchAdminSettings,
@@ -95,6 +96,7 @@ export default function AdminDashboard() {
   const [datasetCurrentMatch, setDatasetCurrentMatch] = useState(0);
   const [previewLoadingName, setPreviewLoadingName] = useState("");
   const [datasetDownloading, setDatasetDownloading] = useState(false);
+  const [datasetRemovingName, setDatasetRemovingName] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -372,6 +374,33 @@ export default function AdminDashboard() {
     }
   }
 
+  async function onRemoveDatasetFile(fileName) {
+    if (!fileName) return;
+    const confirmed = window.confirm(`Remove dataset ${fileName}? This will trigger re-index.`);
+    if (!confirmed) return;
+
+    setDatasetRemovingName(fileName);
+    setFeedback("");
+    try {
+      const result = await removeDataset(fileName);
+      if (datasetPreviewMeta?.name === fileName) {
+        setDatasetPreviewOpen(false);
+        setDatasetPreviewMeta(null);
+      }
+      await refreshAll();
+      setFeedback(
+        result?.reindexError
+          ? `Dataset removed, but re-index failed: ${result.reindexError}`
+          : "Dataset removed and RAG re-indexed."
+      );
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "Failed to remove dataset.");
+    } finally {
+      setDatasetRemovingName("");
+    }
+  }
+
   async function onCopyPreview() {
     try {
       await navigator.clipboard.writeText(datasetPreviewText || "");
@@ -489,13 +518,22 @@ export default function AdminDashboard() {
               {(datasets || []).slice(0, 6).map((file) => (
                 <div className="dataset-item" key={`${file.name}-${file.updatedAt}`}>
                   <p>{file.name} • {Math.max(1, Math.round((file.size || 0) / 1024))} KB</p>
-                  <button
-                    className="pill-btn"
-                    onClick={() => onPreviewDataset(file.name)}
-                    disabled={previewLoading && previewLoadingName === file.name}
-                  >
-                    {previewLoading && previewLoadingName === file.name ? "Loading..." : "Preview"}
-                  </button>
+                  <div className="dataset-actions">
+                    <button
+                      className="pill-btn"
+                      onClick={() => onPreviewDataset(file.name)}
+                      disabled={previewLoading && previewLoadingName === file.name}
+                    >
+                      {previewLoading && previewLoadingName === file.name ? "Loading..." : "Preview"}
+                    </button>
+                    <button
+                      className="pill-btn danger-pill"
+                      onClick={() => onRemoveDatasetFile(file.name)}
+                      disabled={datasetRemovingName === file.name}
+                    >
+                      {datasetRemovingName === file.name ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
                 </div>
               ))}
               {!datasets.length && <p>No dataset files found.</p>}

@@ -256,6 +256,11 @@ export async function downloadDataset(fileName) {
   return response.data;
 }
 
+export async function removeDataset(fileName) {
+  const response = await api.delete(`/admin/datasets/${encodeURIComponent(fileName)}`, agentAuthConfig());
+  return response.data.data;
+}
+
 export async function uploadDataset(fileName, content) {
   const response = await api.post('/admin/datasets/upload', { fileName, content }, agentAuthConfig());
   return response.data.data;

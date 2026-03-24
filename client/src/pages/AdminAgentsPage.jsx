@@ -8,10 +8,11 @@ function formatDate(value) {
 }
 
 export default function AdminAgentsPage() {
+  const PAGE_SIZE = 10;
   const navigate = useNavigate();
   const [authToken] = useState(() => getAgentToken());
   const [items, setItems] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1, search: "" });
+  const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1, search: "" });
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState("");
@@ -25,9 +26,9 @@ export default function AdminAgentsPage() {
     setLoading(true);
     setFeedback("");
     try {
-      const result = await fetchAdminAgents({ page, limit: 20, search });
+      const result = await fetchAdminAgents({ page, limit: PAGE_SIZE, search });
       setItems(result.items || []);
-      setPagination(result.pagination || { page: 1, limit: 20, total: 0, totalPages: 1, search });
+      setPagination(result.pagination || { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1, search });
     } catch (error) {
       console.error(error);
       setFeedback("Unable to load agent management data.");

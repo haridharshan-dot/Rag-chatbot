@@ -513,6 +513,47 @@ router.get("/users", async (req, res, next) => {
   }
 });
 
+router.delete("/datasets/:fileName", async (req, res, next) => {
+  try {
+    const requested = String(req.params?.fileName || "").trim();
+    if (!requested) {
+      return res.status(400).json({ success: false, message: "fileName is required" });
+    }
+
+    const safeName = path.basename(requested);
+    const target = path.join(env.dataDir, safeName);
+    const resolvedDataDir = path.resolve(env.dataDir);
+    const resolvedTarget = path.resolve(target);
+    if (!resolvedTarget.startsWith(resolvedDataDir)) {
+      return res.status(400).json({ success: false, message: "Invalid file path" });
+    }
+
+    await fs.unlink(target);
+
+    let reindex = null;
+    let reindexError = null;
+    try {
+      reindex = await ragService.reindex();
+    } catch (error) {
+      reindexError = error?.message || "Re-index failed after delete";
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        removed: safeName,
+        reindex,
+        reindexError,
+      },
+    });
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return res.status(404).json({ success: false, message: "Dataset file not found" });
+    }
+    next(error);
+  }
+});
+
 router.post("/datasets/upload", async (req, res, next) => {
   try {
     const fileName = String(req.body?.fileName || "").trim();
