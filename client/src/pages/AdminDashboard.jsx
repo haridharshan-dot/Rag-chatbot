@@ -17,6 +17,7 @@ import {
   reopenSession,
   runAdminReindex,
   runAdminStatusCheck,
+  runAdminWarmRag,
   uploadDataset,
   updateAdminSettings,
 } from "../api";
@@ -104,6 +105,9 @@ export default function AdminDashboard() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [runningReindex, setRunningReindex] = useState(false);
   const [runningStatusCheck, setRunningStatusCheck] = useState(false);
+  const [warmingRag, setWarmingRag] = useState(false);
+  const [usersOpen, setUsersOpen] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const previewRef = useRef(null);
 
@@ -138,6 +142,7 @@ export default function AdminDashboard() {
             setFeedback("Session expired. Please login again.");
             return;
           }
+          setFeedback("Some admin data could not be loaded. Backend may still be deploying.");
       } finally {
         setLoading(false);
       }
@@ -166,6 +171,21 @@ export default function AdminDashboard() {
     setDatasets(datasetsData);
     setAgents(agentsData);
     setUsers(usersData);
+  }
+
+  async function onWarmRag() {
+    setWarmingRag(true);
+    setFeedback("");
+    try {
+      await runAdminWarmRag();
+      await refreshAll();
+      setFeedback("RAG warm-up complete.");
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "RAG warm-up failed.");
+    } finally {
+      setWarmingRag(false);
+    }
   }
 
   async function onSaveSettings() {
@@ -615,6 +635,9 @@ export default function AdminDashboard() {
           <article className="manage-card">
             <h4>AI Runtime</h4>
             <p>Live model and retrieval stack currently serving chatbot responses.</p>
+            <button className="pill-btn" onClick={onWarmRag} disabled={warmingRag}>
+              {warmingRag ? "Warming..." : "Warm RAG Now"}
+            </button>
             <div className="runtime-grid">
               <p>LLM Provider: <strong>{readiness?.rag?.llmProvider || "unknown"}</strong></p>
               <p>LLM Model: <strong>{readiness?.rag?.llmModel || "unknown"}</strong></p>
@@ -703,9 +726,12 @@ export default function AdminDashboard() {
         <section className="admin-live-queue">
           <div className="admin-main-head">
             <h3>User Management</h3>
+            <button className="pill-btn" onClick={() => setUsersOpen((prev) => !prev)}>
+              {usersOpen ? "Hide" : "Show"}
+            </button>
           </div>
 
-          <div className="queue-table-wrap">
+          {usersOpen && <div className="queue-table-wrap">
             <table className="queue-table">
               <thead>
                 <tr>
@@ -735,15 +761,18 @@ export default function AdminDashboard() {
                 )}
               </tbody>
             </table>
-          </div>
+          </div>}
         </section>
 
         <section className="admin-live-queue">
           <div className="admin-main-head">
             <h3>Agent Management</h3>
+            <button className="pill-btn" onClick={() => setAgentsOpen((prev) => !prev)}>
+              {agentsOpen ? "Hide" : "Show"}
+            </button>
           </div>
 
-          <div className="queue-table-wrap">
+          {agentsOpen && <div className="queue-table-wrap">
             <table className="queue-table">
               <thead>
                 <tr>
@@ -775,7 +804,7 @@ export default function AdminDashboard() {
                 )}
               </tbody>
             </table>
-          </div>
+          </div>}
         </section>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}

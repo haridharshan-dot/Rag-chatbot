@@ -151,6 +151,19 @@ router.post("/actions/record-status", async (req, res, next) => {
   }
 });
 
+router.post("/actions/warm-rag", async (req, res, next) => {
+  try {
+    await ragService.init();
+    return res.json({ success: true, data: ragService.getStatus() });
+  } catch (error) {
+    return res.status(503).json({
+      success: false,
+      message: error?.message || "Failed to initialize RAG service",
+      data: ragService.getStatus(),
+    });
+  }
+});
+
 router.get("/sessions", async (req, res, next) => {
   try {
     const status = String(req.query?.status || "queued").trim();

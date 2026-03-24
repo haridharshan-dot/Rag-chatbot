@@ -152,19 +152,34 @@ export async function runAdminStatusCheck() {
   return response.data.data;
 }
 
+export async function runAdminWarmRag() {
+  const response = await api.post('/admin/actions/warm-rag', {}, agentAuthConfig());
+  return response.data.data;
+}
+
 export async function fetchAdminSessions(status = 'queued', limit = 50) {
   const response = await api.get(`/admin/sessions?status=${encodeURIComponent(status)}&limit=${limit}`, agentAuthConfig());
   return response.data.data;
 }
 
 export async function fetchAdminAgents() {
-  const response = await api.get('/admin/agents', agentAuthConfig());
-  return response.data.data;
+  try {
+    const response = await api.get('/admin/agents', agentAuthConfig());
+    return response.data.data;
+  } catch (error) {
+    if (error?.response?.status === 404) return [];
+    throw error;
+  }
 }
 
 export async function fetchAdminUsers() {
-  const response = await api.get('/admin/users', agentAuthConfig());
-  return response.data.data;
+  try {
+    const response = await api.get('/admin/users', agentAuthConfig());
+    return response.data.data;
+  } catch (error) {
+    if (error?.response?.status === 404) return [];
+    throw error;
+  }
 }
 
 export async function forceAssignSession(sessionId, agentId) {
