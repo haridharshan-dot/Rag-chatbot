@@ -22,6 +22,10 @@ body {
   min-height: 100vh;
 }
 
+.top-nav h1 {
+  font-size: 1rem;
+}
+
 .app-shell {
   min-height: 100vh;
 }
@@ -50,6 +54,13 @@ body {
   font-weight: 600;
 }
 
+
+.chat-input-row button:disabled,
+.agent-composer button:disabled,
+.agent-chat-header button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .student-page {
   padding: 2rem;
 }
@@ -63,6 +74,18 @@ body {
   animation: rise 0.45s ease;
 }
 
+
+@media (max-width: 1100px) {
+  .agent-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .status-panel {
+    border-left: 0;
+    border-top: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+}
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -70,11 +93,113 @@ body {
   color: var(--accent);
   margin-bottom: 0.3rem;
 }
+    width: calc(100vw - 1rem);
+    height: min(76vh, 640px);
 
 .chat-fab {
   position: fixed;
   right: 1.4rem;
   bottom: 1.4rem;
+
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .student-page {
+    padding: 0.9rem;
+  }
+
+  .hero-card {
+    padding: 1.1rem;
+    border-radius: 14px;
+  }
+
+  .chat-header {
+    padding: 0.75rem;
+  }
+
+  .chat-brand h3 {
+    font-size: 0.9rem;
+  }
+
+  .chat-list {
+    padding: 0.75rem;
+  }
+
+  .bubble {
+    max-width: 92%;
+    font-size: 0.9rem;
+    padding: 0.62rem 0.7rem;
+  }
+
+  .chat-input-row {
+    padding: 0.7rem;
+  }
+
+  .chat-input-row input,
+  .chat-input-row button {
+    min-height: 40px;
+  }
+
+  .queue-panel,
+  .agent-chat-panel {
+    padding: 0.8rem;
+  }
+
+  .agent-chat-panel {
+    min-height: 56vh;
+  }
+
+  .agent-chat-header {
+    gap: 0.5rem;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .agent-composer {
+    flex-direction: column;
+  }
+
+  .agent-composer input,
+  .agent-composer button {
+    width: 100%;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 520px) {
+  .chat-widget {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 82vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .chat-fab {
+    bottom: 0.7rem;
+    right: 0.7rem;
+    padding: 0.7rem 1rem;
+  }
+
+  .modern-auth-card {
+    border-radius: 14px;
+  }
+
+  .auth-form-panel {
+    padding: 1rem;
+  }
+
+  .auth-visual-panel {
+    padding: 1rem;
+  }
+
+  .status-panel {
+    padding: 12px;
+  }
+}
   border: 0;
   background: var(--accent);
   color: #fff;
