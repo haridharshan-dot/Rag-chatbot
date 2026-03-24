@@ -42,7 +42,7 @@
 
   function applyFloatingStyles(iframe, open, dimensions) {
     var isOpen = typeof open === "boolean" ? open : true;
-    var fallbackClosed = { width: 86, height: 56 };
+    var fallbackClosed = { width: 136, height: 64 };
     var fallbackOpen = {
       width: Number(iframe.dataset.sonaWidth || 420),
       height: Number(iframe.dataset.sonaHeight || 700),
@@ -60,7 +60,7 @@
     iframe.style.height = size.height + "px";
     iframe.style.maxWidth = "calc(100vw - 16px)";
     iframe.style.border = iframe.style.border || "0";
-    iframe.style.borderRadius = isOpen ? "16px" : "999px";
+    iframe.style.borderRadius = isOpen ? "16px" : "14px";
     iframe.style.boxShadow = isOpen
       ? "0 10px 25px rgba(0,0,0,0.14)"
       : "0 8px 18px rgba(0,0,0,0.16)";
@@ -78,10 +78,10 @@
       } else {
         iframe.style.left = "auto";
         iframe.style.right = "8px";
-        iframe.style.width = "86px";
-        iframe.style.height = "56px";
+        iframe.style.width = "136px";
+        iframe.style.height = "64px";
         iframe.style.bottom = "8px";
-        iframe.style.borderRadius = "999px";
+        iframe.style.borderRadius = "14px";
       }
     } else {
       iframe.style.left = "auto";
@@ -101,7 +101,7 @@
     iframe.style.width = width + "px";
     iframe.style.height = height + "px";
     iframe.style.border = "0";
-    iframe.style.borderRadius = open ? "16px" : "999px";
+    iframe.style.borderRadius = open ? "16px" : "14px";
     iframe.style.boxShadow = open
       ? "0 10px 25px rgba(0,0,0,0.14)"
       : "0 8px 18px rgba(0,0,0,0.16)";
@@ -119,10 +119,10 @@
       } else {
         iframe.style.left = "auto";
         iframe.style.right = "8px";
-        iframe.style.width = "86px";
-        iframe.style.height = "56px";
+        iframe.style.width = "136px";
+        iframe.style.height = "64px";
         iframe.style.bottom = "8px";
-        iframe.style.borderRadius = "999px";
+        iframe.style.borderRadius = "14px";
       }
     }
   }
@@ -148,7 +148,7 @@
     if (mode === "floating") {
       var floatingState = {
         open: false,
-        dimensions: { width: 86, height: 56 },
+        dimensions: { width: 136, height: 64 },
       };
 
       function onFloatingMessage(event) {
@@ -169,7 +169,7 @@
     }
 
     if (mode === "compact") {
-      applyCompactStyles(iframe, false, { width: 86, height: 56 });
+      applyCompactStyles(iframe, false, { width: 136, height: 64 });
 
       function onCompactMessage(event) {
         if (!event || !event.data || event.data.type !== "sona-chatbot:state") return;
@@ -179,7 +179,7 @@
 
       window.addEventListener("message", onCompactMessage);
       window.addEventListener("resize", function () {
-        applyCompactStyles(iframe, iframe.style.height !== "56px", null);
+        applyCompactStyles(iframe, iframe.style.height !== "64px", null);
       });
       return;
     }

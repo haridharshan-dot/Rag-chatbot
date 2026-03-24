@@ -90,21 +90,20 @@ body {
 }
 
 .chat-fab-logo {
-  width: 56px;
-  height: 56px;
+  width: 136px;
+  height: 64px;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 14px;
   overflow: hidden;
   background: #ffffff;
-  border: 2px solid #e2ece9;
+  border: 1px solid #d7e6e3;
 }
 
 .chat-fab-logo-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   background: #ffffff;
-  padding: 3px;
   display: block;
 }
 
