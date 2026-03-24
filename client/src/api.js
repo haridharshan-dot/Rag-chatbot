@@ -100,3 +100,8 @@ export async function fetchStatusLogs() {
   const response = await api.get('/status/status-logs');
   return response.data.data;
 }
+
+export async function fetchReadiness() {
+  const response = await api.get('/ready');
+  return response.data.data;
+}

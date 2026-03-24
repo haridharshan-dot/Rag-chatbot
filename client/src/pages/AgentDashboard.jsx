@@ -16,6 +16,17 @@ function normalizeSessionId(session) {
   return session?._id || session?.id;
 }
 
+function formatDate(dateLike) {
+  if (!dateLike) return "-";
+  return new Date(dateLike).toLocaleString();
+}
+
+function getWaitMinutes(escalationRequestedAt) {
+  if (!escalationRequestedAt) return 0;
+  const deltaMs = Date.now() - new Date(escalationRequestedAt).getTime();
+  return Math.max(0, Math.round(deltaMs / 60000));
+}
+
 export default function AgentDashboard() {
   const [authToken, setAuthToken] = useState(() => getAgentToken());
   const [agentId, setAgentId] = useState("agent");
@@ -26,6 +37,10 @@ export default function AgentDashboard() {
   const [activeSessionId, setActiveSessionId] = useState("");
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueError, setQueueError] = useState("");
+  const [lastSyncAt, setLastSyncAt] = useState("");
+  const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
     if (!authToken) return;
@@ -33,24 +48,44 @@ export default function AgentDashboard() {
     socket.connect();
     socket.emit("agent:register", { token: authToken });
 
-    const refreshQueue = () => {
-      fetchAgentQueue()
-        .then((sessions) => setQueue(sessions))
-        .catch((error) => console.error("Queue fetch failed", error));
+    const refreshQueue = async () => {
+      setQueueLoading(true);
+      setQueueError("");
+      try {
+        const sessions = await fetchAgentQueue();
+        setQueue(sessions);
+        setLastSyncAt(new Date().toISOString());
+      } catch (error) {
+        console.error("Queue fetch failed", error);
+        setQueueError("Unable to refresh queue right now.");
+      } finally {
+        setQueueLoading(false);
+      }
     };
 
     const onMessage = (message) => {
       setMessages((prev) => [...prev, message]);
     };
 
+    const onConnect = () => setSocketConnected(true);
+    const onDisconnect = () => setSocketConnected(false);
+
     socket.on("queue:updated", refreshQueue);
     socket.on("chat:message", onMessage);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
+    const pollId = setInterval(refreshQueue, 20000);
 
     refreshQueue();
+    setSocketConnected(socket.connected);
 
     return () => {
       socket.off("queue:updated", refreshQueue);
       socket.off("chat:message", onMessage);
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      clearInterval(pollId);
     };
   }, [agentId, authToken]);
 
@@ -77,6 +112,9 @@ export default function AgentDashboard() {
     setQueue([]);
     setActiveSessionId("");
     setMessages([]);
+    setQueueError("");
+    setLastSyncAt("");
+    setSocketConnected(false);
     socket.disconnect();
   }
 
@@ -108,6 +146,14 @@ export default function AgentDashboard() {
     setQueue(updatedQueue);
   }
 
+  const activeQueueSession = queue.find((session) => normalizeSessionId(session) === activeSessionId);
+  const avgWait = queue.length
+    ? Math.round(
+        queue.reduce((sum, session) => sum + getWaitMinutes(session.escalationRequestedAt), 0) /
+          queue.length
+      )
+    : 0;
+
   if (!authToken) {
     return (
       <div className="agent-auth-wrap">
@@ -137,32 +183,68 @@ export default function AgentDashboard() {
   }
 
   return (
-    <div className="agent-layout">
-      <aside className="queue-panel">
-        <div className="queue-head">
+    <div className="agent-layout modern-agent-layout">
+      <aside className="queue-panel modern-queue-panel">
+        <div className="queue-head modern-queue-head">
           <div>
             <p className="eyebrow">Live Operations</p>
-            <h3>Agent Queue</h3>
+            <h3>Support Command Center</h3>
           </div>
           <button className="ghost-btn" onClick={onLogout}>
             Logout
           </button>
         </div>
-        {queue.length === 0 && <p>No students waiting right now.</p>}
+
+        <div className="ops-kpis">
+          <div className="kpi-card">
+            <span>Queue</span>
+            <strong>{queue.length}</strong>
+          </div>
+          <div className="kpi-card">
+            <span>Avg Wait</span>
+            <strong>{avgWait}m</strong>
+          </div>
+          <div className="kpi-card">
+            <span>Socket</span>
+            <strong className={socketConnected ? "state-up" : "state-down"}>
+              {socketConnected ? "LIVE" : "OFF"}
+            </strong>
+          </div>
+        </div>
+
+        <p className="queue-sync">Last sync: {formatDate(lastSyncAt)}</p>
+        {queueError ? <p className="agent-error">{queueError}</p> : null}
+        {queueLoading && <p className="queue-loading">Refreshing queue...</p>}
+        {queue.length === 0 && !queueLoading && <p>No students waiting right now.</p>}
         {queue.map((session) => {
           const sessionId = normalizeSessionId(session);
+          const wait = getWaitMinutes(session.escalationRequestedAt);
           return (
-            <button key={sessionId} className="queue-item" onClick={() => openSession(sessionId)}>
+            <button
+              key={sessionId}
+              className={`queue-item ${activeSessionId === sessionId ? "active" : ""}`}
+              onClick={() => openSession(sessionId)}
+            >
               <strong>{session.studentId}</strong>
-              <span>Requested: {new Date(session.escalationRequestedAt).toLocaleString()}</span>
+              <span>Requested: {formatDate(session.escalationRequestedAt)}</span>
+              <small>Waiting: {wait} min</small>
             </button>
           );
         })}
       </aside>
 
-      <section className="agent-chat-panel">
+      <section className="agent-chat-panel modern-agent-chat-panel">
         <div className="agent-chat-header">
-          <h3>{activeSessionId ? `Session ${activeSessionId.slice(-6)}` : "Select a student"}</h3>
+          <div>
+            <h3>{activeSessionId ? `Session ${activeSessionId.slice(-6)}` : "Select a student"}</h3>
+            <p className="session-meta">
+              {activeQueueSession
+                ? `Student ${activeQueueSession.studentId} • queued ${getWaitMinutes(
+                    activeQueueSession.escalationRequestedAt
+                  )} min ago`
+                : "Pick a queued request to start live support."}
+            </p>
+          </div>
           <button onClick={markResolved} disabled={!activeSessionId}>
             Mark Resolved
           </button>
@@ -171,7 +253,8 @@ export default function AgentDashboard() {
         <div className="agent-chat-log">
           {messages.map((message, index) => (
             <div key={`${index}-${message.content.slice(0, 8)}`} className={`bubble ${message.sender}`}>
-              {message.content}
+              <p>{message.content}</p>
+              <small>{formatDate(message.createdAt)}</small>
             </div>
           ))}
         </div>

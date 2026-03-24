@@ -189,9 +189,13 @@ body {
 
 .agent-layout {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 340px 1fr;
   gap: 1rem;
   padding: 1rem;
+}
+
+.modern-agent-layout {
+  min-height: calc(100vh - 90px);
 }
 
 .agent-auth-wrap {
@@ -292,6 +296,53 @@ body {
   cursor: pointer;
 }
 
+.queue-item.active {
+  border-color: #0f766e;
+  box-shadow: inset 0 0 0 1px #0f766e;
+}
+
+.ops-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0.8rem 0;
+}
+
+.kpi-card {
+  padding: 0.65rem;
+  background: #fff;
+  border: 1px solid #dbe4eb;
+  border-radius: 10px;
+}
+
+.kpi-card span {
+  display: block;
+  font-size: 0.72rem;
+  color: #5a6f84;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.kpi-card strong {
+  font-size: 1.1rem;
+}
+
+.state-up {
+  color: #047857;
+}
+
+.state-down {
+  color: #b91c1c;
+}
+
+.queue-sync,
+.queue-loading,
+.session-meta {
+  margin: 0.25rem 0;
+  color: #577086;
+  font-size: 0.85rem;
+}
+
 .queue-item:hover {
   border-color: #9fb6cc;
   background: #f8fbfe;
@@ -324,6 +375,17 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+.agent-chat-log .bubble p {
+  margin: 0;
+}
+
+.agent-chat-log .bubble small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #5d7285;
+  font-size: 0.76rem;
+}
+
 .agent-chat-log .bubble.student {
   background: #e6efff;
 }
@@ -347,6 +409,10 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .ops-kpis {
+    grid-template-columns: 1fr;
+  }
+
   .chat-widget {
     right: 0.5rem;
     bottom: 4.2rem;
@@ -367,7 +433,7 @@ body {
     opacity: 1;
   }
 }
-_# Status Dashboard Styles #_#_AGENT_TASK_BOUNDARY_#_.status-panel {
+.status-panel {
   flex: 1;
   padding: 20px;
   background-color: #f9fafb;

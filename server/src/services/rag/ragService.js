@@ -114,6 +114,7 @@ class RAGService {
         confidence: 0,
         sources: [],
         escalationSuggested: true,
+        outOfScope: true,
       };
     }
 
@@ -126,6 +127,7 @@ class RAGService {
       confidence,
       sources: contextChunks.map((chunk) => chunk.source),
       escalationSuggested: confidence < env.ragConfidenceThreshold,
+      outOfScope: confidence < env.ragOutOfScopeThreshold,
     };
   }
 }

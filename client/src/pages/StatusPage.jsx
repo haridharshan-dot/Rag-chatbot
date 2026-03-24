@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStatusLogs } from '../api';
+import { fetchReadiness, fetchStatusLogs } from '../api';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
@@ -8,16 +8,20 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const StatusPage = () => {
   const [statusLogs, setStatusLogs] = useState([]);
+  const [readiness, setReadiness] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastRefreshAt, setLastRefreshAt] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const getLogs = async () => {
       try {
-        const logs = await fetchStatusLogs();
+        const [logs, ready] = await Promise.all([fetchStatusLogs(), fetchReadiness()]);
         setStatusLogs(logs);
+        setReadiness(ready);
         setError(null);
+        setLastRefreshAt(new Date().toISOString());
       } catch (err) {
         setError('Failed to fetch status logs.');
         console.error(err);
@@ -26,6 +30,9 @@ const StatusPage = () => {
       }
     };
     getLogs();
+
+    const timer = setInterval(getLogs, 30000);
+    return () => clearInterval(timer);
   }, []);
 
   const processChartData = () => {
@@ -89,6 +96,13 @@ const StatusPage = () => {
 
   const latestStatus = getLatestStatus();
 
+  const uptimeRatio = statusLogs.length
+    ? Math.round((statusLogs.filter((log) => log.apiStatus === 'up').length / statusLogs.length) * 100)
+    : 0;
+  const llmRatio = statusLogs.length
+    ? Math.round((statusLogs.filter((log) => log.llmStatus === 'up').length / statusLogs.length) * 100)
+    : 0;
+
   const chartData = processChartData();
 
   const options = {
@@ -112,12 +126,11 @@ const StatusPage = () => {
 
   return (
     <div className="status-layout">
-      {/* Left Sidebar - Status Summary */}
       <aside className="status-sidebar">
         <div className="sidebar-header">
           <div>
-            <p className="eyebrow">System Health</p>
-            <h3>Status Monitor</h3>
+            <p className="eyebrow">Production Monitoring</p>
+            <h3>Service Health Center</h3>
           </div>
         </div>
 
@@ -135,8 +148,16 @@ const StatusPage = () => {
           </div>
 
           <div className="status-item info">
-            <h4>Last Updated</h4>
-            <p className="last-updated">{latestStatus ? new Date(latestStatus.timestamp).toLocaleString() : 'N/A'}</p>
+            <h4>Readiness</h4>
+            <p className="last-updated">
+              {readiness?.status ? readiness.status.toUpperCase() : 'UNKNOWN'}
+            </p>
+            <p className="response-time">DB: {readiness?.db?.state || 'unknown'}</p>
+          </div>
+
+          <div className="status-item info">
+            <h4>Last Refresh</h4>
+            <p className="last-updated">{lastRefreshAt ? new Date(lastRefreshAt).toLocaleString() : 'N/A'}</p>
           </div>
         </div>
 
@@ -145,13 +166,31 @@ const StatusPage = () => {
         </button>
       </aside>
 
-      {/* Main Content - Chart and Logs */}
       <section className="status-main">
         <div className="status-header">
-          <h2>System Status Dashboard</h2>
+          <h2>Operations Dashboard</h2>
           <button className="nav-btn agent-btn" onClick={() => navigate('/agent')}>
             Agent Dashboard
           </button>
+        </div>
+
+        <div className="ops-strip">
+          <article className="ops-card">
+            <p>API Uptime (7d)</p>
+            <strong>{uptimeRatio}%</strong>
+          </article>
+          <article className="ops-card">
+            <p>LLM Uptime (7d)</p>
+            <strong>{llmRatio}%</strong>
+          </article>
+          <article className="ops-card">
+            <p>RAG Provider</p>
+            <strong>{readiness?.rag?.provider || 'n/a'}</strong>
+          </article>
+          <article className="ops-card">
+            <p>LLM Provider</p>
+            <strong>{readiness?.rag?.llmProvider || 'n/a'}</strong>
+          </article>
         </div>
 
         {error && <div className="error-message">{error}</div>}

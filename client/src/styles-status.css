@@ -137,6 +137,34 @@
   gap: 2rem;
 }
 
+.ops-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.ops-card {
+  background: linear-gradient(160deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #d7e1ea;
+  border-radius: 12px;
+  padding: 0.9rem;
+}
+
+.ops-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #4f6477;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ops-card strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.25rem;
+  color: #182838;
+}
+
 .status-header {
   display: flex;
   justify-content: space-between;
@@ -304,6 +332,10 @@
     padding: 1rem;
   }
 
+  .ops-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .status-logs table {
     font-size: 0.85rem;
   }
@@ -332,6 +364,10 @@
 
   .status-header h2 {
     font-size: 1.2rem;
+  }
+
+  .ops-strip {
+    grid-template-columns: 1fr;
   }
 
   .chart-container {

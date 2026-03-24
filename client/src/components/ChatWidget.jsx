@@ -14,6 +14,7 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
   const [isSending, setIsSending] = useState(false);
   const [showEscalate, setShowEscalate] = useState(false);
   const [agentConnected, setAgentConnected] = useState(false);
+  const [handoffPending, setHandoffPending] = useState(false);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
       setMessages(data.messages || []);
       setShowEscalate(data.status === "queued" || data.status === "active");
       setAgentConnected(data.status === "active");
+      setHandoffPending(data.status === "queued");
     }
 
     loadHistory().catch((error) => {
@@ -44,6 +46,7 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
     const onAgentJoined = () => {
       setAgentConnected(true);
       setShowEscalate(true);
+      setHandoffPending(false);
       setMessages((prev) => [
         ...prev,
         {
@@ -79,8 +82,11 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
 
     try {
       const response = await sendStudentMessage(sessionId, text);
-      if (response.escalationSuggested) {
+      if (response.autoEscalated || response.outOfScope || response.escalationSuggested) {
         setShowEscalate(true);
+      }
+      if (response.autoEscalated || response.outOfScope) {
+        setHandoffPending(true);
       }
     } catch (error) {
       console.error("Failed to send message", error);
@@ -93,6 +99,7 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
     if (!sessionId) return;
     await escalateToAgent(sessionId);
     setShowEscalate(true);
+    setHandoffPending(true);
     setMessages((prev) => [
       ...prev,
       {
@@ -126,9 +133,13 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
           </div>
 
           {showEscalate && !agentConnected && (
-            <button className="agent-btn" onClick={onEscalate}>
-              Talk to an Agent
-            </button>
+            handoffPending ? (
+              <p className="agent-live">Agent request sent. A support agent will join shortly.</p>
+            ) : (
+              <button className="agent-btn" onClick={onEscalate}>
+                Talk to an Agent
+              </button>
+            )
           )}
 
           {agentConnected && <p className="agent-live">You are now connected to a live agent.</p>}

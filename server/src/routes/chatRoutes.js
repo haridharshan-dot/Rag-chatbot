@@ -38,7 +38,7 @@ router.post("/:sessionId/message", async (req, res, next) => {
       return res.status(400).json({ success: false, message: "content is required" });
     }
 
-    const { session, ragResponse } = await handleStudentMessage(
+    const { session, ragResponse, autoEscalated } = await handleStudentMessage(
       req.params.sessionId,
       content
     );
@@ -48,8 +48,21 @@ router.post("/:sessionId/message", async (req, res, next) => {
       content,
     });
 
-    const botMessage = session.messages[session.messages.length - 1];
+    const botMessage = autoEscalated
+      ? session.messages[session.messages.length - 2]
+      : session.messages[session.messages.length - 1];
     req.app.locals.io.to(`session:${session.id}`).emit("chat:message", botMessage);
+
+    if (autoEscalated) {
+      const systemMessage = session.messages[session.messages.length - 1];
+      req.app.locals.io.to(`session:${session.id}`).emit("chat:message", systemMessage);
+      req.app.locals.io.emit("queue:updated");
+      req.app.locals.io.to("agents").emit("agent:sessionQueued", {
+        sessionId: session.id,
+        studentId: session.studentId,
+        autoEscalated: true,
+      });
+    }
 
     return res.json({
       success: true,
@@ -58,6 +71,8 @@ router.post("/:sessionId/message", async (req, res, next) => {
         botMessage,
         confidence: ragResponse.confidence,
         escalationSuggested: ragResponse.escalationSuggested,
+        outOfScope: ragResponse.outOfScope,
+        autoEscalated,
       },
     });
   } catch (error) {

@@ -42,9 +42,10 @@ export const env = {
   geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
   claudeModel: process.env.CLAUDE_MODEL || "claude-3-haiku-20240307",
-  // Free-tier optimized: fetch fewer chunks to reduce memory usage
-  ragTopK: asNumber(process.env.RAG_TOP_K, 3),
-  ragConfidenceThreshold: asNumber(process.env.RAG_CONFIDENCE_THRESHOLD, 0.55),
+  // Production defaults tuned for better retrieval coverage and controlled escalation
+  ragTopK: asNumber(process.env.RAG_TOP_K, 5),
+  ragConfidenceThreshold: asNumber(process.env.RAG_CONFIDENCE_THRESHOLD, 0.6),
+  ragOutOfScopeThreshold: asNumber(process.env.RAG_OUT_OF_SCOPE_THRESHOLD, 0.45),
   vectorDbProvider: process.env.VECTOR_DB_PROVIDER || "local",
   pineconeApiKey: process.env.PINECONE_API_KEY || "",
   pineconeIndex: process.env.PINECONE_INDEX || "",
@@ -94,6 +95,12 @@ export function validateEnvironment() {
     if (!env.googleApiKey && !env.anthropicApiKey) {
       warnings.push(
         "No LLM API key configured (GOOGLE_API_KEY or ANTHROPIC_API_KEY). Responses will be retrieval-only summaries."
+      );
+    }
+
+    if (env.ragOutOfScopeThreshold >= env.ragConfidenceThreshold) {
+      warnings.push(
+        "RAG_OUT_OF_SCOPE_THRESHOLD should usually be lower than RAG_CONFIDENCE_THRESHOLD for clean escalation behavior."
       );
     }
   }
