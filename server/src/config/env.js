@@ -64,3 +64,45 @@ export const env = {
 };
 
 export const isProd = env.nodeEnv === "production";
+
+export function validateEnvironment() {
+  const errors = [];
+  const warnings = [];
+
+  if (isProd) {
+    if (!process.env.MONGO_URI) {
+      errors.push("MONGO_URI is required in production");
+    }
+
+    if (!process.env.JWT_SECRET || env.jwtSecret === "replace_me_with_strong_secret") {
+      errors.push("JWT_SECRET must be set to a strong value in production");
+    }
+
+    if (!env.clientUrls.length) {
+      errors.push("CLIENT_URL or CLIENT_URLS must be set in production");
+    }
+
+    if (env.vectorDbProvider === "pinecone") {
+      if (!env.pineconeApiKey) {
+        errors.push("PINECONE_API_KEY is required when VECTOR_DB_PROVIDER=pinecone");
+      }
+      if (!env.pineconeIndex) {
+        errors.push("PINECONE_INDEX is required when VECTOR_DB_PROVIDER=pinecone");
+      }
+    }
+
+    if (!env.googleApiKey && !env.anthropicApiKey) {
+      warnings.push(
+        "No LLM API key configured (GOOGLE_API_KEY or ANTHROPIC_API_KEY). Responses will be retrieval-only summaries."
+      );
+    }
+  }
+
+  if (errors.length) {
+    throw new Error(`Invalid environment configuration: ${errors.join("; ")}`);
+  }
+
+  for (const warning of warnings) {
+    console.warn(`Config warning: ${warning}`);
+  }
+}

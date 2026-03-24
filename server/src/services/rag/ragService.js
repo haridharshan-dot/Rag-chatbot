@@ -30,6 +30,18 @@ class RAGService {
     this.ready = false;
   }
 
+  getStatus() {
+    return {
+      provider: env.vectorDbProvider,
+      initialized: this.ready,
+      llmProvider: env.googleApiKey
+        ? "gemini"
+        : env.anthropicApiKey
+          ? "claude"
+          : "retrieval-only",
+    };
+  }
+
   async ensurePineconeSeeded(chunks) {
     if (!chunks.length) return;
 

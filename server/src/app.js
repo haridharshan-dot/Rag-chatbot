@@ -28,6 +28,11 @@ export function buildApp() {
   const app = express();
   const allowedOrigins = new Set(buildAllowedOrigins());
 
+  app.disable("x-powered-by");
+  if (env.nodeEnv === "production") {
+    app.set("trust proxy", 1);
+  }
+
   app.use(helmet());
   app.use(
     cors({

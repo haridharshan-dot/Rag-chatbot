@@ -2,7 +2,7 @@ import http from "node:http";
 import { Server as SocketServer } from "socket.io";
 import { buildApp } from "./app.js";
 import { connectDatabase } from "./config/db.js";
-import { env } from "./config/env.js";
+import { env, validateEnvironment } from "./config/env.js";
 import { registerSocketHandlers } from "./socket/socketHandlers.js";
 import { ragService } from "./services/rag/ragService.js";
 
@@ -23,6 +23,7 @@ function buildAllowedOrigins() {
 }
 
 async function bootstrap() {
+  validateEnvironment();
   await connectDatabase();
   // ragService.init() is now called within the status check or on first use
   // This ensures it doesn't block server startup if data ingestion is slow or fails
@@ -48,6 +49,23 @@ async function bootstrap() {
 
   registerSocketHandlers(io);
   app.locals.io = io;
+
+  const shutdown = (signal) => {
+    console.log(`${signal} received. Starting graceful shutdown...`);
+    server.close((error) => {
+      if (error) {
+        console.error("Error while closing HTTP server", error);
+        process.exit(1);
+      }
+      io.close(() => {
+        console.log("Graceful shutdown complete.");
+        process.exit(0);
+      });
+    });
+  };
+
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
 
   server.listen(env.port, () => {
     console.log(`Server running on port ${env.port}`);
