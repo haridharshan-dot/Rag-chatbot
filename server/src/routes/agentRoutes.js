@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ChatSession } from "../models/ChatSession.js";
 import { env } from "../config/env.js";
 import { requireAgentAuth, signAgentToken } from "../middleware/agentAuth.js";
+import { getRuntimeSettings } from "../services/adminSettingsService.js";
 
 const router = Router();
 
@@ -42,6 +43,7 @@ router.post("/login/microsoft", async (req, res) => {
   }
 
   try {
+    const settings = await getRuntimeSettings();
     const graphResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -59,11 +61,11 @@ router.post("/login/microsoft", async (req, res) => {
     }
 
     const domain = email.includes("@") ? email.split("@")[1] : "";
-    if (env.microsoftAllowedDomains.length && !env.microsoftAllowedDomains.includes(domain)) {
+    if (settings.microsoftAllowedDomains.length && !settings.microsoftAllowedDomains.includes(domain)) {
       return res.status(403).json({ success: false, message: "Microsoft account domain not allowed" });
     }
 
-    if (env.microsoftAllowedEmails.length && !env.microsoftAllowedEmails.includes(email)) {
+    if (settings.microsoftAllowedEmails.length && !settings.microsoftAllowedEmails.includes(email)) {
       return res.status(403).json({ success: false, message: "Microsoft account not allowed" });
     }
 

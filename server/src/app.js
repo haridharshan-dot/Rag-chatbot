@@ -8,6 +8,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import agentRoutes from "./routes/agentRoutes.js";
 import healthRoutes from "./routes/healthRoutes.js";
 import statusRoutes from "./routes/statusRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 function normalizeOrigin(origin) {
@@ -63,6 +64,7 @@ export function buildApp() {
   app.use("/api/chat", chatRoutes);
   app.use("/api/agent", agentRoutes);
   app.use("/api/status", statusRoutes);
+  app.use("/api/admin", adminRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -1,5 +1,6 @@
 import { ChatSession } from "../models/ChatSession.js";
 import { ragService } from "./rag/ragService.js";
+import { getRuntimeSettings } from "./adminSettingsService.js";
 
 export async function createSession(studentId) {
   const session = await ChatSession.create({
@@ -26,7 +27,10 @@ export async function handleStudentMessage(sessionId, content) {
   session.messages.push({ sender: "student", content });
 
   const ragResponse = await ragService.ask(content);
-  const shouldAutoEscalate = Boolean(ragResponse.outOfScope && session.status === "bot");
+  const settings = await getRuntimeSettings();
+  const shouldAutoEscalate = Boolean(
+    settings.autoEscalationEnabled && ragResponse.outOfScope && session.status === "bot"
+  );
 
   session.messages.push({
     sender: "bot",

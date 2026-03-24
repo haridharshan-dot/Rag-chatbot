@@ -110,3 +110,28 @@ export async function fetchReadiness() {
   const response = await api.get('/ready');
   return response.data.data;
 }
+
+export async function fetchAdminOverview() {
+  const response = await api.get('/admin/overview', agentAuthConfig());
+  return response.data.data;
+}
+
+export async function fetchAdminSettings() {
+  const response = await api.get('/admin/settings', agentAuthConfig());
+  return response.data.data;
+}
+
+export async function updateAdminSettings(payload) {
+  const response = await api.put('/admin/settings', payload, agentAuthConfig());
+  return response.data.data;
+}
+
+export async function runAdminReindex() {
+  const response = await api.post('/admin/actions/reindex', {}, agentAuthConfig());
+  return response.data.data;
+}
+
+export async function runAdminStatusCheck() {
+  const response = await api.post('/admin/actions/record-status', {}, agentAuthConfig());
+  return response.data.data;
+}

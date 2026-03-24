@@ -5,6 +5,7 @@ import { ClaudeService } from "./claudeService.js";
 import { createVectorStore } from "./vectorStore.js";
 import { createEmbeddings } from "./embeddingService.js";
 import { loadChunksFromDirectory } from "./chunkService.js";
+import { getRuntimeSettings } from "../adminSettingsService.js";
 
 function normalizeScore(rawScore) {
   if (!Number.isFinite(rawScore)) return 0;
@@ -28,6 +29,23 @@ class RAGService {
       model: env.claudeModel,
     }); // fallback
     this.ready = false;
+  }
+
+  async loadChunks() {
+    let chunks = [];
+    try {
+      const file = await fs.readFile(env.chunksStorePath, "utf8");
+      const parsed = JSON.parse(file);
+      chunks = parsed.chunks || [];
+    } catch {
+      try {
+        await fs.access(env.dataDir);
+        chunks = await loadChunksFromDirectory(env.dataDir);
+      } catch {
+        chunks = [];
+      }
+    }
+    return chunks;
   }
 
   getStatus() {
@@ -59,20 +77,7 @@ class RAGService {
   async init() {
     if (this.ready) return;
 
-    let chunks = [];
-    try {
-      const file = await fs.readFile(env.chunksStorePath, "utf8");
-      const parsed = JSON.parse(file);
-      chunks = parsed.chunks || [];
-    } catch {
-      try {
-        await fs.access(env.dataDir);
-        chunks = await loadChunksFromDirectory(env.dataDir);
-      } catch (error) {
-        console.warn(`Data directory not found at ${env.dataDir}. Starting with empty knowledge base.`);
-        chunks = [];
-      }
-    }
+    const chunks = await this.loadChunks();
 
     try {
       if (env.vectorDbProvider === "pinecone") {
@@ -92,10 +97,25 @@ class RAGService {
     this.ready = true;
   }
 
+  async reindex() {
+    const chunks = await this.loadChunks();
+
+    if (env.vectorDbProvider === "pinecone") {
+      await this.vectorStore.buildFromChunks(chunks);
+      this.ready = true;
+      return { provider: "pinecone", chunkCount: chunks.length };
+    }
+
+    await this.vectorStore.buildFromChunks(chunks);
+    this.ready = true;
+    return { provider: "local", chunkCount: chunks.length };
+  }
+
   async ask(question) {
     await this.init();
+    const settings = await getRuntimeSettings();
 
-    const results = await this.vectorStore.similaritySearch(question, env.ragTopK);
+    const results = await this.vectorStore.similaritySearch(question, settings.ragTopK);
     const topScores = results.map((item) => normalizeScore(item.score));
     const confidence = topScores.length
       ? topScores.reduce((a, b) => a + b, 0) / topScores.length
@@ -126,8 +146,8 @@ class RAGService {
       answer: modelAnswer.content,
       confidence,
       sources: contextChunks.map((chunk) => chunk.source),
-      escalationSuggested: confidence < env.ragConfidenceThreshold,
-      outOfScope: confidence < env.ragOutOfScopeThreshold,
+      escalationSuggested: confidence < settings.ragConfidenceThreshold,
+      outOfScope: confidence < settings.ragOutOfScopeThreshold,
     };
   }
 }
