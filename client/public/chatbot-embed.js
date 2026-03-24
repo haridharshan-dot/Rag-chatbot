@@ -30,6 +30,45 @@
     }
   }
 
+  function applyCompactStyles(iframe, open, dimensions) {
+    var width = Number((dimensions && dimensions.width) || iframe.dataset.sonaWidth || 420);
+    var height = Number((dimensions && dimensions.height) || iframe.dataset.sonaHeight || 700);
+    var right = Number(iframe.dataset.sonaRight || 16);
+    var bottom = Number(iframe.dataset.sonaBottom || 16);
+
+    iframe.style.position = "fixed";
+    iframe.style.right = right + "px";
+    iframe.style.bottom = bottom + "px";
+    iframe.style.left = "auto";
+    iframe.style.width = width + "px";
+    iframe.style.height = height + "px";
+    iframe.style.border = "0";
+    iframe.style.borderRadius = open ? "16px" : "999px";
+    iframe.style.boxShadow = open
+      ? "0 10px 25px rgba(0,0,0,0.14)"
+      : "0 8px 18px rgba(0,0,0,0.16)";
+    iframe.style.zIndex = iframe.style.zIndex || "999999";
+    iframe.style.background = "transparent";
+
+    if (window.innerWidth <= 640) {
+      if (open) {
+        iframe.style.left = "8px";
+        iframe.style.right = "8px";
+        iframe.style.width = "calc(100vw - 16px)";
+        iframe.style.height = "82vh";
+        iframe.style.bottom = "8px";
+        iframe.style.borderRadius = "16px";
+      } else {
+        iframe.style.left = "auto";
+        iframe.style.right = "8px";
+        iframe.style.width = "86px";
+        iframe.style.height = "56px";
+        iframe.style.bottom = "8px";
+        iframe.style.borderRadius = "999px";
+      }
+    }
+  }
+
   function bindIframe(iframe) {
     if (!iframe || iframe.dataset.sonaBound === "1") return;
     iframe.dataset.sonaBound = "1";
@@ -40,6 +79,22 @@
       applyFloatingStyles(iframe);
       window.addEventListener("resize", function () {
         applyFloatingStyles(iframe);
+      });
+      return;
+    }
+
+    if (mode === "compact") {
+      applyCompactStyles(iframe, false, { width: 86, height: 56 });
+
+      function onCompactMessage(event) {
+        if (!event || !event.data || event.data.type !== "sona-chatbot:state") return;
+        if (!iframe.contentWindow || event.source !== iframe.contentWindow) return;
+        applyCompactStyles(iframe, Boolean(event.data.open), event.data.dimensions || null);
+      }
+
+      window.addEventListener("message", onCompactMessage);
+      window.addEventListener("resize", function () {
+        applyCompactStyles(iframe, iframe.style.height !== "56px", null);
       });
       return;
     }

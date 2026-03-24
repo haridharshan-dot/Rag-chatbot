@@ -30,7 +30,7 @@ export default function ChatbotEmbedPage() {
 
   return (
     <div className="chatbot-embed-page">
-      <EmbeddedStudentChatbot defaultOpen={true} hideFab={true} />
+      <EmbeddedStudentChatbot defaultOpen={false} hideFab={false} />
     </div>
   );
 }

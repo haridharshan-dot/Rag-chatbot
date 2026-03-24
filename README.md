@@ -168,6 +168,25 @@ Use floating mode to pin chatbot at bottom-right, similar to native widget behav
 <script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
 ```
 
+### Option A+++: Native compact modal behavior (recommended)
+
+This behaves like the original frontend widget:
+
+- starts as a small launcher bubble at bottom-right
+- opens into full chatbot panel
+- can be closed back to compact launcher
+
+```html
+<iframe
+	data-sona-chatbot="true"
+	data-sona-mode="compact"
+	src="https://your-vercel-app.vercel.app/chatbot"
+	title="College AI Chatbot"
+	loading="lazy"
+></iframe>
+<script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
+```
+
 Embed troubleshooting:
 
 - If chatbot is blank in iframe, ensure frontend is redeployed after latest changes.

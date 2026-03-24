@@ -72,6 +72,20 @@ export default function ChatWidget({ sessionId, studentId, loading, defaultOpen 
     listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages, open]);
 
+  useEffect(() => {
+    // Notify parent embed script for compact/floating iframe sizing.
+    window.parent?.postMessage(
+      {
+        type: "sona-chatbot:state",
+        open,
+        dimensions: open
+          ? { width: 420, height: 700 }
+          : { width: 86, height: 56 },
+      },
+      "*"
+    );
+  }, [open]);
+
   const canSend = useMemo(() => input.trim().length > 0 && !isSending, [input, isSending]);
 
   async function onSend() {
