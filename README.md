@@ -153,6 +153,21 @@ Use the embed helper script so iframe height adapts to mobile and desktop automa
 <script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
 ```
 
+### Option A++: Real frontend style (fixed bottom-right floating chatbot)
+
+Use floating mode to pin chatbot at bottom-right, similar to native widget behavior.
+
+```html
+<iframe
+	data-sona-chatbot="true"
+	data-sona-mode="floating"
+	src="https://your-vercel-app.vercel.app/chatbot"
+	title="College AI Chatbot"
+	loading="lazy"
+></iframe>
+<script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
+```
+
 Embed troubleshooting:
 
 - If chatbot is blank in iframe, ensure frontend is redeployed after latest changes.
@@ -172,7 +187,7 @@ Embed troubleshooting:
 
 Two options:
 
-1. Replace `client/public/sonalogo.png`.
+1. Replace `client/public/Sona_College_of_Technology_logo.jpg`.
 2. Set `VITE_CHATBOT_LOGO_URL` to a hosted logo URL.
 
 Branding is centralized in [client/src/config/branding.js](client/src/config/branding.js).
