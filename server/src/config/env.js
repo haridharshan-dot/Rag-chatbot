@@ -13,10 +13,24 @@ function asNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function asList(value, fallback = []) {
+  if (!value) return fallback;
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+const configuredClientUrls = asList(process.env.CLIENT_URLS, asList(process.env.CLIENT_URL));
+const defaultClientUrls = configuredClientUrls.length
+  ? configuredClientUrls
+  : ["http://localhost:5173"];
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: asNumber(process.env.PORT, 5001),
-  clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
+  clientUrl: defaultClientUrls[0],
+  clientUrls: defaultClientUrls,
   mongoUri:
     process.env.MONGO_URI || "mongodb://localhost:27017/college_rag_chatbot",
   // Free-tier optimized rate limiting: 30 requests per minute

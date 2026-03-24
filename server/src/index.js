@@ -6,6 +6,22 @@ import { env } from "./config/env.js";
 import { registerSocketHandlers } from "./socket/socketHandlers.js";
 import { ragService } from "./services/rag/ragService.js";
 
+function normalizeOrigin(origin) {
+  return String(origin || "")
+    .trim()
+    .replace(/\/$/, "");
+}
+
+function buildAllowedOrigins() {
+  return new Set(
+    [
+      ...env.clientUrls,
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ].map(normalizeOrigin)
+  );
+}
+
 async function bootstrap() {
   await connectDatabase();
   // ragService.init() is now called within the status check or on first use
@@ -13,10 +29,18 @@ async function bootstrap() {
 
   const app = buildApp();
   const server = http.createServer(app);
+  const allowedOrigins = buildAllowedOrigins();
 
   const io = new SocketServer(server, {
     cors: {
-      origin: [env.clientUrl, "http://localhost:5173", "http://localhost:3000"],
+      origin: (origin, callback) => {
+        const normalized = normalizeOrigin(origin);
+        if (!origin || allowedOrigins.has(normalized)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by Socket.IO CORS"));
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },

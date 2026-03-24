@@ -9,5 +9,7 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 COPY src ./src
+COPY data ./data
+COPY storage ./storage
 EXPOSE 5001
 CMD ["node", "src/index.js"]

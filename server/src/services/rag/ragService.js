@@ -30,6 +30,20 @@ class RAGService {
     this.ready = false;
   }
 
+  async ensurePineconeSeeded(chunks) {
+    if (!chunks.length) return;
+
+    const bootstrapResults = await this.vectorStore.similaritySearch(
+      "college admission cutoff fees eligibility",
+      1
+    );
+
+    if (bootstrapResults.length > 0) return;
+
+    console.log("Pinecone index appears empty. Seeding from local dataset chunks...");
+    await this.vectorStore.buildFromChunks(chunks);
+  }
+
   async init() {
     if (this.ready) return;
 
@@ -51,6 +65,7 @@ class RAGService {
     try {
       if (env.vectorDbProvider === "pinecone") {
         await this.vectorStore.initPineconeStore();
+        await this.ensurePineconeSeeded(chunks);
       } else {
         await this.vectorStore.buildFromChunks(chunks);
       }

@@ -10,15 +10,30 @@ import healthRoutes from "./routes/healthRoutes.js";
 import statusRoutes from "./routes/statusRoutes.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
+function normalizeOrigin(origin) {
+  return String(origin || "")
+    .trim()
+    .replace(/\/$/, "");
+}
+
+function buildAllowedOrigins() {
+  return [
+    ...env.clientUrls,
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ].map(normalizeOrigin);
+}
+
 export function buildApp() {
   const app = express();
+  const allowedOrigins = new Set(buildAllowedOrigins());
 
   app.use(helmet());
   app.use(
     cors({
       origin: (origin, callback) => {
-        const allowedOrigins = [env.clientUrl, "http://localhost:5173", "http://localhost:3000"];
-        if (!origin || allowedOrigins.includes(origin)) {
+        const normalized = normalizeOrigin(origin);
+        if (!origin || allowedOrigins.has(normalized)) {
           callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));

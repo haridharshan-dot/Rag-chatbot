@@ -2,6 +2,16 @@ import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { Document } from "@langchain/core/documents";
 import { env } from "../../config/env.js";
 
+function getPineconeIndex(client, indexName) {
+  if (typeof client.index === "function") {
+    return client.index(indexName);
+  }
+  if (typeof client.Index === "function") {
+    return client.Index(indexName);
+  }
+  throw new Error("Unsupported Pinecone client version: index accessor not found");
+}
+
 export class LangChainVectorStore {
   constructor(embeddings, options = {}) {
     this.embeddings = embeddings;
@@ -32,7 +42,7 @@ export class LangChainVectorStore {
     ]);
 
     const client = new PineconeClient({ apiKey: this.pineconeApiKey });
-    const index = client.Index(this.pineconeIndex);
+    const index = getPineconeIndex(client, this.pineconeIndex);
 
     this.store = await PineconeStore.fromExistingIndex(this.embeddings, {
       pineconeIndex: index,
@@ -55,7 +65,7 @@ export class LangChainVectorStore {
       ]);
 
       const client = new PineconeClient({ apiKey: this.pineconeApiKey });
-      const index = client.Index(this.pineconeIndex);
+      const index = getPineconeIndex(client, this.pineconeIndex);
 
       this.store = await PineconeStore.fromDocuments(docs, this.embeddings, {
         pineconeIndex: index,
