@@ -4,8 +4,6 @@ import StatusDashboard from "../components/StatusDashboard";
 import {
   downloadTranscript,
   downloadDataset,
-  fetchAdminAgents,
-  fetchAdminUsers,
   fetchAdminSessions,
   fetchAdminOverview,
   fetchAdminSettings,
@@ -84,8 +82,6 @@ export default function AdminDashboard() {
   const [sessionFilter, setSessionFilter] = useState("queued");
   const [assignAgentId, setAssignAgentId] = useState("agent");
   const [datasets, setDatasets] = useState([]);
-  const [agents, setAgents] = useState([]);
-  const [users, setUsers] = useState([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadName, setUploadName] = useState("");
   const [uploadContent, setUploadContent] = useState("");
@@ -106,8 +102,6 @@ export default function AdminDashboard() {
   const [runningReindex, setRunningReindex] = useState(false);
   const [runningStatusCheck, setRunningStatusCheck] = useState(false);
   const [warmingRag, setWarmingRag] = useState(false);
-  const [usersOpen, setUsersOpen] = useState(false);
-  const [agentsOpen, setAgentsOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const previewRef = useRef(null);
 
@@ -119,14 +113,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [overview, runtime, logs, queueData, datasetsData, agentsData, usersData] = await Promise.all([
+        const [overview, runtime, logs, queueData, datasetsData] = await Promise.all([
           fetchAdminOverview(),
           fetchAdminSettings(),
           fetchStatusLogs(),
           fetchAdminSessions(sessionFilter),
           fetchDatasets(),
-          fetchAdminAgents(),
-          fetchAdminUsers(),
         ]);
         setReadiness(overview.readiness);
         setKnowledge(overview.knowledge);
@@ -134,8 +126,6 @@ export default function AdminDashboard() {
         setStatusLogs(logs);
         setSessions(queueData);
         setDatasets(datasetsData);
-        setAgents(agentsData);
-        setUsers(usersData);
       } catch (error) {
         console.error("Admin dashboard load failed", error);
           if (error?.response?.status === 401) {
@@ -154,14 +144,12 @@ export default function AdminDashboard() {
   }, [sessionFilter]);
 
   async function refreshAll() {
-    const [overview, runtime, logs, queueData, datasetsData, agentsData, usersData] = await Promise.all([
+    const [overview, runtime, logs, queueData, datasetsData] = await Promise.all([
       fetchAdminOverview(),
       fetchAdminSettings(),
       fetchStatusLogs(),
       fetchAdminSessions(sessionFilter),
       fetchDatasets(),
-      fetchAdminAgents(),
-      fetchAdminUsers(),
     ]);
     setReadiness(overview.readiness);
     setKnowledge(overview.knowledge);
@@ -169,8 +157,6 @@ export default function AdminDashboard() {
     setStatusLogs(logs);
     setSessions(queueData);
     setDatasets(datasetsData);
-    setAgents(agentsData);
-    setUsers(usersData);
   }
 
   async function onWarmRag() {
@@ -726,85 +712,17 @@ export default function AdminDashboard() {
         <section className="admin-live-queue">
           <div className="admin-main-head">
             <h3>User Management</h3>
-            <button className="pill-btn" onClick={() => setUsersOpen((prev) => !prev)}>
-              {usersOpen ? "Hide" : "Show"}
-            </button>
+            <button className="pill-btn" onClick={() => navigate("/admin/users")}>Open Users Page</button>
           </div>
-
-          {usersOpen && <div className="queue-table-wrap">
-            <table className="queue-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Sessions</th>
-                  <th>Current Status</th>
-                  <th>Assigned Agent</th>
-                  <th>Last Seen</th>
-                  <th>IP Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.studentId}>
-                    <td>{user.studentId}</td>
-                    <td>{user.sessions}</td>
-                    <td>{user.currentStatus || "-"}</td>
-                    <td>{user.assignedAgentId || "-"}</td>
-                    <td>{formatDate(user.lastSeenAt)}</td>
-                    <td>{user.lastIp || "-"}</td>
-                  </tr>
-                ))}
-                {!users.length && (
-                  <tr>
-                    <td colSpan={6}>No users found yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>}
+          <p className="admin-note">Moved to dedicated route with search and pagination for better performance.</p>
         </section>
 
         <section className="admin-live-queue">
           <div className="admin-main-head">
             <h3>Agent Management</h3>
-            <button className="pill-btn" onClick={() => setAgentsOpen((prev) => !prev)}>
-              {agentsOpen ? "Hide" : "Show"}
-            </button>
+            <button className="pill-btn" onClick={() => navigate("/admin/agents")}>Open Agents Page</button>
           </div>
-
-          {agentsOpen && <div className="queue-table-wrap">
-            <table className="queue-table">
-              <thead>
-                <tr>
-                  <th>Agent</th>
-                  <th>Provider</th>
-                  <th>Email</th>
-                  <th>Last Login</th>
-                  <th>IP Address</th>
-                  <th>Active</th>
-                  <th>Resolved</th>
-                </tr>
-              </thead>
-              <tbody>
-                {agents.map((agent) => (
-                  <tr key={agent.agentId}>
-                    <td>{agent.displayName || agent.agentId}</td>
-                    <td>{agent.provider || "-"}</td>
-                    <td>{agent.email || "-"}</td>
-                    <td>{formatDate(agent.lastLoginAt)}</td>
-                    <td>{agent.lastLoginIp || "-"}</td>
-                    <td>{agent.activeSessions ?? 0}</td>
-                    <td>{agent.resolvedSessions ?? 0}</td>
-                  </tr>
-                ))}
-                {!agents.length && (
-                  <tr>
-                    <td colSpan={7}>No agent logins recorded yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>}
+          <p className="admin-note">Moved to dedicated route with search and pagination for better performance.</p>
         </section>
 
         {feedback ? <p className="admin-feedback">{feedback}</p> : null}

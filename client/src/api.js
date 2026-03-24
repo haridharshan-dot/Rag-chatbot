@@ -162,22 +162,46 @@ export async function fetchAdminSessions(status = 'queued', limit = 50) {
   return response.data.data;
 }
 
-export async function fetchAdminAgents() {
+export async function fetchAdminAgents({ page = 1, limit = 20, search = "" } = {}) {
   try {
-    const response = await api.get('/admin/agents', agentAuthConfig());
-    return response.data.data;
+    const response = await api.get(
+      `/admin/agents?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+      agentAuthConfig()
+    );
+    const payload = response.data.data;
+    if (Array.isArray(payload)) {
+      return {
+        items: payload,
+        pagination: { page, limit, total: payload.length, totalPages: 1, search },
+      };
+    }
+    return payload;
   } catch (error) {
-    if (error?.response?.status === 404) return [];
+    if (error?.response?.status === 404) {
+      return { items: [], pagination: { page, limit, total: 0, totalPages: 1, search } };
+    }
     throw error;
   }
 }
 
-export async function fetchAdminUsers() {
+export async function fetchAdminUsers({ page = 1, limit = 20, search = "" } = {}) {
   try {
-    const response = await api.get('/admin/users', agentAuthConfig());
-    return response.data.data;
+    const response = await api.get(
+      `/admin/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+      agentAuthConfig()
+    );
+    const payload = response.data.data;
+    if (Array.isArray(payload)) {
+      return {
+        items: payload,
+        pagination: { page, limit, total: payload.length, totalPages: 1, search },
+      };
+    }
+    return payload;
   } catch (error) {
-    if (error?.response?.status === 404) return [];
+    if (error?.response?.status === 404) {
+      return { items: [], pagination: { page, limit, total: 0, totalPages: 1, search } };
+    }
     throw error;
   }
 }

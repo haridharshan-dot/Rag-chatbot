@@ -394,7 +394,7 @@ router.get("/agents", async (req, res, next) => {
     const activeMap = new Map(activeSessions.map((row) => [String(row._id), row.activeCount]));
     const resolvedMap = new Map(resolvedSessions.map((row) => [String(row._id), row.resolvedCount]));
 
-    const data = activities.map((activity) => ({
+    let data = activities.map((activity) => ({
       agentId: activity.agentId,
       email: activity.email,
       displayName: activity.displayName,
@@ -405,7 +405,36 @@ router.get("/agents", async (req, res, next) => {
       resolvedSessions: resolvedMap.get(activity.agentId) || 0,
     }));
 
-    return res.json({ success: true, data });
+    const search = String(req.query?.search || "").trim().toLowerCase();
+    if (search) {
+      data = data.filter((row) => {
+        const haystack = [row.agentId, row.displayName, row.email, row.provider]
+          .map((value) => String(value || "").toLowerCase())
+          .join(" ");
+        return haystack.includes(search);
+      });
+    }
+
+    const page = Math.max(1, Number(req.query?.page || 1));
+    const limit = Math.min(100, Math.max(1, Number(req.query?.limit || 20)));
+    const total = data.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const start = (page - 1) * limit;
+    const items = data.slice(start, start + limit);
+
+    return res.json({
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          search,
+        },
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -445,10 +474,40 @@ router.get("/users", async (req, res, next) => {
       }
     }
 
-    const data = Array.from(map.values()).sort(
+    let data = Array.from(map.values()).sort(
       (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime()
     );
-    return res.json({ success: true, data });
+
+    const search = String(req.query?.search || "").trim().toLowerCase();
+    if (search) {
+      data = data.filter((row) => {
+        const haystack = [row.studentId, row.currentStatus, row.assignedAgentId, row.lastIp]
+          .map((value) => String(value || "").toLowerCase())
+          .join(" ");
+        return haystack.includes(search);
+      });
+    }
+
+    const page = Math.max(1, Number(req.query?.page || 1));
+    const limit = Math.min(100, Math.max(1, Number(req.query?.limit || 20)));
+    const total = data.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const start = (page - 1) * limit;
+    const items = data.slice(start, start + limit);
+
+    return res.json({
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          search,
+        },
+      },
+    });
   } catch (error) {
     next(error);
   }
