@@ -135,9 +135,17 @@ export default function ChatWidget({ sessionId, studentId, loading, defaultOpen 
 
   return (
     <>
-      {!hideFab && (
-        <button className="chat-fab" onClick={() => setOpen((prev) => !prev)}>
-          {open ? "Close" : "Ask AI"}
+      {!hideFab && !open && (
+        <button
+          className="chat-fab chat-fab-logo"
+          onClick={() => setOpen(true)}
+          aria-label="Open Sona chatbot"
+        >
+          <img
+            src={BRANDING.chatbotLogoUrl}
+            alt={BRANDING.chatbotLogoAlt}
+            className="chat-fab-logo-image"
+          />
         </button>
       )}
 

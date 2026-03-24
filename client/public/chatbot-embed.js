@@ -40,32 +40,49 @@
     );
   }
 
-  function applyFloatingStyles(iframe) {
-    var width = Number(iframe.dataset.sonaWidth || 420);
-    var height = Number(iframe.dataset.sonaHeight || 700);
+  function applyFloatingStyles(iframe, open, dimensions) {
+    var isOpen = typeof open === "boolean" ? open : true;
+    var fallbackClosed = { width: 86, height: 56 };
+    var fallbackOpen = {
+      width: Number(iframe.dataset.sonaWidth || 420),
+      height: Number(iframe.dataset.sonaHeight || 700),
+    };
+    var size = dimensions && Number(dimensions.width) > 0 && Number(dimensions.height) > 0
+      ? { width: Number(dimensions.width), height: Number(dimensions.height) }
+      : (isOpen ? fallbackOpen : fallbackClosed);
     var right = Number(iframe.dataset.sonaRight || 16);
     var bottom = Number(iframe.dataset.sonaBottom || 16);
 
     iframe.style.position = "fixed";
     iframe.style.right = right + "px";
     iframe.style.bottom = bottom + "px";
-    iframe.style.width = width + "px";
-    iframe.style.height = height + "px";
+    iframe.style.width = size.width + "px";
+    iframe.style.height = size.height + "px";
     iframe.style.maxWidth = "calc(100vw - 16px)";
     iframe.style.border = iframe.style.border || "0";
-    iframe.style.borderRadius = iframe.style.borderRadius || "16px";
-    iframe.style.boxShadow =
-      iframe.style.boxShadow || "0 10px 25px rgba(0,0,0,0.14)";
+    iframe.style.borderRadius = isOpen ? "16px" : "999px";
+    iframe.style.boxShadow = isOpen
+      ? "0 10px 25px rgba(0,0,0,0.14)"
+      : "0 8px 18px rgba(0,0,0,0.16)";
     iframe.style.zIndex = iframe.style.zIndex || "999999";
     iframe.style.background = iframe.style.background || "transparent";
 
     if (window.innerWidth <= 640) {
-      iframe.style.left = "8px";
-      iframe.style.right = "8px";
-      iframe.style.width = "calc(100vw - 16px)";
-      iframe.style.height = "82vh";
-      iframe.style.bottom = "8px";
-      iframe.style.borderRadius = "16px";
+      if (isOpen) {
+        iframe.style.left = "8px";
+        iframe.style.right = "8px";
+        iframe.style.width = "calc(100vw - 16px)";
+        iframe.style.height = "82vh";
+        iframe.style.bottom = "8px";
+        iframe.style.borderRadius = "16px";
+      } else {
+        iframe.style.left = "auto";
+        iframe.style.right = "8px";
+        iframe.style.width = "86px";
+        iframe.style.height = "56px";
+        iframe.style.bottom = "8px";
+        iframe.style.borderRadius = "999px";
+      }
     } else {
       iframe.style.left = "auto";
     }
@@ -129,9 +146,24 @@
     var mode = String(iframe.dataset.sonaMode || "inline").toLowerCase();
 
     if (mode === "floating") {
-      applyFloatingStyles(iframe);
+      var floatingState = {
+        open: false,
+        dimensions: { width: 86, height: 56 },
+      };
+
+      function onFloatingMessage(event) {
+        if (!event || !event.data || event.data.type !== "sona-chatbot:state") return;
+        if (!iframe.contentWindow || event.source !== iframe.contentWindow) return;
+
+        floatingState.open = Boolean(event.data.open);
+        floatingState.dimensions = event.data.dimensions || null;
+        applyFloatingStyles(iframe, floatingState.open, floatingState.dimensions);
+      }
+
+      applyFloatingStyles(iframe, floatingState.open, floatingState.dimensions);
+      window.addEventListener("message", onFloatingMessage);
       window.addEventListener("resize", function () {
-        applyFloatingStyles(iframe);
+        applyFloatingStyles(iframe, floatingState.open, floatingState.dimensions);
       });
       return;
     }
