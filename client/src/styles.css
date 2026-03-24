@@ -26,6 +26,11 @@ body {
   min-height: 100vh;
 }
 
+.chatbot-embed-page {
+  min-height: 100vh;
+  background: transparent;
+}
+
 .top-nav {
   display: flex;
   justify-content: space-between;

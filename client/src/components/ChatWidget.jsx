@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { escalateToAgent, fetchHistory, sendStudentMessage } from "../api";
 import { socket } from "../socket";
+import { BRANDING } from "../config/branding";
 
 function formatTime(dateLike) {
   const date = new Date(dateLike);
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ChatWidget({ sessionId, studentId, loading }) {
-  const [open, setOpen] = useState(false);
+export default function ChatWidget({ sessionId, studentId, loading, defaultOpen = false, hideFab = false }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
@@ -120,15 +121,17 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
 
   return (
     <>
-      <button className="chat-fab" onClick={() => setOpen((prev) => !prev)}>
-        {open ? "Close" : "Ask AI"}
-      </button>
+      {!hideFab && (
+        <button className="chat-fab" onClick={() => setOpen((prev) => !prev)}>
+          {open ? "Close" : "Ask AI"}
+        </button>
+      )}
 
       {open && (
         <aside className="chat-widget">
           <div className="chat-header">
             <div className="chat-brand">
-              <img src="/sonalogo.png" alt="Sona logo" className="ai-avatar" />
+              <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="ai-avatar" />
               <div>
                 <h3>Ask AI - Sona Concierge</h3>
                 <span>{loading ? "Starting session..." : `Session: ${sessionId?.slice(-6)}`}</span>
@@ -140,7 +143,7 @@ export default function ChatWidget({ sessionId, studentId, loading }) {
             {messages.map((message, index) => (
               <div key={`${index}-${message.content.slice(0, 8)}`} className={`bubble-row ${message.sender}`}>
                 {(message.sender === "bot" || message.sender === "system") && (
-                  <img src="/sonalogo.png" alt="AI profile" className="avatar-mini" />
+                  <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="avatar-mini" />
                 )}
                 <div className={`bubble ${message.sender}`}>
                   <p>{message.content}</p>

@@ -120,6 +120,42 @@ export default function ExistingDashboard() {
 
 If `studentId` is omitted, it is generated and persisted in localStorage.
 
+## Chatbot-Only Embed (Official College Website)
+
+This project includes a chatbot-only route:
+
+- `/chatbot` renders only the chatbot widget (no portal header).
+- It is suitable for embedding inside official college pages.
+
+### Option A: Iframe embed (quickest)
+
+```html
+<iframe
+	src="https://your-vercel-app.vercel.app/chatbot"
+	title="College AI Chatbot"
+	style="width:420px; height:700px; border:0; border-radius:16px;"
+	loading="lazy"
+></iframe>
+```
+
+### Option B: React integration
+
+- Import [client/src/components/EmbeddedStudentChatbot.jsx](client/src/components/EmbeddedStudentChatbot.jsx).
+- Use chatbot-only mode props:
+
+```jsx
+<EmbeddedStudentChatbot defaultOpen={true} hideFab={true} />
+```
+
+## Logo Update (Sona College Logo)
+
+Two options:
+
+1. Replace `client/public/sonalogo.png`.
+2. Set `VITE_CHATBOT_LOGO_URL` to a hosted logo URL.
+
+Branding is centralized in [client/src/config/branding.js](client/src/config/branding.js).
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and update values:

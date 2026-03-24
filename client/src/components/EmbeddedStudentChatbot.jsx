@@ -10,7 +10,7 @@ function getOrCreateStudentId(storageKey) {
   return generated;
 }
 
-export default function EmbeddedStudentChatbot({ studentId: providedStudentId }) {
+export default function EmbeddedStudentChatbot({ studentId: providedStudentId, defaultOpen = false, hideFab = false }) {
   const studentId = useMemo(
     () => providedStudentId || getOrCreateStudentId("student-id"),
     [providedStudentId]
@@ -40,5 +40,13 @@ export default function EmbeddedStudentChatbot({ studentId: providedStudentId })
     };
   }, [studentId]);
 
-  return <ChatWidget sessionId={sessionId} studentId={studentId} loading={loading} />;
+  return (
+    <ChatWidget
+      sessionId={sessionId}
+      studentId={studentId}
+      loading={loading}
+      defaultOpen={defaultOpen}
+      hideFab={hideFab}
+    />
+  );
 }
