@@ -1,0 +1,100 @@
+{
+  "updatedAt": "2026-03-25T16:53:54.184Z",
+  "chunks": [
+    {
+      "id": "sample\\college_faq.txt-1",
+      "source": "sample\\college_faq.txt",
+      "text": "Admissions FAQ\n- Eligibility: 10+2 with PCM for engineering streams.\n- Required documents: mark sheets, transfer certificate, ID proof, passport photo.\n- Typical counseling starts in June and closes in August.\n\nFee Structure\n- Tuition fee per semester: INR 55,000.\n- Hostel fee per semester: INR 28,000.\n- Lab and exam fee per semester: INR 7,500.\n\nCourses\n- CSE: 4 years, includes AI/ML electives from 3rd year.\n- ECE: 4 years, includes embedded systems labs.\n- Mechanical: 4 years, includes CAD/CAM and manufacturing practice.\n\nCutoffs (General, previous year)\n- CSE: 168+\n- ECE: 154+\n- Mechanical: 142+\nCollege Name\nSona College Of Technology Salem Tamil Nadu-636005"
+    },
+    {
+      "id": "sample\\data.json-1",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 1\ndepartment: Computer Science and Engineering\ncode: CSE\nyears[0].year: 2024\nyears[0].available_seats: 180\nyears[0].cutoff.OC.max: 196\nyears[0].cutoff.OC.min: 181\nyears[0].cutoff.BCM.max: 177\nyears[0].cutoff.BCM.min: 169\nyears[0].cutoff.BC.max: 181\nyears[0].cutoff.BC.min: 176\nyears[0].cutoff.MBC.max: 181\nyears[0].cutoff.MBC.min: 174\nyears[0].cutoff.SCA.max: 163\nyears[0].cutoff.SCA.min: 138\nyears[0].cutoff.SC.max: 174\nyears[0].cutoff.SC.min: 138\nyears[0].cutoff.ST.max: 145\nyears[1].year: 2025\nyears[1].available_seats: 180\nyears[1].cutoff.OC.max: 198\nyears[1].cutoff.OC.min: 185\nyears[1].cutoff.BCM.max: 180\nyears[1].cutoff.BCM.min: 172\nyears[1].cutoff.BC.max: 184"
+    },
+    {
+      "id": "sample\\data.json-2",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.OC.min: 185\nyears[1].cutoff.BCM.max: 180\nyears[1].cutoff.BCM.min: 172\nyears[1].cutoff.BC.max: 184\nyears[1].cutoff.BC.min: 179\nyears[1].cutoff.MBC.max: 184\nyears[1].cutoff.MBC.min: 177\nyears[1].cutoff.SCA.max: 168\nyears[1].cutoff.SCA.min: 145\nyears[1].cutoff.SC.max: 178\nyears[1].cutoff.SC.min: 142\nyears[1].cutoff.ST.max: 150"
+    },
+    {
+      "id": "sample\\data.json-3",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 2\ndepartment: Artificial Intelligence and Data Science\ncode: ADS\nyears[0].year: 2024\nyears[0].available_seats: 120\nyears[0].cutoff.OC.max: 192\nyears[0].cutoff.OC.min: 178\nyears[0].cutoff.BCM.max: 173\nyears[0].cutoff.BCM.min: 172\nyears[0].cutoff.BC.max: 177\nyears[0].cutoff.BC.min: 172\nyears[0].cutoff.MBC.max: 177\nyears[0].cutoff.MBC.min: 170\nyears[0].cutoff.SCA.max: 149\nyears[0].cutoff.SCA.min: 117\nyears[0].cutoff.SC.max: 155\nyears[0].cutoff.SC.min: 123\nyears[0].cutoff.ST.max: 124\nyears[1].year: 2025\nyears[1].available_seats: 120\nyears[1].cutoff.OC.max: 195\nyears[1].cutoff.OC.min: 182\nyears[1].cutoff.BCM.max: 176\nyears[1].cutoff.BCM.min: 174"
+    },
+    {
+      "id": "sample\\data.json-4",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.OC.max: 195\nyears[1].cutoff.OC.min: 182\nyears[1].cutoff.BCM.max: 176\nyears[1].cutoff.BCM.min: 174\nyears[1].cutoff.BC.max: 180\nyears[1].cutoff.BC.min: 175\nyears[1].cutoff.MBC.max: 180\nyears[1].cutoff.MBC.min: 173\nyears[1].cutoff.SCA.max: 154\nyears[1].cutoff.SCA.min: 122\nyears[1].cutoff.SC.max: 160\nyears[1].cutoff.SC.min: 128\nyears[1].cutoff.ST.max: 130"
+    },
+    {
+      "id": "sample\\data.json-5",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 3\ndepartment: Information Technology\ncode: IT\nyears[0].year: 2023\nyears[0].cutoff.OC.max: 184\nyears[0].cutoff.OC.min: 175\nyears[0].cutoff.BCM.max: 168\nyears[0].cutoff.BCM.min: 164\nyears[0].cutoff.BC.max: 174\nyears[0].cutoff.BC.min: 171\nyears[0].cutoff.MBC.max: 174\nyears[0].cutoff.MBC.min: 171\nyears[0].cutoff.SCA.max: 132\nyears[0].cutoff.SCA.min: 119\nyears[0].cutoff.SC.max: 157\nyears[0].cutoff.SC.min: 127\nyears[0].cutoff.ST.max: 135\nyears[1].year: 2025\nyears[1].available_seats: 120\nyears[1].cutoff.OC.max: 187\nyears[1].cutoff.OC.min: 178\nyears[1].cutoff.BCM.max: 171\nyears[1].cutoff.BCM.min: 167\nyears[1].cutoff.BC.max: 177\nyears[1].cutoff.BC.min: 174"
+    },
+    {
+      "id": "sample\\data.json-6",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.BCM.max: 171\nyears[1].cutoff.BCM.min: 167\nyears[1].cutoff.BC.max: 177\nyears[1].cutoff.BC.min: 174\nyears[1].cutoff.MBC.max: 177\nyears[1].cutoff.MBC.min: 174\nyears[1].cutoff.SCA.max: 138\nyears[1].cutoff.SCA.min: 124\nyears[1].cutoff.SC.max: 162\nyears[1].cutoff.SC.min: 132\nyears[1].cutoff.ST.max: 140"
+    },
+    {
+      "id": "sample\\data.json-7",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 4\ndepartment: AI & Machine Learning\ncode: AML\nyears[0].year: 2024\nyears[0].cutoff.OC.max: 190\nyears[0].cutoff.OC.min: 173\nyears[0].cutoff.BC.max: 172\nyears[0].cutoff.BC.min: 169\nyears[0].cutoff.MBC.max: 173\nyears[0].cutoff.MBC.min: 169\nyears[0].cutoff.SC.max: 146\nyears[0].cutoff.SC.min: 132\nyears[1].year: 2025\nyears[1].available_seats: 60\nyears[1].cutoff.OC.max: 193\nyears[1].cutoff.OC.min: 176\nyears[1].cutoff.BCM.max: 174\nyears[1].cutoff.BCM.min: 170\nyears[1].cutoff.BC.max: 175\nyears[1].cutoff.BC.min: 172\nyears[1].cutoff.MBC.max: 176\nyears[1].cutoff.MBC.min: 172\nyears[1].cutoff.SCA.max: 148\nyears[1].cutoff.SCA.min: 135\nyears[1].cutoff.SC.max: 152"
+    },
+    {
+      "id": "sample\\data.json-8",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.MBC.min: 172\nyears[1].cutoff.SCA.max: 148\nyears[1].cutoff.SCA.min: 135\nyears[1].cutoff.SC.max: 152\nyears[1].cutoff.SC.min: 138\nyears[1].cutoff.ST.max: 142"
+    },
+    {
+      "id": "sample\\data.json-9",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 5\ndepartment: Electronics and Communication Engineering\ncode: ECE\nyears[0].year: 2024\nyears[0].cutoff.OC.max: 196\nyears[0].cutoff.OC.min: 175\nyears[0].cutoff.BCM.max: 175\nyears[0].cutoff.BCM.min: 165\nyears[0].cutoff.BC.max: 175\nyears[0].cutoff.BC.min: 170\nyears[0].cutoff.MBC.max: 174\nyears[0].cutoff.MBC.min: 167\nyears[0].cutoff.SCA.max: 138\nyears[0].cutoff.SCA.min: 129\nyears[0].cutoff.SC.max: 172\nyears[0].cutoff.SC.min: 125\nyears[0].cutoff.ST.max: 126\nyears[0].cutoff.ST.min: 108\nyears[1].year: 2025\nyears[1].available_seats: 120\nyears[1].cutoff.OC.max: 198\nyears[1].cutoff.OC.min: 178\nyears[1].cutoff.BCM.max: 178\nyears[1].cutoff.BCM.min: 168"
+    },
+    {
+      "id": "sample\\data.json-10",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.OC.max: 198\nyears[1].cutoff.OC.min: 178\nyears[1].cutoff.BCM.max: 178\nyears[1].cutoff.BCM.min: 168\nyears[1].cutoff.BC.max: 178\nyears[1].cutoff.BC.min: 173\nyears[1].cutoff.MBC.max: 177\nyears[1].cutoff.MBC.min: 170\nyears[1].cutoff.SCA.max: 143\nyears[1].cutoff.SCA.min: 134\nyears[1].cutoff.SC.max: 176\nyears[1].cutoff.SC.min: 130\nyears[1].cutoff.ST.max: 132\nyears[1].cutoff.ST.min: 115"
+    },
+    {
+      "id": "sample\\data.json-11",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 6\ndepartment: Electrical and Electronics Engineering\ncode: EEE\nyears[0].year: 2024\nyears[0].cutoff.OC.max: 182\nyears[0].cutoff.OC.min: 166\nyears[0].cutoff.BCM.max: 157\nyears[0].cutoff.BCM.min: 153\nyears[0].cutoff.BC.max: 166\nyears[0].cutoff.BC.min: 161\nyears[0].cutoff.MBC.max: 166\nyears[0].cutoff.MBC.min: 160\nyears[0].cutoff.SCA.max: 109\nyears[0].cutoff.SCA.min: 101\nyears[0].cutoff.SC.max: 153\nyears[0].cutoff.SC.min: 121\nyears[1].year: 2025\nyears[1].available_seats: 60\nyears[1].cutoff.OC.max: 185\nyears[1].cutoff.OC.min: 169\nyears[1].cutoff.BCM.max: 161\nyears[1].cutoff.BCM.min: 156\nyears[1].cutoff.BC.max: 169\nyears[1].cutoff.BC.min: 164"
+    },
+    {
+      "id": "sample\\data.json-12",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.BCM.max: 161\nyears[1].cutoff.BCM.min: 156\nyears[1].cutoff.BC.max: 169\nyears[1].cutoff.BC.min: 164\nyears[1].cutoff.MBC.max: 169\nyears[1].cutoff.MBC.min: 163\nyears[1].cutoff.SCA.max: 115\nyears[1].cutoff.SCA.min: 106\nyears[1].cutoff.SC.max: 158\nyears[1].cutoff.SC.min: 126\nyears[1].cutoff.ST.max: 128"
+    },
+    {
+      "id": "sample\\data.json-13",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 7\ndepartment: Mechanical Engineering\ncode: MECH\nyears[0].year: 2024\nyears[0].cutoff.OC.max: 170\nyears[0].cutoff.OC.min: 154\nyears[0].cutoff.BCM.max: 144\nyears[0].cutoff.BCM.min: 126\nyears[0].cutoff.BC.max: 153\nyears[0].cutoff.BC.min: 143\nyears[0].cutoff.MBC.max: 153\nyears[0].cutoff.MBC.min: 142\nyears[0].cutoff.SCA.max: 106\nyears[0].cutoff.SC.max: 131\nyears[0].cutoff.SC.min: 91\nyears[1].year: 2025\nyears[1].available_seats: 120\nyears[1].cutoff.OC.max: 173\nyears[1].cutoff.OC.min: 157\nyears[1].cutoff.BCM.max: 148\nyears[1].cutoff.BCM.min: 130\nyears[1].cutoff.BC.max: 156\nyears[1].cutoff.BC.min: 146\nyears[1].cutoff.MBC.max: 156\nyears[1].cutoff.MBC.min: 145"
+    },
+    {
+      "id": "sample\\data.json-14",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.BC.max: 156\nyears[1].cutoff.BC.min: 146\nyears[1].cutoff.MBC.max: 156\nyears[1].cutoff.MBC.min: 145\nyears[1].cutoff.SCA.max: 112\nyears[1].cutoff.SCA.min: 95\nyears[1].cutoff.SC.max: 136\nyears[1].cutoff.SC.min: 96\nyears[1].cutoff.ST.max: 98"
+    },
+    {
+      "id": "sample\\data.json-15",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 8\ndepartment: Civil Engineering\ncode: CIVIL\nyears[0].year: 2024\nyears[0].cutoff.OC.max: 164\nyears[0].cutoff.OC.min: 149\nyears[0].cutoff.BC.max: 141\nyears[0].cutoff.BC.min: 122\nyears[0].cutoff.MBC.max: 143\nyears[0].cutoff.MBC.min: 134\nyears[0].cutoff.SC.max: 142\nyears[0].cutoff.SC.min: 120\nyears[1].year: 2025\nyears[1].available_seats: 60\nyears[1].cutoff.OC.max: 167\nyears[1].cutoff.OC.min: 152\nyears[1].cutoff.BCM.max: 145\nyears[1].cutoff.BCM.min: 138\nyears[1].cutoff.BC.max: 144\nyears[1].cutoff.BC.min: 126\nyears[1].cutoff.MBC.max: 146\nyears[1].cutoff.MBC.min: 137\nyears[1].cutoff.SCA.max: 125\nyears[1].cutoff.SCA.min: 110\nyears[1].cutoff.SC.max: 146"
+    },
+    {
+      "id": "sample\\data.json-16",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.MBC.min: 137\nyears[1].cutoff.SCA.max: 125\nyears[1].cutoff.SCA.min: 110\nyears[1].cutoff.SC.max: 146\nyears[1].cutoff.SC.min: 125\nyears[1].cutoff.ST.max: 127"
+    },
+    {
+      "id": "sample\\data.json-17",
+      "source": "sample\\data.json",
+      "text": "section: cutoff_data\nrecord: 9\ndepartment: Fashion Technology\ncode: FT\nyears[0].year: 2024\nyears[0].cutoff.OC.max: 169\nyears[0].cutoff.OC.min: 149\nyears[0].cutoff.BCM.max: 138\nyears[0].cutoff.BC.max: 150\nyears[0].cutoff.BC.min: 122\nyears[0].cutoff.MBC.max: 145\nyears[0].cutoff.MBC.min: 123\nyears[0].cutoff.SC.max: 142\nyears[0].cutoff.SC.min: 87\nyears[1].year: 2025\nyears[1].available_seats: 30\nyears[1].cutoff.OC.max: 172\nyears[1].cutoff.OC.min: 152\nyears[1].cutoff.BCM.max: 142\nyears[1].cutoff.BCM.min: 135\nyears[1].cutoff.BC.max: 153\nyears[1].cutoff.BC.min: 126\nyears[1].cutoff.MBC.max: 148\nyears[1].cutoff.MBC.min: 127\nyears[1].cutoff.SCA.max: 118\nyears[1].cutoff.SCA.min: 102"
+    },
+    {
+      "id": "sample\\data.json-18",
+      "source": "sample\\data.json",
+      "text": "years[1].cutoff.MBC.max: 148\nyears[1].cutoff.MBC.min: 127\nyears[1].cutoff.SCA.max: 118\nyears[1].cutoff.SCA.min: 102\nyears[1].cutoff.SC.max: 146\nyears[1].cutoff.SC.min: 92\nyears[1].cutoff.ST.max: 95"
+    }
+  ]
+}
