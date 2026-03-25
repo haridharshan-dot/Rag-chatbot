@@ -32,6 +32,7 @@ class RAGService {
     this.gemini = new GeminiService({
       apiKey: env.googleApiKey,
       model: env.geminiModel,
+      timeoutMs: env.geminiTimeoutMs,
     });
     this.claude = new ClaudeService({
       apiKey: env.anthropicApiKey,

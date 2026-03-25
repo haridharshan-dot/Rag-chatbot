@@ -61,6 +61,15 @@ function messageSuggestsAgent(content) {
   );
 }
 
+function shouldTriggerEscalationFromMessage(message) {
+  const meta = message?.meta || {};
+  return Boolean(
+    meta?.outOfScope ||
+    meta?.escalationSuggested ||
+    messageSuggestsAgent(message?.content)
+  );
+}
+
 export default function ChatContainer({ sessionId, studentId, loading, isFullscreen, setFullscreen, onClose }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -121,7 +130,8 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         setMessages(history);
         setHandoffPending(data.status === "queued");
         setAgentConnected(false);
-        setShowEscalate(data.status === "queued");
+        const latestBotLikeMessage = [...history].reverse().find((msg) => msg?.sender === "bot" || msg?.sender === "system");
+        setShowEscalate(data.status === "queued" || shouldTriggerEscalationFromMessage(latestBotLikeMessage));
       })
       .catch((error) => {
         console.error("Unable to load history", error);
@@ -138,6 +148,9 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
       const normalized = normalizeMessage(nextMessage);
       if (isAgentJoinMessage(normalized)) {
         return;
+      }
+      if (shouldTriggerEscalationFromMessage(normalized)) {
+        setShowEscalate(true);
       }
       setMessages((prev) => {
         const duplicate = prev.slice(-5).some(
@@ -226,7 +239,23 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
     startProcessingStages();
 
     try {
-      const response = await sendStudentMessage(sessionId, content);
+      let response;
+      try {
+        response = await sendStudentMessage(sessionId, content);
+      } catch (firstError) {
+        // Do not retry timeout requests; it doubles wait time in UI.
+        const isRetriable =
+          firstError?.code !== "ECONNABORTED" &&
+          (!firstError?.response || firstError?.response?.status >= 500);
+
+        if (!isRetriable) {
+          throw firstError;
+        }
+
+        // Retry once only for transient server/network failures.
+        response = await sendStudentMessage(sessionId, content);
+      }
+
       const status = String(response.sessionStatus || "bot");
       const botText = String(response?.botMessage?.content || "");
       const shouldShowEscalate = Boolean(
@@ -258,11 +287,14 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
       }
     } catch (error) {
       console.error("Failed to send message", error);
+      const serverMessage = String(error?.response?.data?.message || "").trim();
+      const uiMessage = serverMessage || "We hit a network issue. Please try again.";
+
       setMessages((prev) => [
         ...prev,
         {
           sender: "system",
-          content: "We hit a network issue. Please try again.",
+          content: uiMessage,
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -345,6 +377,8 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         onChange={setInput}
         onSend={sendMessage}
         onTyping={onTyping}
+        onEscalate={onEscalate}
+        handoffPending={handoffPending}
         placeholder={text.placeholder}
       />
     </motion.section>

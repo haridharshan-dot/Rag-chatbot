@@ -737,11 +737,12 @@ body.chatbot-embed-mode #root {
 }
 
 .ad-shell {
-  min-height: calc(100vh - 86px);
+  height: calc(100vh - 86px);
   padding: 1rem;
   display: grid;
   grid-template-columns: minmax(280px, 30%) minmax(0, 70%);
   gap: 1rem;
+  overflow: hidden;
 }
 
 .ad-mobile-toolbar {
@@ -761,7 +762,8 @@ body.chatbot-embed-mode #root {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr;
   gap: 0.75rem;
-  min-height: calc(100vh - 112px);
+  min-height: 0;
+  height: 100%;
 }
 
 .ad-side-top {
@@ -828,8 +830,11 @@ body.chatbot-embed-mode #root {
 .ad-queue-list {
   overflow-y: auto;
   display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 0.55rem;
   padding-right: 0.2rem;
+  min-height: 0;
 }
 
 .ad-queue-card {
@@ -838,6 +843,7 @@ body.chatbot-embed-mode #root {
   border-radius: 16px;
   background: #ffffff;
   padding: 0.72rem;
+  height: auto;
   text-align: left;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
@@ -906,7 +912,8 @@ body.chatbot-embed-mode #root {
 }
 
 .ad-chat {
-  min-height: calc(100vh - 112px);
+  min-height: 0;
+  height: 100%;
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
@@ -987,6 +994,7 @@ body.chatbot-embed-mode #root {
   padding: 1rem;
   display: grid;
   gap: 0.66rem;
+  min-height: 0;
   background:
     radial-gradient(circle at 97% 0%, rgba(139, 196, 255, 0.16) 0, transparent 20%),
     radial-gradient(circle at 0% 100%, rgba(106, 223, 203, 0.15) 0, transparent 28%),
@@ -1089,6 +1097,9 @@ body.chatbot-embed-mode #root {
   gap: 0.55rem;
   align-items: center;
   background: #ffffff;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
 
 .ad-composer input {
@@ -1896,6 +1907,7 @@ body.chatbot-embed-mode #root {
   .ad-shell {
     grid-template-columns: 1fr;
     padding: 0.7rem;
+    height: calc(100vh - 86px);
   }
 
   .ad-mobile-toolbar {
@@ -1904,7 +1916,8 @@ body.chatbot-embed-mode #root {
 
   .ad-sidebar,
   .ad-chat {
-    min-height: calc(100vh - 168px);
+    min-height: 0;
+    height: 100%;
   }
 
   .ad-kpis {

@@ -25,6 +25,12 @@ function asList(value, fallback = []) {
     .filter(Boolean);
 }
 
+function asString(value, fallback = "") {
+  if (value === undefined || value === null) return fallback;
+  const normalized = String(value).trim();
+  return normalized || fallback;
+}
+
 const configuredClientUrls = asList(process.env.CLIENT_URLS, asList(process.env.CLIENT_URL));
 const defaultClientUrls = configuredClientUrls.length
   ? configuredClientUrls
@@ -40,10 +46,17 @@ export const env = {
   // Free-tier optimized rate limiting: 30 requests per minute
   rateLimitWindowMs: asNumber(process.env.RATE_LIMIT_WINDOW_MS, 60000),
   rateLimitMax: asNumber(process.env.RATE_LIMIT_MAX, 30),
-  googleApiKey: process.env.GOOGLE_API_KEY || "",
+  // Accept multiple Gemini key variable names to avoid deployment misconfiguration.
+  googleApiKey: asString(
+    process.env.GOOGLE_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    ""
+  ),
   openaiApiKey: process.env.OPENAI_API_KEY || "",
   // Use faster, lighter models for free tier
-  geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
+  geminiModel: asString(process.env.GEMINI_MODEL, "gemini-2.5-flash-lite"),
+  geminiTimeoutMs: asNumber(process.env.GEMINI_TIMEOUT_MS, 9000),
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
   claudeModel: process.env.CLAUDE_MODEL || "claude-3-haiku-20240307",
   // Production defaults tuned for better retrieval coverage and controlled escalation

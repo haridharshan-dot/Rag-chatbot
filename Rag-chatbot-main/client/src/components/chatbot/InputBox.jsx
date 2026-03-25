@@ -7,6 +7,8 @@ export default function InputBox({
   onChange,
   onSend,
   onTyping,
+  onEscalate,
+  handoffPending = false,
   placeholder,
 }) {
   const inputRef = useRef(null);
@@ -25,28 +27,40 @@ export default function InputBox({
   }, [disabled]);
 
   return (
-    <div className="cc-input-wrap">
-      <textarea
-        ref={inputRef}
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value);
-          onTyping?.();
-        }}
-        placeholder={placeholder}
-        rows={1}
-        className="cc-input"
-        disabled={disabled}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            onSend();
-          }
-        }}
-      />
-      <button type="button" className="cc-send" onClick={onSend} disabled={!canSend}>
-        Send
-      </button>
+    <div className="cc-input-zone">
+      <div className="cc-input-toolbar">
+        <button
+          type="button"
+          className="cc-live-agent-mini"
+          onClick={onEscalate}
+          disabled={handoffPending || disabled}
+        >
+          {handoffPending ? "Connecting..." : "Switch to Live Agent"}
+        </button>
+      </div>
+      <div className="cc-input-wrap">
+        <textarea
+          ref={inputRef}
+          value={value}
+          onChange={(event) => {
+            onChange(event.target.value);
+            onTyping?.();
+          }}
+          placeholder={placeholder}
+          rows={1}
+          className="cc-input"
+          disabled={disabled}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              onSend();
+            }
+          }}
+        />
+        <button type="button" className="cc-send" onClick={onSend} disabled={!canSend}>
+          Send
+        </button>
+      </div>
     </div>
   );
 }

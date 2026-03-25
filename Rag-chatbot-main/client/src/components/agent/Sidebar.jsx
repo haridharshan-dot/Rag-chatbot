@@ -10,7 +10,7 @@ function getWaitMinutes(escalationRequestedAt) {
 }
 
 function getStudentLabel(session) {
-  return session?.studentEmail || session?.studentName || session?.studentId || "student";
+  return session?.studentName || session?.studentEmail || session?.studentId || "student";
 }
 
 function getLastMessagePreview(session) {
@@ -111,4 +111,3 @@ export default function Sidebar({
     </aside>
   );
 }
-
