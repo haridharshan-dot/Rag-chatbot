@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BRANDING } from "../../config/branding";
 
-const AGENT_TIME_SLOTS = ["9AM-12PM", "12PM-3PM", "3PM-5PM"];
+const AGENT_TIME_SLOT = "9AM-5PM";
 
 export default function ChatHeader({
   connectionStatus,
@@ -36,9 +36,7 @@ export default function ChatHeader({
 
       <div className="cc-header-actions">
         <div className="cc-hours-group" aria-label="Live agent working slots">
-          {AGENT_TIME_SLOTS.map((slot) => (
-            <span key={slot} className="cc-hours-pill">{slot}</span>
-          ))}
+          <span className="cc-hours-pill">{AGENT_TIME_SLOT}</span>
         </div>
         {!agentConnected && (
           <div className="cc-agent-wrap">
