@@ -1,4 +1,6 @@
 import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { env } from "../../config/env.js";
 import { GeminiService } from "./geminiService.js";
 import { ClaudeService } from "./claudeService.js";
@@ -6,6 +8,9 @@ import { createVectorStore } from "./vectorStore.js";
 import { createEmbeddings } from "./embeddingService.js";
 import { loadChunksFromDirectory } from "./chunkService.js";
 import { getRuntimeSettings } from "../adminSettingsService.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function normalizeScore(rawScore) {
   if (!Number.isFinite(rawScore)) return 0;
@@ -42,20 +47,39 @@ class RAGService {
   }
 
   async loadChunks() {
-    let chunks = [];
+    const candidateDataDirs = [
+      env.dataDir,
+      path.resolve(process.cwd(), "data/sample"),
+      path.resolve(process.cwd(), "server/data/sample"),
+      path.resolve(__dirname, "../../../../data/sample"),
+      path.resolve(__dirname, "../../../data/sample"),
+    ].filter(Boolean);
+
+    const uniqueDataDirs = [...new Set(candidateDataDirs)];
+
+    for (const dataDir of uniqueDataDirs) {
+      try {
+        await fs.access(dataDir);
+        const chunksFromDir = await loadChunksFromDirectory(dataDir);
+        if (chunksFromDir.length) {
+          return chunksFromDir;
+        }
+      } catch {
+        // Try next available dataset directory.
+      }
+    }
+
     try {
       const file = await fs.readFile(env.chunksStorePath, "utf8");
       const parsed = JSON.parse(file);
-      chunks = parsed.chunks || [];
-    } catch {
-      try {
-        await fs.access(env.dataDir);
-        chunks = await loadChunksFromDirectory(env.dataDir);
-      } catch {
-        chunks = [];
+      if (Array.isArray(parsed?.chunks) && parsed.chunks.length) {
+        return parsed.chunks;
       }
+    } catch {
+      // No persisted chunks available.
     }
-    return chunks;
+
+    return [];
   }
 
   getStatus() {
