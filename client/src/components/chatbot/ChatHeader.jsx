@@ -8,6 +8,7 @@ export default function ChatHeader({
   onEscalate,
   isAgentAvailable,
   agentButtonLabel,
+  agentAvailabilityLabel,
   studentDisplayName,
   historyCount,
   onStudentLogout,
@@ -58,16 +59,19 @@ export default function ChatHeader({
         ) : null}
         {!agentConnected && (
           <div className="cc-agent-wrap">
-            <button
-              className="cc-agent-cta"
-              onClick={onEscalate}
-              disabled={!isAgentAvailable || handoffPending}
-              aria-label="Connect to live agent"
-              title="Connect to live agent"
-              aria-busy={handoffPending}
-            >
-              {handoffPending ? "Requested" : agentButtonLabel}
-            </button>
+            <div className="cc-agent-stack">
+              <button
+                className="cc-agent-cta"
+                onClick={onEscalate}
+                disabled={!isAgentAvailable || handoffPending}
+                aria-label="Connect to live agent"
+                title={`Live agents available ${agentAvailabilityLabel}`}
+                aria-busy={handoffPending}
+              >
+                {handoffPending ? "Requested" : agentButtonLabel}
+              </button>
+              <small className="cc-agent-note">Agents available {agentAvailabilityLabel}</small>
+            </div>
           </div>
         )}
       </div>

@@ -1415,6 +1415,20 @@
   font-size: 0.69rem;
 }
 
+.cc-agent-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+}
+
+.cc-agent-note {
+  padding-left: 0.1rem;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  color: #6d7788;
+}
+
 .cc-message-list {
   background:
     radial-gradient(circle at top right, rgba(7, 112, 126, 0.06), transparent 24%),
@@ -1611,6 +1625,10 @@
 
   .cc-student-pill {
     max-width: 110px;
+  }
+
+  .cc-agent-note {
+    font-size: 0.58rem;
   }
 
   .cc-message-list {
