@@ -31,6 +31,187 @@ function isGreetingOnly(text) {
   return /^(hi|hii|hello|hey|yo|good morning|good afternoon|good evening)$/.test(normalized);
 }
 
+function isCutoffQuestion(question) {
+  return /\bcutoff|cut off\b/i.test(String(question || ""));
+}
+
+function extractRequestedYear(question) {
+  const match = String(question || "").match(/\b(20\d{2})\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function normalizeDepartmentName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function findRequestedDepartment(question, departments) {
+  const q = normalizeDepartmentName(question);
+  if (!q) return null;
+
+  for (const entry of departments) {
+    const department = String(entry?.department || "").trim();
+    const code = String(entry?.code || "").trim();
+    const normalizedDepartment = normalizeDepartmentName(department);
+    const normalizedCode = normalizeDepartmentName(code);
+
+    if (
+      (normalizedDepartment && q.includes(normalizedDepartment)) ||
+      (normalizedCode && q.split(" ").includes(normalizedCode))
+    ) {
+      return entry;
+    }
+  }
+
+  return null;
+}
+
+function formatCategoryLine(category, values) {
+  if (!values || typeof values !== "object") {
+    return `- ${category}: not available in dataset`;
+  }
+  const max = values.max ?? "NA";
+  const min = values.min ?? "NA";
+  return `- ${category}: max ${max}, min ${min}`;
+}
+
+function buildDepartmentCutoffAnswer({ year, department, yearEntry }) {
+  const cutoff = yearEntry?.cutoff && typeof yearEntry.cutoff === "object" ? yearEntry.cutoff : {};
+  const categories = Object.keys(cutoff);
+  const lines = [
+    `## ${year} Cutoffs`,
+    `**Department:** ${department.department} (${department.code})`,
+  ];
+
+  if (yearEntry?.available_seats !== null && yearEntry?.available_seats !== undefined) {
+    lines.push(`**Available seats:** ${yearEntry.available_seats}`);
+  }
+
+  if (!categories.length) {
+    lines.push("Cutoff details are not available in the dataset.");
+    return lines.join("\n\n");
+  }
+
+  lines.push(categories.map((category) => formatCategoryLine(category, cutoff[category])).join("\n"));
+  return lines.join("\n\n");
+}
+
+function buildYearSummaryAnswer({ year, departments }) {
+  const lines = [
+    `## ${year} Cutoff Summary`,
+    "| Department | Code | Seats | OC cutoff |",
+    "| --- | --- | ---: | --- |",
+  ];
+
+  for (const department of departments) {
+    const yearEntry = (Array.isArray(department?.years) ? department.years : []).find(
+      (item) => Number(item?.year) === Number(year)
+    );
+    if (!yearEntry) continue;
+    const oc = yearEntry?.cutoff?.OC;
+    const ocLabel = oc && typeof oc === "object" ? `${oc.max ?? "NA"} / ${oc.min ?? "NA"}` : "NA";
+    const seats = yearEntry?.available_seats ?? "NA";
+    lines.push(`| ${department.department} | ${department.code || "NA"} | ${seats} | ${ocLabel} |`);
+  }
+
+  lines.push("");
+  lines.push("Ask for a specific department like `CSE 2025 cutoff` to get full category-wise values.");
+  return lines.join("\n");
+}
+
+async function readStructuredCutoffDataset(dataDirs) {
+  for (const dataDir of dataDirs) {
+    try {
+      const entries = await fs.readdir(dataDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isFile() || path.extname(entry.name).toLowerCase() !== ".json") continue;
+        const fullPath = path.join(dataDir, entry.name);
+        const content = await fs.readFile(fullPath, "utf8");
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed === "object" && Array.isArray(parsed.cutoff_data)) {
+          return {
+            source: path.relative(process.cwd(), fullPath),
+            parsed,
+          };
+        }
+      }
+    } catch {
+      // Try next directory candidate.
+    }
+  }
+
+  return null;
+}
+
+async function buildStructuredCutoffResponse(question, dataDirs) {
+  if (!isCutoffQuestion(question)) return null;
+
+  const dataset = await readStructuredCutoffDataset(dataDirs);
+  if (!dataset?.parsed) return null;
+
+  const departments = Array.isArray(dataset.parsed.cutoff_data) ? dataset.parsed.cutoff_data : [];
+  if (!departments.length) return null;
+
+  const requestedYear =
+    extractRequestedYear(question) ||
+    Math.max(
+      ...departments.flatMap((department) =>
+        (Array.isArray(department?.years) ? department.years : [])
+          .map((entry) => Number(entry?.year))
+          .filter(Number.isFinite)
+      )
+    );
+
+  if (!Number.isFinite(requestedYear)) return null;
+
+  const department = findRequestedDepartment(question, departments);
+
+  if (department) {
+    const yearEntry = (Array.isArray(department.years) ? department.years : []).find(
+      (item) => Number(item?.year) === Number(requestedYear)
+    );
+
+    if (!yearEntry) {
+      return {
+        answer: `The dataset does not contain cutoff data for ${department.department} in ${requestedYear}.`,
+        source: dataset.source,
+      };
+    }
+
+    return {
+      answer: buildDepartmentCutoffAnswer({
+        year: requestedYear,
+        department,
+        yearEntry,
+      }),
+      source: dataset.source,
+    };
+  }
+
+  const matchingDepartments = departments.filter((entry) =>
+    (Array.isArray(entry?.years) ? entry.years : []).some(
+      (item) => Number(item?.year) === Number(requestedYear)
+    )
+  );
+
+  if (!matchingDepartments.length) {
+    return {
+      answer: `The dataset does not contain cutoff information for ${requestedYear}.`,
+      source: dataset.source,
+    };
+  }
+
+  return {
+    answer: buildYearSummaryAnswer({
+      year: requestedYear,
+      departments: matchingDepartments,
+    }),
+    source: dataset.source,
+  };
+}
+
 class RAGService {
   constructor() {
     this.vectorStore = createVectorStore(createEmbeddings());
@@ -158,6 +339,14 @@ class RAGService {
     await this.init();
     const settings = await getRuntimeSettings();
     const supplementalContext = String(options?.supplementalContext || "").trim();
+    const candidateDataDirs = [
+      env.dataDir,
+      path.resolve(process.cwd(), "data/sample"),
+      path.resolve(process.cwd(), "server/data/sample"),
+      path.resolve(__dirname, "../../../../data/sample"),
+      path.resolve(__dirname, "../../../data/sample"),
+    ].filter(Boolean);
+    const uniqueDataDirs = [...new Set(candidateDataDirs)];
 
     if (isGreetingOnly(question)) {
       return {
@@ -165,6 +354,17 @@ class RAGService {
           "Hi! I can help with admissions, fees, cutoffs, courses, and deadlines. Ask your specific college question.",
         confidence: 1,
         sources: [],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    const structuredCutoffResponse = await buildStructuredCutoffResponse(question, uniqueDataDirs);
+    if (structuredCutoffResponse) {
+      return {
+        answer: structuredCutoffResponse.answer,
+        confidence: 1,
+        sources: [structuredCutoffResponse.source],
         escalationSuggested: false,
         outOfScope: false,
       };

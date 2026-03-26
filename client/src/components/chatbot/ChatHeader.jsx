@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
 import { BRANDING } from "../../config/branding";
 
-const AGENT_TIME_SLOT = "9AM-5PM";
-
 export default function ChatHeader({
   connectionStatus,
   handoffPending,
@@ -10,7 +8,6 @@ export default function ChatHeader({
   onEscalate,
   isAgentAvailable,
   agentButtonLabel,
-  agentAvailabilityLabel,
   studentDisplayName,
   historyCount,
   onStudentLogout,
@@ -53,9 +50,6 @@ export default function ChatHeader({
           <span className={`cc-dot cc-dot-${statusTone}`} />
           <span>{statusLabel}</span>
         </div>
-        <div className="cc-hours-group" aria-label="Live agent working slots">
-          <span className="cc-hours-pill">{AGENT_TIME_SLOT}</span>
-        </div>
         {studentDisplayName ? (
           <div className="cc-student-pill" title={`Recent sessions: ${historyCount || 0}`}>
             <span>{studentDisplayName}</span>
@@ -69,10 +63,10 @@ export default function ChatHeader({
               onClick={onEscalate}
               disabled={!isAgentAvailable || handoffPending}
               aria-label="Connect to live agent"
-              title="Live agent hours are 9AM to 5PM IST"
+              title="Connect to live agent"
               aria-busy={handoffPending}
             >
-              {handoffPending ? "Requested" : `${agentButtonLabel} ${agentAvailabilityLabel}`}
+              {handoffPending ? "Requested" : agentButtonLabel}
             </button>
           </div>
         )}

@@ -655,7 +655,6 @@ router.get("/users", async (req, res, next) => {
           total,
           totalPages,
           search,
-          retainedPages: RETAIN_PAGES,
         },
       },
     });
