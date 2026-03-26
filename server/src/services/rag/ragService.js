@@ -31,6 +31,16 @@ function isGreetingOnly(text) {
   return /^(hi|hii|hello|hey|yo|good morning|good afternoon|good evening)$/.test(normalized);
 }
 
+function getCandidateDataDirs() {
+  return [
+    env.dataDir,
+    path.resolve(process.cwd(), "data/sample"),
+    path.resolve(process.cwd(), "server/data/sample"),
+    path.resolve(__dirname, "../../../../data/sample"),
+    path.resolve(__dirname, "../../../data/sample"),
+  ].filter(Boolean);
+}
+
 function isCutoffQuestion(question) {
   return /\bcutoff|cut off\b/i.test(String(question || ""));
 }
@@ -259,24 +269,18 @@ class RAGService {
       model: env.claudeModel,
     }); // fallback
     this.ready = false;
+    this.lastDatasetDir = null;
   }
 
   async loadChunks() {
-    const candidateDataDirs = [
-      env.dataDir,
-      path.resolve(process.cwd(), "data/sample"),
-      path.resolve(process.cwd(), "server/data/sample"),
-      path.resolve(__dirname, "../../../../data/sample"),
-      path.resolve(__dirname, "../../../data/sample"),
-    ].filter(Boolean);
-
-    const uniqueDataDirs = [...new Set(candidateDataDirs)];
+    const uniqueDataDirs = [...new Set(getCandidateDataDirs())];
 
     for (const dataDir of uniqueDataDirs) {
       try {
         await fs.access(dataDir);
         const chunksFromDir = await loadChunksFromDirectory(dataDir);
         if (chunksFromDir.length) {
+          this.lastDatasetDir = path.resolve(dataDir);
           return chunksFromDir;
         }
       } catch {
@@ -288,6 +292,7 @@ class RAGService {
       const file = await fs.readFile(env.chunksStorePath, "utf8");
       const parsed = JSON.parse(file);
       if (Array.isArray(parsed?.chunks) && parsed.chunks.length) {
+        this.lastDatasetDir = null;
         return parsed.chunks;
       }
     } catch {
@@ -315,6 +320,7 @@ class RAGService {
             ? env.claudeModel
             : "none",
       llmConfigured: Boolean(env.googleApiKey || env.anthropicApiKey),
+      datasetDir: this.lastDatasetDir,
     };
   }
 
@@ -339,7 +345,9 @@ class RAGService {
 
     try {
       if (env.vectorDbProvider === "pinecone") {
-        await this.vectorStore.initPineconeStore();
+        if (!this.vectorStore.pineconeIntegratedEmbedding) {
+          await this.vectorStore.initPineconeStore();
+        }
         await this.ensurePineconeSeeded(chunks);
       } else {
         await this.vectorStore.buildFromChunks(chunks);
@@ -361,26 +369,19 @@ class RAGService {
     if (env.vectorDbProvider === "pinecone") {
       await this.vectorStore.buildFromChunks(chunks);
       this.ready = true;
-      return { provider: "pinecone", chunkCount: chunks.length };
+      return { provider: "pinecone", chunkCount: chunks.length, dataDir: this.lastDatasetDir };
     }
 
     await this.vectorStore.buildFromChunks(chunks);
     this.ready = true;
-    return { provider: "local", chunkCount: chunks.length };
+    return { provider: "local", chunkCount: chunks.length, dataDir: this.lastDatasetDir };
   }
 
   async ask(question, options = {}) {
     await this.init();
     const settings = await getRuntimeSettings();
     const supplementalContext = String(options?.supplementalContext || "").trim();
-    const candidateDataDirs = [
-      env.dataDir,
-      path.resolve(process.cwd(), "data/sample"),
-      path.resolve(process.cwd(), "server/data/sample"),
-      path.resolve(__dirname, "../../../../data/sample"),
-      path.resolve(__dirname, "../../../data/sample"),
-    ].filter(Boolean);
-    const uniqueDataDirs = [...new Set(candidateDataDirs)];
+    const uniqueDataDirs = [...new Set(getCandidateDataDirs())];
 
     if (isGreetingOnly(question)) {
       return {

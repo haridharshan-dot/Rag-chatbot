@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Router } from "express";
 import { requireAdminAuth, signAgentToken } from "../middleware/agentAuth.js";
 import { getDatabaseHealth } from "../config/db.js";
@@ -13,6 +14,39 @@ import { StudentUser } from "../models/StudentUser.js";
 import { checkOtpProviderHealth } from "../services/otpDeliveryService.js";
 
 const router = Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function getCandidateDataDirs() {
+  return [
+    env.dataDir,
+    path.resolve(process.cwd(), "data/sample"),
+    path.resolve(process.cwd(), "server/data/sample"),
+    path.resolve(__dirname, "../../../data/sample"),
+    path.resolve(__dirname, "../../data/sample"),
+  ].filter(Boolean);
+}
+
+async function resolveActiveDataDir() {
+  const uniqueDirs = [...new Set(getCandidateDataDirs().map((dir) => path.resolve(dir)))];
+  let firstAccessibleDir = null;
+
+  for (const dataDir of uniqueDirs) {
+    try {
+      const entries = await fs.readdir(dataDir, { withFileTypes: true });
+      if (!firstAccessibleDir) {
+        firstAccessibleDir = dataDir;
+      }
+      if (entries.some((entry) => entry.isFile())) {
+        return dataDir;
+      }
+    } catch {
+      // Try next candidate directory.
+    }
+  }
+
+  return firstAccessibleDir || path.resolve(env.dataDir);
+}
 
 router.post("/login", (req, res) => {
   const identity = String(req.body?.email || req.body?.username || "").trim().toLowerCase();
@@ -67,8 +101,8 @@ async function readDatasetPreview(fileName, includeFull = false) {
   }
 
   const safeName = path.basename(requested);
-  const filePath = path.join(env.dataDir, safeName);
-  const resolvedDataDir = path.resolve(env.dataDir);
+  const resolvedDataDir = await resolveActiveDataDir();
+  const filePath = path.join(resolvedDataDir, safeName);
   const resolvedFilePath = path.resolve(filePath);
   if (!resolvedFilePath.startsWith(resolvedDataDir)) {
     const error = new Error("Invalid file path");
@@ -107,16 +141,17 @@ async function loadKnowledgeStats() {
     // Ignore missing chunk store; admin UI will show fallback values.
   }
 
+  const resolvedDataDir = await resolveActiveDataDir();
   let sourceFileCount = 0;
   try {
-    const entries = await fs.readdir(env.dataDir, { withFileTypes: true });
+    const entries = await fs.readdir(resolvedDataDir, { withFileTypes: true });
     sourceFileCount = entries.filter((entry) => entry.isFile()).length;
   } catch {
     // Ignore missing data dir.
   }
 
   return {
-    dataDir: path.resolve(env.dataDir),
+    dataDir: resolvedDataDir,
     sourceFileCount,
     chunkCount,
     lastIngestedAt: updatedAt,
@@ -415,13 +450,14 @@ router.get("/sessions/:sessionId/transcript", async (req, res, next) => {
 
 router.get("/datasets", async (req, res, next) => {
   try {
-    await fs.mkdir(env.dataDir, { recursive: true });
-    const entries = await fs.readdir(env.dataDir, { withFileTypes: true });
+    const activeDataDir = await resolveActiveDataDir();
+    await fs.mkdir(activeDataDir, { recursive: true });
+    const entries = await fs.readdir(activeDataDir, { withFileTypes: true });
     const files = [];
 
     for (const entry of entries) {
       if (!entry.isFile()) continue;
-      const fullPath = path.join(env.dataDir, entry.name);
+      const fullPath = path.join(activeDataDir, entry.name);
       const stat = await fs.stat(fullPath);
       files.push({
         name: entry.name,
@@ -699,8 +735,8 @@ router.delete("/datasets/:fileName", async (req, res, next) => {
     }
 
     const safeName = path.basename(requested);
-    const target = path.join(env.dataDir, safeName);
-    const resolvedDataDir = path.resolve(env.dataDir);
+    const resolvedDataDir = await resolveActiveDataDir();
+    const target = path.join(resolvedDataDir, safeName);
     const resolvedTarget = path.resolve(target);
     if (!resolvedTarget.startsWith(resolvedDataDir)) {
       return res.status(400).json({ success: false, message: "Invalid file path" });
@@ -759,9 +795,10 @@ router.post("/datasets/upload", async (req, res, next) => {
       }
     }
 
-    await fs.mkdir(env.dataDir, { recursive: true });
+    const resolvedDataDir = await resolveActiveDataDir();
+    await fs.mkdir(resolvedDataDir, { recursive: true });
     const sanitized = path.basename(fileName).replace(/\s+/g, "_");
-    const target = path.join(env.dataDir, sanitized);
+    const target = path.join(resolvedDataDir, sanitized);
     await fs.writeFile(target, content, "utf8");
 
     return res.json({
