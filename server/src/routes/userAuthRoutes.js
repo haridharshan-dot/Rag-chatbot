@@ -208,77 +208,9 @@ router.post("/login", async (req, res, next) => {
 
 router.post("/signup", async (req, res, next) => {
   try {
-    const name = String(req.body?.name || "").trim();
-    const email = normalizeEmail(req.body?.email);
-    const mobile = normalizeMobile(req.body?.mobile);
-    const password = String(req.body?.password || "").trim();
-
-    if (!name || !email || !mobile) {
-      return res.status(400).json({ success: false, message: "name, email and mobile are required" });
-    }
-    if (mobile.length < 10) {
-      return res.status(400).json({ success: false, message: "Please enter a valid mobile number" });
-    }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
-    }
-
-    const emailMatch = await StudentUser.findOne({ email });
-    const mobileMatch = await StudentUser.findOne({ mobile });
-
-    if (emailMatch && mobileMatch && String(emailMatch._id) !== String(mobileMatch._id)) {
-      return res.status(409).json({ success: false, message: "Email and mobile belong to different users" });
-    }
-
-    if (emailMatch && !mobileMatch) {
-      emailMatch.mobile = mobile;
-      emailMatch.name = name;
-      emailMatch.passwordHash = hashPassword(password);
-      emailMatch.lastLoginAt = new Date();
-      await emailMatch.save();
-      return res.json({
-        success: true,
-        message: "Signup complete",
-        data: buildStudentLoginPayload(emailMatch),
-      });
-    }
-
-    if (mobileMatch && !emailMatch) {
-      mobileMatch.email = email;
-      mobileMatch.name = name;
-      mobileMatch.passwordHash = hashPassword(password);
-      mobileMatch.lastLoginAt = new Date();
-      await mobileMatch.save();
-      return res.json({
-        success: true,
-        message: "Signup complete",
-        data: buildStudentLoginPayload(mobileMatch),
-      });
-    }
-
-    if (emailMatch && mobileMatch) {
-      emailMatch.name = name;
-      emailMatch.passwordHash = hashPassword(password);
-      emailMatch.lastLoginAt = new Date();
-      await emailMatch.save();
-      return res.json({
-        success: true,
-        message: "Profile updated",
-        data: buildStudentLoginPayload(emailMatch),
-      });
-    }
-
-    const user = await StudentUser.create({
-      name,
-      email,
-      mobile,
-      passwordHash: hashPassword(password),
-      lastLoginAt: new Date(),
-    });
-    return res.status(201).json({
-      success: true,
-      message: "Signup complete",
-      data: buildStudentLoginPayload(user),
+    return res.status(410).json({
+      success: false,
+      message: "Endpoint deprecated. Use /auth/register.",
     });
   } catch (error) {
     next(error);

@@ -27,6 +27,9 @@ export default function InputBox({
   return (
     <div className="cc-input-zone">
       <div className="cc-input-wrap">
+        <button type="button" className="cc-input-aux" disabled aria-label="More actions">
+          +
+        </button>
         <textarea
           ref={inputRef}
           value={value}
@@ -54,7 +57,7 @@ export default function InputBox({
           disabled={!canSend}
           aria-label="Send message"
         >
-          Send
+          ↑
         </button>
       </div>
     </div>
