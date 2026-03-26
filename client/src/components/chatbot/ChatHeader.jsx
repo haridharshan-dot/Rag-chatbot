@@ -15,6 +15,7 @@ export default function ChatHeader({
   onChangeLanguage,
 }) {
   const statusTone = connectionStatus === "online" ? "online" : "offline";
+  const statusLabel = connectionStatus === "online" ? "Online" : "Reconnecting";
 
   return (
     <motion.header
@@ -26,10 +27,10 @@ export default function ChatHeader({
       <div className="cc-brand-wrap">
         <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
         <div className="cc-brand-copy">
-          <h3>COLLEGE AI ASSISTANT</h3>
+          <h3>SONATECH AI ASSISTANT</h3>
           <p>
             <span className={`cc-dot cc-dot-${statusTone}`} />
-            Online
+            {statusLabel}
           </p>
         </div>
       </div>

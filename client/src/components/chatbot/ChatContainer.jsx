@@ -344,43 +344,47 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
 
       <AgentStatusBanner status={agentBanner} />
 
-      <MessageList
-        messages={messages}
-        listRef={listRef}
-        aiStageLabel={stageLabel}
-        isSending={isSending}
-        agentTyping={agentTyping}
-        onRichAction={sendMessage}
-      />
+      <div className="cc-body">
+        <MessageList
+          messages={messages}
+          listRef={listRef}
+          aiStageLabel={stageLabel}
+          isSending={isSending}
+          agentTyping={agentTyping}
+          onRichAction={sendMessage}
+        />
+      </div>
 
-      <SuggestionChips suggestions={text.suggestions} onPick={sendMessage} />
+      <div className="cc-footer">
+        <SuggestionChips suggestions={text.suggestions} onPick={sendMessage} />
 
-      <AnimatePresence>
-        {showEscalate && !agentConnected && (
-          <motion.button
-            className="cc-escalate"
-            onClick={onEscalate}
-            disabled={handoffPending}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-          >
-            {handoffPending ? text.connecting : text.escalateButton}
-          </motion.button>
-        )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {showEscalate && !agentConnected && (
+            <motion.button
+              className="cc-escalate"
+              onClick={onEscalate}
+              disabled={handoffPending}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+            >
+              {handoffPending ? text.connecting : text.escalateButton}
+            </motion.button>
+          )}
+        </AnimatePresence>
 
-      <InputBox
-        value={input}
-        loading={isSending}
-        disabled={!sessionId}
-        onChange={setInput}
-        onSend={sendMessage}
-        onTyping={onTyping}
-        onEscalate={onEscalate}
-        handoffPending={handoffPending}
-        placeholder={text.placeholder}
-      />
+        <InputBox
+          value={input}
+          loading={isSending}
+          disabled={!sessionId}
+          onChange={setInput}
+          onSend={sendMessage}
+          onTyping={onTyping}
+          onEscalate={onEscalate}
+          handoffPending={handoffPending}
+          placeholder={text.placeholder}
+        />
+      </div>
     </motion.section>
   );
 }

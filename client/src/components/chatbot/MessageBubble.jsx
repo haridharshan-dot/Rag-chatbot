@@ -33,8 +33,8 @@ export default function MessageBubble({ message, onRichAction }) {
       )}
 
       <article className={`cc-bubble cc-bubble-${variant}`}>
-        <p>{message.content}</p>
-        <small>{formatTime(message.createdAt)}</small>
+        <p className="cc-bubble-text">{message.content}</p>
+        <small className="cc-bubble-time">{formatTime(message.createdAt)}</small>
         {variant === "bot" && <RichCards message={message.content} onAction={onRichAction} />}
       </article>
     </motion.div>
