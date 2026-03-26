@@ -144,13 +144,9 @@ export class LangChainVectorStore {
       }
 
       if (this.pineconeIntegratedEmbedding) {
-        try {
-          await this.buildWithIntegratedEmbedding(chunks);
-          this.store = null;
-          return;
-        } catch (error) {
-          console.warn("Pinecone integrated embedding failed, falling back to vector upsert:", error.message);
-        }
+        await this.buildWithIntegratedEmbedding(chunks);
+        this.store = null;
+        return;
       }
 
       const docs = this.toDocuments(chunks);

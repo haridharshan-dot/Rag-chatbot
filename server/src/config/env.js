@@ -140,8 +140,8 @@ export function validateEnvironment() {
         errors.push("PINECONE_INDEX is required when VECTOR_DB_PROVIDER=pinecone");
       }
       if (env.pineconeIntegratedEmbedding && !env.pineconeIndexHost) {
-        warnings.push(
-          "PINECONE_INDEX_HOST is not set. Integrated embedding flow will be skipped and standard vector mode will be used."
+        errors.push(
+          "PINECONE_INDEX_HOST is required when VECTOR_DB_PROVIDER=pinecone and PINECONE_INTEGRATED_EMBEDDING=true"
         );
       }
     }
