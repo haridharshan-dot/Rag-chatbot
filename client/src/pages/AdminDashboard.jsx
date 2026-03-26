@@ -91,6 +91,7 @@ export default function AdminDashboard() {
   const [uploadContent, setUploadContent] = useState("");
   const [uploadPreview, setUploadPreview] = useState("");
   const [datasetPreviewOpen, setDatasetPreviewOpen] = useState(false);
+  const [siteConfigOpen, setSiteConfigOpen] = useState(false);
   const [datasetPreviewMeta, setDatasetPreviewMeta] = useState(null);
   const [datasetPreviewText, setDatasetPreviewText] = useState("");
   const [datasetPreviewSearch, setDatasetPreviewSearch] = useState("");
@@ -789,55 +790,14 @@ export default function AdminDashboard() {
                 <p className={siteChecklist.ready ? "config-ready" : "config-missing"}>
                   {siteChecklist.ready ? "Ready to work" : "Setup incomplete"}
                 </p>
-                <label className="admin-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(settings?.microsoftAuthEnabled)}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, microsoftAuthEnabled: e.target.checked }))
-                    }
-                  />
-                  Enable Microsoft SSO for Agent Dashboard
-                </label>
-                <input
-                  className="admin-input"
-                  value={(settings?.microsoftAllowedDomains || []).join(",")}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      microsoftAllowedDomains: e.target.value.split(",").map((v) => v.trim()).filter(Boolean),
-                    }))
-                  }
-                  placeholder="allowed domains (comma-separated)"
-                />
-                <input
-                  className="admin-input"
-                  value={(settings?.microsoftAllowedEmails || []).join(",")}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      microsoftAllowedEmails: e.target.value.split(",").map((v) => v.trim()).filter(Boolean),
-                    }))
-                  }
-                  placeholder="allowed emails (optional, comma-separated)"
-                />
-                <div className="site-config-list">
-                  <p><strong>Render (backend)</strong>: MICROSOFT_AUTH_ENABLED, MICROSOFT_ALLOWED_DOMAINS, MICROSOFT_ALLOWED_EMAILS (optional).</p>
-                  <p><strong>Vercel (frontend)</strong>: VITE_MS_CLIENT_ID, VITE_MS_TENANT_ID, VITE_MS_REDIRECT_URI.</p>
-                  <p><strong>Entra App</strong>: Add SPA redirect URI for /agent, allow User.Read, enable public client flow for popup login.</p>
+                <div className="admin-config-summary">
+                  <p><strong>Domains:</strong> {(settings?.microsoftAllowedDomains || []).join(", ") || "Not set"}</p>
+                  <p><strong>Emails:</strong> {(settings?.microsoftAllowedEmails || []).join(", ") || "Optional / empty"}</p>
+                  <p><strong>Runtime Toggle:</strong> {settings?.microsoftAuthEnabled ? "Enabled" : "Disabled"}</p>
                 </div>
-                <div className="site-config-checklist">
-                  {siteChecklist.checks.map((item) => (
-                    <p key={item.key} className={item.ok ? "check-ok" : "check-missing"}>
-                      <span>{item.label}</span>
-                      <strong>{item.ok ? "Configured" : "Missing"}</strong>
-                    </p>
-                  ))}
-                  <p className="check-optional">
-                    <span>Render MICROSOFT_ALLOWED_EMAILS</span>
-                    <strong>Optional</strong>
-                  </p>
-                </div>
+                <button className="pill-btn" onClick={() => setSiteConfigOpen(true)}>
+                  Open Config Modal
+                </button>
               </article>
               <article className="manage-card">
                 <h4>Escalation Policy</h4>
@@ -1129,6 +1089,88 @@ export default function AdminDashboard() {
             <div className="admin-modal-actions">
               <button className="pill-btn" onClick={() => setDatasetPreviewSearch("")}>
                 Clear Search
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {siteConfigOpen && (
+        <div className="admin-modal-backdrop" onClick={() => setSiteConfigOpen(false)}>
+          <div className="admin-modal site-config-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-head">
+              <h3>Site Configuration</h3>
+              <button className="pill-btn" onClick={() => setSiteConfigOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="site-config-modal-body">
+              <p>Configure Microsoft SSO controls for the Agent Dashboard at runtime.</p>
+              <p className={siteChecklist.ready ? "config-ready" : "config-missing"}>
+                {siteChecklist.ready ? "Ready to work" : "Setup incomplete"}
+              </p>
+
+              <label className="admin-checkbox">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings?.microsoftAuthEnabled)}
+                  onChange={(e) =>
+                    setSettings((prev) => ({ ...prev, microsoftAuthEnabled: e.target.checked }))
+                  }
+                />
+                Enable Microsoft SSO for Agent Dashboard
+              </label>
+
+              <input
+                className="admin-input"
+                value={(settings?.microsoftAllowedDomains || []).join(",")}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    microsoftAllowedDomains: e.target.value.split(",").map((v) => v.trim()).filter(Boolean),
+                  }))
+                }
+                placeholder="allowed domains (comma-separated)"
+              />
+
+              <input
+                className="admin-input"
+                value={(settings?.microsoftAllowedEmails || []).join(",")}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    microsoftAllowedEmails: e.target.value.split(",").map((v) => v.trim()).filter(Boolean),
+                  }))
+                }
+                placeholder="allowed emails (optional, comma-separated)"
+              />
+
+              <div className="site-config-list">
+                <p><strong>Render (backend)</strong>: MICROSOFT_AUTH_ENABLED, MICROSOFT_ALLOWED_DOMAINS, MICROSOFT_ALLOWED_EMAILS (optional).</p>
+                <p><strong>Vercel (frontend)</strong>: VITE_MS_CLIENT_ID, VITE_MS_TENANT_ID, VITE_MS_REDIRECT_URI.</p>
+                <p><strong>Entra App</strong>: Add SPA redirect URI for /agent, allow User.Read, enable public client flow for popup login.</p>
+              </div>
+
+              <div className="site-config-checklist">
+                {siteChecklist.checks.map((item) => (
+                  <p key={item.key} className={item.ok ? "check-ok" : "check-missing"}>
+                    <span>{item.label}</span>
+                    <strong>{item.ok ? "Configured" : "Missing"}</strong>
+                  </p>
+                ))}
+                <p className="check-optional">
+                  <span>Render MICROSOFT_ALLOWED_EMAILS</span>
+                  <strong>Optional</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="admin-modal-actions site-config-modal-footer">
+              <button className="pill-btn" onClick={onSaveSettings} disabled={savingSettings}>
+                {savingSettings ? "Saving..." : "Save"}
+              </button>
+              <button className="pill-btn" onClick={() => setSiteConfigOpen(false)}>
+                Close
               </button>
             </div>
           </div>
