@@ -57,7 +57,7 @@ export default function InputBox({
           disabled={!canSend}
           aria-label="Send message"
         >
-          ↑
+          {"\u2191"}
         </button>
       </div>
     </div>
