@@ -6,7 +6,6 @@ import { ChatSession } from "../models/ChatSession.js";
 import { env, isProd } from "../config/env.js";
 import { sendOtp } from "../services/otpDeliveryService.js";
 import { OAuth2Client } from "google-auth-library";
-import { getRuntimeSettings } from "../services/adminSettingsService.js";
 
 const router = Router();
 
@@ -64,38 +63,6 @@ function generateOtp() {
 function getDebugOtp(otp) {
   if (isProd) return undefined;
   return env.otpDebugExpose ? otp : undefined;
-}
-
-function resolveOtpDestination({ preferredChannel = "mobile", email = "", mobile = "" }) {
-  const normalizedPreferred = String(preferredChannel || "mobile").trim().toLowerCase();
-  const normalizedEmail = normalizeEmail(email);
-  const normalizedMobile = normalizeMobile(mobile);
-
-  if (normalizedPreferred === "email" && normalizedEmail) {
-    return {
-      channel: "email",
-      target: normalizedEmail,
-      deliveryTarget: normalizedEmail,
-    };
-  }
-
-  if (normalizedMobile) {
-    return {
-      channel: "mobile",
-      target: normalizedMobile,
-      deliveryTarget: formatMobileForDelivery(normalizedMobile),
-    };
-  }
-
-  if (normalizedEmail) {
-    return {
-      channel: "email",
-      target: normalizedEmail,
-      deliveryTarget: normalizedEmail,
-    };
-  }
-
-  throw new Error("Unable to resolve OTP destination");
 }
 
 async function setUserOtp({ user, channel, target }) {
@@ -252,17 +219,9 @@ router.post("/signup", async (req, res, next) => {
     if (mobile.length < 10) {
       return res.status(400).json({ success: false, message: "Please enter a valid mobile number" });
     }
-    if (password && password.length < 6) {
+    if (!password || password.length < 6) {
       return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
     }
-
-    const runtimeSettings = await getRuntimeSettings();
-    const preferredChannel = runtimeSettings?.otpPreferredChannel || env.otpPreferredChannel || "mobile";
-    const destination = resolveOtpDestination({
-      preferredChannel,
-      email,
-      mobile,
-    });
 
     const emailMatch = await StudentUser.findOne({ email });
     const mobileMatch = await StudentUser.findOne({ mobile });
@@ -274,65 +233,38 @@ router.post("/signup", async (req, res, next) => {
     if (emailMatch && !mobileMatch) {
       emailMatch.mobile = mobile;
       emailMatch.name = name;
-      if (password) {
-        emailMatch.passwordHash = hashPassword(password);
-      }
-      const otpPayload = await issueAndDeliverOtp({
-        user: emailMatch,
-        channel: destination.channel,
-        target: destination.target,
-        deliveryTarget: destination.deliveryTarget,
-      });
+      emailMatch.passwordHash = hashPassword(password);
+      emailMatch.lastLoginAt = new Date();
+      await emailMatch.save();
       return res.json({
         success: true,
-        message: `Signup complete. OTP sent to ${otpPayload.channel}.`,
-        data: {
-          ...otpPayload,
-          user: buildOtpPayload(emailMatch),
-        },
+        message: "Signup complete",
+        data: buildStudentLoginPayload(emailMatch),
       });
     }
 
     if (mobileMatch && !emailMatch) {
       mobileMatch.email = email;
       mobileMatch.name = name;
-      if (password) {
-        mobileMatch.passwordHash = hashPassword(password);
-      }
-      const otpPayload = await issueAndDeliverOtp({
-        user: mobileMatch,
-        channel: destination.channel,
-        target: destination.target,
-        deliveryTarget: destination.deliveryTarget,
-      });
+      mobileMatch.passwordHash = hashPassword(password);
+      mobileMatch.lastLoginAt = new Date();
+      await mobileMatch.save();
       return res.json({
         success: true,
-        message: `Signup complete. OTP sent to ${otpPayload.channel}.`,
-        data: {
-          ...otpPayload,
-          user: buildOtpPayload(mobileMatch),
-        },
+        message: "Signup complete",
+        data: buildStudentLoginPayload(mobileMatch),
       });
     }
 
     if (emailMatch && mobileMatch) {
       emailMatch.name = name;
-      if (password) {
-        emailMatch.passwordHash = hashPassword(password);
-      }
-      const otpPayload = await issueAndDeliverOtp({
-        user: emailMatch,
-        channel: destination.channel,
-        target: destination.target,
-        deliveryTarget: destination.deliveryTarget,
-      });
+      emailMatch.passwordHash = hashPassword(password);
+      emailMatch.lastLoginAt = new Date();
+      await emailMatch.save();
       return res.json({
         success: true,
-        message: `Profile exists. OTP sent to ${otpPayload.channel}.`,
-        data: {
-          ...otpPayload,
-          user: buildOtpPayload(emailMatch),
-        },
+        message: "Profile updated",
+        data: buildStudentLoginPayload(emailMatch),
       });
     }
 
@@ -340,21 +272,13 @@ router.post("/signup", async (req, res, next) => {
       name,
       email,
       mobile,
-      passwordHash: password ? hashPassword(password) : "",
-    });
-    const otpPayload = await issueAndDeliverOtp({
-      user,
-      channel: destination.channel,
-      target: destination.target,
-      deliveryTarget: destination.deliveryTarget,
+      passwordHash: hashPassword(password),
+      lastLoginAt: new Date(),
     });
     return res.status(201).json({
       success: true,
-      message: `Signup complete. OTP sent to ${otpPayload.channel}.`,
-      data: {
-        ...otpPayload,
-        user: buildOtpPayload(user),
-      },
+      message: "Signup complete",
+      data: buildStudentLoginPayload(user),
     });
   } catch (error) {
     next(error);
@@ -363,41 +287,9 @@ router.post("/signup", async (req, res, next) => {
 
 router.post("/otp/request", async (req, res, next) => {
   try {
-    const runtimeSettings = await getRuntimeSettings();
-    const fallbackChannel = runtimeSettings?.otpPreferredChannel || env.otpPreferredChannel || "mobile";
-    const channel = String(req.body?.channel || fallbackChannel).trim().toLowerCase();
-    if (channel !== "email" && channel !== "mobile") {
-      return res.status(400).json({ success: false, message: "channel must be email or mobile" });
-    }
-
-    const email = normalizeEmail(req.body?.email);
-    const mobile = normalizeMobile(req.body?.mobile);
-    const query = channel === "email" ? { email } : { mobile };
-    const target = channel === "email" ? email : mobile;
-    const deliveryTarget = channel === "email" ? email : formatMobileForDelivery(mobile);
-
-    if (!target) {
-      return res.status(400).json({ success: false, message: `${channel} is required` });
-    }
-
-    const user = await StudentUser.findOne(query);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "Student not found. Please sign up first." });
-    }
-
-    const otpPayload = await issueAndDeliverOtp({
-      user,
-      channel,
-      target,
-      deliveryTarget,
-    });
-
-    return res.json({
-      success: true,
-      message: `OTP sent to your ${channel}`,
-      data: {
-        ...otpPayload,
-      },
+    return res.status(410).json({
+      success: false,
+      message: "OTP login is disabled. OTP is available only for password reset.",
     });
   } catch (error) {
     next(error);
@@ -406,54 +298,9 @@ router.post("/otp/request", async (req, res, next) => {
 
 router.post("/otp/verify", async (req, res, next) => {
   try {
-    const channel = String(req.body?.channel || "").trim().toLowerCase();
-    const otp = String(req.body?.otp || "").trim();
-    const email = normalizeEmail(req.body?.email);
-    const mobile = normalizeMobile(req.body?.mobile);
-    const query = channel === "email" ? { email } : { mobile };
-    const target = channel === "email" ? email : mobile;
-
-    if ((channel !== "email" && channel !== "mobile") || !target || !otp) {
-      return res.status(400).json({ success: false, message: "channel, target, and otp are required" });
-    }
-
-    const user = await StudentUser.findOne(query);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "Student not found" });
-    }
-
-    if (!user.otpCodeHash || !user.otpExpiresAt) {
-      return res.status(400).json({ success: false, message: "No OTP requested. Please request OTP first." });
-    }
-    if (user.otpChannel !== channel || user.otpTarget !== target) {
-      return res.status(400).json({ success: false, message: "OTP channel or destination mismatch" });
-    }
-    if (Date.now() > new Date(user.otpExpiresAt).getTime()) {
-      return res.status(400).json({ success: false, message: "OTP expired. Request a new OTP." });
-    }
-    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
-      return res.status(429).json({ success: false, message: "Too many attempts. Request a new OTP." });
-    }
-
-    const valid = verifyPassword(otp, user.otpCodeHash);
-    if (!valid) {
-      user.otpAttempts += 1;
-      await user.save();
-      return res.status(401).json({ success: false, message: "Invalid OTP" });
-    }
-
-    user.otpCodeHash = "";
-    user.otpChannel = "";
-    user.otpTarget = "";
-    user.otpExpiresAt = null;
-    user.otpAttempts = 0;
-    user.lastLoginAt = new Date();
-    await user.save();
-
-    return res.json({
-      success: true,
-      message: "OTP verified",
-      data: buildStudentLoginPayload(user),
+    return res.status(410).json({
+      success: false,
+      message: "OTP login is disabled. OTP is available only for password reset.",
     });
   } catch (error) {
     next(error);
@@ -563,17 +410,39 @@ router.post("/login/google", async (req, res, next) => {
     const payload = ticket.getPayload();
     const email = normalizeEmail(payload?.email);
     const name = String(payload?.name || payload?.given_name || "Student").trim();
+    const mobile = normalizeMobile(req.body?.mobile);
 
     if (!email || !payload?.email_verified) {
       return res.status(401).json({ success: false, message: "Unable to verify Google account email" });
     }
 
     let user = await StudentUser.findOne({ email });
+    if (!user || !user.mobile) {
+      if (!mobile || mobile.length < 10) {
+        return res.status(428).json({
+          success: false,
+          message: "Mobile number required for Google signup",
+          code: "MOBILE_REQUIRED",
+        });
+      }
+    }
+
     if (!user) {
+      const mobileExists = await StudentUser.findOne({ mobile });
+      if (mobileExists) {
+        return res.status(409).json({ success: false, message: "Mobile number already registered" });
+      }
       user = await StudentUser.create({
         name: name || "Student",
         email,
+        mobile,
       });
+    } else if (!user.mobile) {
+      const mobileExists = await StudentUser.findOne({ mobile, _id: { $ne: user._id } });
+      if (mobileExists) {
+        return res.status(409).json({ success: false, message: "Mobile number already registered" });
+      }
+      user.mobile = mobile;
     }
 
     user.lastLoginAt = new Date();

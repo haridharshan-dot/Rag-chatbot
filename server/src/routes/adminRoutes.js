@@ -9,6 +9,7 @@ import { getRuntimeSettings, updateRuntimeSettings } from "../services/adminSett
 import { checkAndRecordStatus } from "../services/statusService.js";
 import { ChatSession } from "../models/ChatSession.js";
 import { AgentActivity } from "../models/AgentActivity.js";
+import { StudentUser } from "../models/StudentUser.js";
 import { checkOtpProviderHealth } from "../services/otpDeliveryService.js";
 
 const router = Router();
@@ -571,21 +572,17 @@ router.get("/agents", async (req, res, next) => {
 
 router.get("/users", async (req, res, next) => {
   try {
-    const RETAIN_PAGES = 8;
-    const RETAIN_LIMIT = 10;
-    const MAX_RECENT_USERS = RETAIN_PAGES * RETAIN_LIMIT;
-
     const sessions = await ChatSession.find({})
       .select("studentId status updatedAt createdAt clientIp assignedAgentId")
       .sort({ updatedAt: -1 })
       .lean();
 
-    const map = new Map();
+    const sessionMap = new Map();
     for (const session of sessions) {
-      const key = String(session.studentId || "unknown");
-      if (!map.has(key)) {
-        map.set(key, {
-          studentId: key,
+      const key = String(session.studentId || "").trim();
+      if (!key) continue;
+      if (!sessionMap.has(key)) {
+        sessionMap.set(key, {
           sessions: 0,
           lastSeenAt: session.updatedAt || session.createdAt || null,
           currentStatus: session.status || "bot",
@@ -593,8 +590,7 @@ router.get("/users", async (req, res, next) => {
           assignedAgentId: session.assignedAgentId || null,
         });
       }
-
-      const row = map.get(key);
+      const row = sessionMap.get(key);
       row.sessions += 1;
       const updatedAt = session.updatedAt || session.createdAt || null;
       if (updatedAt && (!row.lastSeenAt || new Date(updatedAt) > new Date(row.lastSeenAt))) {
@@ -607,33 +603,31 @@ router.get("/users", async (req, res, next) => {
       }
     }
 
-    let data = Array.from(map.values()).sort(
-      (a, b) => new Date(b.lastSeenAt || 0).getTime() - new Date(a.lastSeenAt || 0).getTime()
-    );
+    const users = await StudentUser.find({})
+      .select("_id name email mobile createdAt updatedAt lastLoginAt")
+      .sort({ updatedAt: -1 })
+      .lean();
 
-    const keepSet = new Set(data.slice(0, MAX_RECENT_USERS).map((row) => row.studentId));
-    const staleStudentIds = data
-      .slice(MAX_RECENT_USERS)
-      .map((row) => row.studentId)
-      .filter(Boolean);
-
-    if (staleStudentIds.length) {
-      try {
-        await ChatSession.deleteMany({
-          studentId: { $in: staleStudentIds },
-          status: { $in: ["bot", "resolved"] },
-        });
-      } catch {
-        // Best effort cleanup only.
-      }
-    }
-
-    data = data.filter((row) => keepSet.has(row.studentId));
+    let data = users.map((user) => {
+      const studentId = String(user._id);
+      const sessionData = sessionMap.get(studentId) || null;
+      return {
+        studentId,
+        name: user.name || "-",
+        email: user.email || "-",
+        mobile: user.mobile || "-",
+        sessions: sessionData?.sessions || 0,
+        lastSeenAt: sessionData?.lastSeenAt || user.lastLoginAt || user.updatedAt || user.createdAt || null,
+        currentStatus: sessionData?.currentStatus || "no-session",
+        lastIp: sessionData?.lastIp || null,
+        assignedAgentId: sessionData?.assignedAgentId || null,
+      };
+    });
 
     const search = String(req.query?.search || "").trim().toLowerCase();
     if (search) {
       data = data.filter((row) => {
-        const haystack = [row.studentId, row.currentStatus, row.assignedAgentId, row.lastIp]
+        const haystack = [row.studentId, row.name, row.email, row.mobile, row.currentStatus, row.assignedAgentId, row.lastIp]
           .map((value) => String(value || "").toLowerCase())
           .join(" ");
         return haystack.includes(search);
@@ -659,6 +653,34 @@ router.get("/users", async (req, res, next) => {
           search,
           retainedPages: RETAIN_PAGES,
         },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/users/:userId", async (req, res, next) => {
+  try {
+    const userId = String(req.params?.userId || "").trim();
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "userId is required" });
+    }
+
+    const user = await StudentUser.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    await Promise.all([
+      ChatSession.deleteMany({ studentId: userId }),
+      StudentUser.deleteOne({ _id: userId }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: {
+        removedUserId: userId,
       },
     });
   } catch (error) {

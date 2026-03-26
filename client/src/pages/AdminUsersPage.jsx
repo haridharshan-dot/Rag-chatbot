@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchAdminUsers, getAgentToken } from "../api";
+import { deleteAdminUser, fetchAdminUsers, getAgentToken } from "../api";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -28,6 +28,7 @@ export default function AdminUsersPage() {
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState("");
+  const [deletingUserId, setDeletingUserId] = useState("");
 
   useEffect(() => {
     if (authToken) return;
@@ -63,6 +64,23 @@ export default function AdminUsersPage() {
     load(page, pagination.search || "");
   }
 
+  async function onDeleteUser(userId) {
+    const confirmed = window.confirm("Delete this user and all their chat sessions?");
+    if (!confirmed) return;
+    setDeletingUserId(userId);
+    setFeedback("");
+    try {
+      await deleteAdminUser(userId);
+      setFeedback("User deleted successfully.");
+      await load(pagination.page, pagination.search || "");
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "Failed to delete user.");
+    } finally {
+      setDeletingUserId("");
+    }
+  }
+
   return (
     <div className="admin-layout">
       <aside className="admin-side">
@@ -86,7 +104,7 @@ export default function AdminUsersPage() {
             className="admin-input"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by student, status, agent, ip"
+            placeholder="Search by student, name, email, mobile, status, agent, ip"
           />
           <button className="pill-btn" type="submit">Search</button>
           <button
@@ -106,17 +124,24 @@ export default function AdminUsersPage() {
             <thead>
               <tr>
                 <th>Student</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Mobile</th>
                 <th>Sessions</th>
                 <th>Current Status</th>
                 <th>Assigned Agent</th>
                 <th>Last Seen</th>
                 <th>IP Address</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map((user) => (
                 <tr key={user.studentId}>
                   <td>{user.studentId}</td>
+                  <td>{user.name || "-"}</td>
+                  <td>{user.email || "-"}</td>
+                  <td>{user.mobile || "-"}</td>
                   <td>{user.sessions}</td>
                   <td>{user.currentStatus || "-"}</td>
                   <td>{user.assignedAgentId || "-"}</td>
@@ -139,11 +164,20 @@ export default function AdminUsersPage() {
                       user.lastIp || "-"
                     )}
                   </td>
+                  <td>
+                    <button
+                      className="pill-btn"
+                      onClick={() => onDeleteUser(user.studentId)}
+                      disabled={deletingUserId === user.studentId}
+                    >
+                      {deletingUserId === user.studentId ? "Deleting..." : "Delete"}
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!items.length && !loading && (
                 <tr>
-                  <td colSpan={6}>No users found for this filter.</td>
+                  <td colSpan={10}>No users found for this filter.</td>
                 </tr>
               )}
             </tbody>

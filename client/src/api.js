@@ -142,8 +142,8 @@ export async function studentLogin(payload) {
   return response.data.data;
 }
 
-export async function studentGoogleLogin(credential) {
-  const response = await api.post("/auth/login/google", { credential });
+export async function studentGoogleLogin(credential, mobile = "") {
+  const response = await api.post("/auth/login/google", { credential, mobile });
   return response.data.data;
 }
 
@@ -319,6 +319,11 @@ export async function fetchAdminUsers({ page = 1, limit = 20, search = "" } = {}
     }
     throw error;
   }
+}
+
+export async function deleteAdminUser(userId) {
+  const response = await api.delete(`/admin/users/${encodeURIComponent(userId)}`, agentAuthConfig());
+  return response.data.data;
 }
 
 export async function forceAssignSession(sessionId, agentId) {
