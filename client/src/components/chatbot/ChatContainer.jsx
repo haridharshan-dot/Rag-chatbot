@@ -328,7 +328,7 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
   };
 
   return (
-    <section className="cc-shell">
+    <motion.section className="cc-shell" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
       <ChatHeader
         loading={loading}
         sessionId={sessionId}
@@ -381,6 +381,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         handoffPending={handoffPending}
         placeholder={text.placeholder}
       />
-    </section>
+    </motion.section>
   );
 }

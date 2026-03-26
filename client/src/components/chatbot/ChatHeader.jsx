@@ -26,10 +26,10 @@ export default function ChatHeader({
       <div className="cc-brand-wrap">
         <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
         <div className="cc-brand-copy">
-          <h3>{BRANDING.chatbotName || "COLLEGE AI ASSISTANT"}</h3>
+          <h3>COLLEGE AI ASSISTANT</h3>
           <p>
             <span className={`cc-dot cc-dot-${statusTone}`} />
-            {connectionStatus === "online" ? "Online" : "Connecting..."}
+            Online
           </p>
         </div>
       </div>
@@ -47,16 +47,9 @@ export default function ChatHeader({
             </option>
           ))}
         </select>
-        
-        {/* Fullscreen toggle - hidden on mobile via CSS but kept for tablets/desktops */}
-        <button 
-          className="cc-action-btn cc-btn-expand" 
-          onClick={onToggleFullscreen} 
-          aria-label="Toggle fullscreen"
-        >
+        <button className="cc-action-btn" onClick={onToggleFullscreen} aria-label="Toggle fullscreen">
           {isFullscreen ? "Exit" : "Expand"}
         </button>
-
         <button className="cc-action-btn" onClick={onClose} aria-label="Close chatbot">
           Close
         </button>

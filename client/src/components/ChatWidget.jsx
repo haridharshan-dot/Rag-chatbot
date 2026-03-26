@@ -14,8 +14,8 @@ export default function ChatWidget({
   const [open, setOpen] = useState(defaultOpen);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewport, setViewport] = useState({
-    width: typeof window !== "undefined" ? window.innerWidth : 420,
-    height: typeof window !== "undefined" ? window.innerHeight : 700,
+    width: window.innerWidth || 420,
+    height: window.innerHeight || 700,
   });
 
   useEffect(() => {
@@ -25,8 +25,8 @@ export default function ChatWidget({
   useEffect(() => {
     const onResize = () => {
       setViewport({
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: window.innerWidth || 420,
+        height: window.innerHeight || 700,
       });
     };
 
@@ -34,30 +34,35 @@ export default function ChatWidget({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Auto-fullscreen on small screens
-  const isMobile = useMemo(() => viewport.width <= 640, [viewport.width]);
-
   useEffect(() => {
     if (!open) return;
-    if (isMobile) {
+    if (viewport.width <= 900) {
       setIsFullscreen(true);
     }
-  }, [open, isMobile]);
+  }, [open, viewport.width]);
 
   const openDimensions = useMemo(() => {
-    if (isFullscreen || isMobile) {
-      return {
-        width: viewport.width,
-        height: viewport.height,
+    const viewportWidth = viewport.width;
+    const viewportHeight = viewport.height;
+
+      if (isFullscreen) {
+        return {
+        width: Math.max(320, viewportWidth - 12),
+        height: Math.max(540, viewportHeight - 12),
       };
     }
 
-    // Standard desktop floating widget dimensions
-    return {
-      width: 400,
-      height: 600,
-    };
-  }, [isFullscreen, isMobile, viewport.height, viewport.width]);
+    const isSmallScreen = viewportWidth <= 640;
+    return isSmallScreen
+      ? {
+          width: Math.max(300, viewportWidth - 16),
+          height: Math.round(Math.max(520, viewportHeight * 0.84)),
+        }
+      : {
+          width: Math.max(380, Math.min(520, viewportWidth - 34)),
+          height: Math.round(Math.max(640, Math.min(760, viewportHeight * 0.9))),
+        };
+  }, [isFullscreen, viewport.height, viewport.width]);
 
   useEffect(() => {
     const closedDimensions = { width: 124, height: 92 };
