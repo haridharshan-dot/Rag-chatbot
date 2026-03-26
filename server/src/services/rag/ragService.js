@@ -114,7 +114,7 @@ function findRequestedDepartment(question, departments) {
 
 function formatCategoryLine(category, values) {
   if (!values || typeof values !== "object") {
-    return `- ${category}: not available in dataset`;
+    return `- ${category}: not published for this year`;
   }
   const max = values.max ?? "NA";
   const min = values.min ?? "NA";
@@ -124,6 +124,10 @@ function formatCategoryLine(category, values) {
 function buildDepartmentCutoffAnswer({ year, department, yearEntry }) {
   const cutoff = yearEntry?.cutoff && typeof yearEntry.cutoff === "object" ? yearEntry.cutoff : {};
   const categories = Object.keys(cutoff);
+  const unpublishedCount = categories.filter((category) => {
+    const values = cutoff[category];
+    return !values || typeof values !== "object";
+  }).length;
   const lines = [
     `## ${year} Cutoffs`,
     `**Department:** ${department.department} (${department.code})`,
@@ -139,6 +143,9 @@ function buildDepartmentCutoffAnswer({ year, department, yearEntry }) {
   }
 
   lines.push(categories.map((category) => formatCategoryLine(category, cutoff[category])).join("\n"));
+  if (unpublishedCount > 0) {
+    lines.push("*Some community/category cutoffs were not published in the official counselling data.*");
+  }
   return lines.join("\n\n");
 }
 

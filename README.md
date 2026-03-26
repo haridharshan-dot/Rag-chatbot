@@ -187,6 +187,26 @@ This behaves like the original frontend widget:
 <script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
 ```
 
+### Exact production embed (same widget version used now)
+
+Use this snippet on the official college website to get the same compact-launcher + full panel behavior.
+
+```html
+<iframe
+  data-sona-chatbot="true"
+  data-sona-mode="compact"
+  data-sona-width="460"
+  data-sona-height="760"
+  data-sona-right="16"
+  data-sona-bottom="16"
+  src="https://your-vercel-app.vercel.app/chatbot"
+  title="Sona AI Concierge"
+  loading="lazy"
+  referrerpolicy="strict-origin-when-cross-origin"
+></iframe>
+<script src="https://your-vercel-app.vercel.app/chatbot-embed.js" defer></script>
+```
+
 Website knowledge support in embed mode:
 
 - The embed script captures host page context (title, URL, description, headings, visible text).
