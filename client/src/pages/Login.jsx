@@ -115,7 +115,7 @@ export default function Login() {
               className={mode === "admin" ? "active" : ""}
               onClick={() => {
                 setMode("admin");
-                setEmail("admin@sona.com");
+                setEmail("admin");
                 setError("");
                 setSuccessMessage("");
               }}
@@ -151,11 +151,11 @@ export default function Login() {
 
           <form onSubmit={onSubmit} className="agent-auth-form">
             <input
-              type="email"
+              type={mode === "admin" ? "text" : "email"}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="agent@sona.com"
-              autoComplete="email"
+              placeholder={mode === "admin" ? "admin" : "agent@sona.com"}
+              autoComplete={mode === "admin" ? "username" : "email"}
               required
             />
             <input

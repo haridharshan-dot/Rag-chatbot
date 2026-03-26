@@ -13,22 +13,24 @@ import { AgentActivity } from "../models/AgentActivity.js";
 const router = Router();
 
 router.post("/login", (req, res) => {
-  const email = String(req.body?.email || "").trim().toLowerCase();
+  const identity = String(req.body?.email || req.body?.username || "").trim().toLowerCase();
   const password = String(req.body?.password || "").trim();
 
-  if (!email || !password) {
+  if (!identity || !password) {
     return res.status(400).json({ success: false, message: "Email and password are required" });
   }
 
-  if (email !== env.adminEmail || password !== env.adminPassword) {
+  const validIdentity = identity === env.adminEmail || identity === String(env.adminUsername || "").toLowerCase();
+
+  if (!validIdentity || password !== env.adminPassword) {
     return res.status(401).json({ success: false, message: "Invalid admin credentials" });
   }
 
-  const adminId = email.split("@")[0] || "admin";
+  const adminId = String(env.adminUsername || "admin").toLowerCase();
   const token = signAgentToken({
     role: "admin",
     agentId: adminId,
-    email,
+    email: env.adminEmail,
   });
 
   return res.json({
@@ -36,7 +38,7 @@ router.post("/login", (req, res) => {
     data: {
       token,
       agentId: adminId,
-      email,
+      email: env.adminEmail,
       role: "admin",
       expiresIn: env.agentJwtExpiry,
     },
