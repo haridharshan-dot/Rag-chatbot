@@ -28,12 +28,15 @@ function AdminRoute({ children }) {
 function App() {
   const location = useLocation();
   const isEmbedRoute = location.pathname === "/chatbot";
+  const topNavTitle = location.pathname.startsWith("/admin")
+    ? "ADMIN DASHBOARD"
+    : "College Concierge";
 
   return (
     <div className="app-shell">
       {!isEmbedRoute && (
         <header className="top-nav">
-          <h1>College Concierge</h1>
+          <h1>{topNavTitle}</h1>
         </header>
       )}
       <Suspense fallback={<div className="app-route-loading" role="status" aria-live="polite">Loading...</div>}>
