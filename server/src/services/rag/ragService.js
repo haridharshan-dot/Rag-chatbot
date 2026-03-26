@@ -53,20 +53,48 @@ function normalizeDepartmentName(value) {
     .trim();
 }
 
+function getDepartmentAliases(entry) {
+  const department = String(entry?.department || "").trim();
+  const code = String(entry?.code || "").trim();
+  const normalizedCode = normalizeDepartmentName(code);
+  const aliases = new Set([
+    normalizeDepartmentName(department),
+    normalizedCode,
+  ]);
+
+  if (normalizedCode === "aml") {
+    aliases.add("aiml");
+    aliases.add("ai ml");
+    aliases.add("ai and ml");
+    aliases.add("artificial intelligence machine learning");
+  }
+
+  if (normalizedCode === "ads") {
+    aliases.add("aids");
+    aliases.add("ai ds");
+    aliases.add("ai and ds");
+    aliases.add("ai data science");
+  }
+
+  if (normalizedCode === "mech") {
+    aliases.add("mechanical");
+  }
+
+  return [...aliases].filter(Boolean);
+}
+
 function findRequestedDepartment(question, departments) {
   const q = normalizeDepartmentName(question);
   if (!q) return null;
+  const tokens = q.split(" ");
 
   for (const entry of departments) {
-    const department = String(entry?.department || "").trim();
-    const code = String(entry?.code || "").trim();
-    const normalizedDepartment = normalizeDepartmentName(department);
-    const normalizedCode = normalizeDepartmentName(code);
-
-    if (
-      (normalizedDepartment && q.includes(normalizedDepartment)) ||
-      (normalizedCode && q.split(" ").includes(normalizedCode))
-    ) {
+    const aliases = getDepartmentAliases(entry);
+    const matched = aliases.some((alias) => {
+      if (!alias) return false;
+      return q.includes(alias) || tokens.includes(alias);
+    });
+    if (matched) {
       return entry;
     }
   }

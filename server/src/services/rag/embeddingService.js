@@ -43,6 +43,12 @@ function hashedVector(text) {
 }
 
 export function createEmbeddings() {
+  if (env.vectorDbProvider === "pinecone" && !env.openaiApiKey) {
+    throw new Error(
+      "OPENAI_API_KEY is required for VECTOR_DB_PROVIDER=pinecone to generate production embeddings."
+    );
+  }
+
   if (env.openaiApiKey) {
     return new OpenAIEmbeddings({
       openAIApiKey: env.openaiApiKey,

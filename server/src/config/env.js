@@ -136,6 +136,9 @@ export function validateEnvironment() {
       if (!env.pineconeIndex) {
         errors.push("PINECONE_INDEX is required when VECTOR_DB_PROVIDER=pinecone");
       }
+      if (!env.openaiApiKey) {
+        errors.push("OPENAI_API_KEY is required when VECTOR_DB_PROVIDER=pinecone");
+      }
     }
 
     if (!env.googleApiKey && !env.anthropicApiKey) {
