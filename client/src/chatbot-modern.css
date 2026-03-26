@@ -376,6 +376,17 @@
   cursor: pointer;
 }
 
+.cc-escalate:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cc-agent-hours-note {
+  margin: 0 1rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--cc-soft-text);
+}
+
 .cc-input-wrap {
   border: 1px solid var(--cc-border);
   border-radius: 16px;
@@ -396,29 +407,6 @@
 .cc-input-zone .cc-input-wrap {
   border-top: 1px solid var(--cc-border);
   padding-top: 0.36rem;
-}
-
-.cc-input-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.15rem 0.15rem 0.42rem;
-}
-
-.cc-live-agent-mini {
-  border: 1px solid #f0b8b8;
-  border-radius: 999px;
-  padding: 0.34rem 0.6rem;
-  font-size: 0.69rem;
-  font-weight: 700;
-  color: #b42323;
-  background: #fff6f6;
-  cursor: pointer;
-}
-
-.cc-live-agent-mini:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .cc-input {

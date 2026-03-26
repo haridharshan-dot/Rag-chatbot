@@ -4,9 +4,7 @@ import { escalateToAgent, fetchHistory, sendStudentMessage } from "../../api";
 import { socket } from "../../socket";
 import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
-import SuggestionChips from "./SuggestionChips";
 import InputBox from "./InputBox";
-import AgentStatusBanner from "./AgentStatusBanner";
 
 const PROCESSING_STAGES = [
   "Analyzing your query...",
@@ -14,25 +12,40 @@ const PROCESSING_STAGES = [
   "Generating response...",
 ];
 const ESCALATE_COOLDOWN_MS = 2 * 60 * 1000;
+const AGENT_TIMEZONE = "Asia/Kolkata";
+const AGENT_START_HOUR = 9;
+const AGENT_END_HOUR = 17;
 
 const COPY = {
   en: {
     placeholder: "Ask about fees, cutoffs, scholarships, courses...",
-    suggestions: ["Check CSE fees", "Cutoff for AI/ML", "Hostel fees", "Admission deadlines"],
-    connectAgent: "I am not fully confident. Connecting you to a human agent...",
-    escalateButton: "Talk to Human Agent",
-    connecting: "Connecting to agent...",
-    joined: "Agent joined the chat",
+    escalateButton: "Connect to Live Agent",
+    offHours: "Live agents are available only from 9:00 AM to 5:00 PM IST.",
+    availabilityNote: "Live agent support is available from 9:00 AM to 5:00 PM IST.",
   },
   hi: {
     placeholder: "Fees, cutoffs, scholarship, courses ke bare me puchhiye...",
-    suggestions: ["CSE fees", "AI/ML cutoff", "Hostel fees", "Admission deadline"],
-    connectAgent: "Mujhe full confidence nahi hai. Human agent se connect kar raha hu...",
     escalateButton: "Human Agent se baat karein",
-    connecting: "Agent se connect ho raha hai...",
-    joined: "Agent chat me join ho gaya",
+    offHours: "Live agent sirf 9:00 AM se 5:00 PM IST tak available hain.",
+    availabilityNote: "Live agent support 9:00 AM se 5:00 PM IST tak available hai.",
   },
 };
+
+function getCurrentHourInTimezone(timezone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "numeric",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hourPart = parts.find((part) => part.type === "hour")?.value;
+  const hour = Number(hourPart);
+  return Number.isFinite(hour) ? hour : 0;
+}
+
+function isAgentWithinWorkingHours() {
+  const hour = getCurrentHourInTimezone(AGENT_TIMEZONE);
+  return hour >= AGENT_START_HOUR && hour < AGENT_END_HOUR;
+}
 
 function normalizeMessage(message) {
   return {
@@ -76,7 +89,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
   const [isSending, setIsSending] = useState(false);
   const [handoffPending, setHandoffPending] = useState(false);
   const [agentConnected, setAgentConnected] = useState(false);
-  const [showEscalate, setShowEscalate] = useState(false);
   const [lastEscalateShownAt, setLastEscalateShownAt] = useState(0);
   const [aiStageIndex, setAiStageIndex] = useState(0);
   const [agentTyping, setAgentTyping] = useState(false);
@@ -95,11 +107,7 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
     [lastEscalateShownAt]
   );
 
-  const agentBanner = useMemo(() => {
-    if (agentConnected) return { label: text.joined, type: "success" };
-    if (handoffPending) return { label: text.connecting, type: "warning" };
-    return null;
-  }, [agentConnected, handoffPending, text.joined, text.connecting]);
+  const isAgentAvailable = useMemo(() => isAgentWithinWorkingHours(), []);
 
   useEffect(() => {
     localStorage.setItem("chat-lang", language);
@@ -130,8 +138,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         setMessages(history);
         setHandoffPending(data.status === "queued");
         setAgentConnected(false);
-        const latestBotLikeMessage = [...history].reverse().find((msg) => msg?.sender === "bot" || msg?.sender === "system");
-        setShowEscalate(data.status === "queued" || shouldTriggerEscalationFromMessage(latestBotLikeMessage));
       })
       .catch((error) => {
         console.error("Unable to load history", error);
@@ -149,9 +155,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
       if (isAgentJoinMessage(normalized)) {
         return;
       }
-      if (shouldTriggerEscalationFromMessage(normalized)) {
-        setShowEscalate(true);
-      }
       setMessages((prev) => {
         const duplicate = prev.slice(-5).some(
           (item) =>
@@ -166,7 +169,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
     const onAgentJoined = () => {
       setAgentConnected(true);
       setHandoffPending(false);
-      setShowEscalate(true);
       setMessages((prev) => [
         ...prev,
         {
@@ -266,9 +268,7 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         messageSuggestsAgent(botText)
       );
 
-      if (status === "queued") {
-        setShowEscalate(true);
-      } else if (shouldShowEscalate && !cooldownActive) {
+      if (status !== "queued" && shouldShowEscalate && !cooldownActive) {
         const now = Date.now();
         setLastEscalateShownAt(now);
         try {
@@ -276,9 +276,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         } catch {
           // Ignore storage errors and keep in-memory cooldown.
         }
-        setShowEscalate(true);
-      } else if (!shouldShowEscalate) {
-        setShowEscalate(false);
       }
 
       setHandoffPending(status === "queued" || Boolean(response.autoEscalated));
@@ -306,18 +303,21 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
 
   const onEscalate = async () => {
     if (!sessionId) return;
-    try {
-      await escalateToAgent(sessionId);
-      setShowEscalate(true);
-      setHandoffPending(true);
+    if (!isAgentAvailable) {
       setMessages((prev) => [
         ...prev,
         {
           sender: "system",
-          content: text.connecting,
+          content: text.offHours,
           createdAt: new Date().toISOString(),
         },
       ]);
+      return;
+    }
+
+    try {
+      await escalateToAgent(sessionId);
+      setHandoffPending(true);
     } catch (error) {
       console.error("Escalation failed", error);
     }
@@ -342,8 +342,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         onChangeLanguage={setLanguage}
       />
 
-      <AgentStatusBanner status={agentBanner} />
-
       <div className="cc-body">
         <MessageList
           messages={messages}
@@ -356,22 +354,22 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
       </div>
 
       <div className="cc-footer">
-        <SuggestionChips suggestions={text.suggestions} onPick={sendMessage} />
-
         <AnimatePresence>
-          {showEscalate && !agentConnected && (
+          {!agentConnected && (
             <motion.button
               className="cc-escalate"
               onClick={onEscalate}
-              disabled={handoffPending}
+              disabled={handoffPending || !isAgentAvailable}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
             >
-              {handoffPending ? text.connecting : text.escalateButton}
+              {text.escalateButton}
             </motion.button>
           )}
         </AnimatePresence>
+
+        <p className="cc-agent-hours-note">{text.availabilityNote}</p>
 
         <InputBox
           value={input}
@@ -380,8 +378,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
           onChange={setInput}
           onSend={sendMessage}
           onTyping={onTyping}
-          onEscalate={onEscalate}
-          handoffPending={handoffPending}
           placeholder={text.placeholder}
         />
       </div>

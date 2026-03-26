@@ -7,8 +7,6 @@ export default function InputBox({
   onChange,
   onSend,
   onTyping,
-  onEscalate,
-  handoffPending = false,
   placeholder,
 }) {
   const inputRef = useRef(null);
@@ -28,16 +26,6 @@ export default function InputBox({
 
   return (
     <div className="cc-input-zone">
-      <div className="cc-input-toolbar">
-        <button
-          type="button"
-          className="cc-live-agent-mini"
-          onClick={onEscalate}
-          disabled={handoffPending || disabled}
-        >
-          {handoffPending ? "Connecting..." : "Switch to Live Agent"}
-        </button>
-      </div>
       <div className="cc-input-wrap">
         <textarea
           ref={inputRef}
