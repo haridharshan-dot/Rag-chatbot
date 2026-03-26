@@ -78,20 +78,61 @@ async function setUserOtp({ user, channel, target }) {
 }
 
 async function issueAndDeliverOtp({ user, channel, target, deliveryTarget }) {
-  const otp = await setUserOtp({ user, channel, target });
-  const delivery = await sendOtp({
-    channel,
-    target: deliveryTarget,
-    otp,
-    studentName: user.name,
+  const preferredChannel = channel;
+  const preferredTarget = target;
+  const preferredDeliveryTarget = deliveryTarget;
+
+  const otp = await setUserOtp({
+    user,
+    channel: preferredChannel,
+    target: preferredTarget,
   });
 
-  return {
-    channel,
-    target,
-    otp: getDebugOtp(otp),
-    delivered: Boolean(delivery?.delivered),
-  };
+  try {
+    const delivery = await sendOtp({
+      channel: preferredChannel,
+      target: preferredDeliveryTarget,
+      otp,
+      studentName: user.name,
+    });
+
+    return {
+      channel: preferredChannel,
+      target: preferredTarget,
+      otp: getDebugOtp(otp),
+      delivered: Boolean(delivery?.delivered),
+    };
+  } catch (error) {
+    const canFallbackToMobile =
+      preferredChannel === "email" &&
+      Boolean(normalizeMobile(user.mobile));
+
+    if (!canFallbackToMobile) {
+      throw error;
+    }
+
+    const fallbackMobile = normalizeMobile(user.mobile);
+    const fallbackDeliveryTarget = formatMobileForDelivery(fallbackMobile);
+
+    // Rebind OTP target metadata to the mobile destination for correct verification.
+    user.otpChannel = "mobile";
+    user.otpTarget = fallbackMobile;
+    await user.save();
+
+    const fallbackDelivery = await sendOtp({
+      channel: "mobile",
+      target: fallbackDeliveryTarget,
+      otp,
+      studentName: user.name,
+    });
+
+    return {
+      channel: "mobile",
+      target: fallbackMobile,
+      otp: getDebugOtp(otp),
+      delivered: Boolean(fallbackDelivery?.delivered),
+    };
+  }
 }
 
 router.post("/register", async (req, res, next) => {
