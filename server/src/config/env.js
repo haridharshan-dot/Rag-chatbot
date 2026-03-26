@@ -73,6 +73,9 @@ export const env = {
   pineconeApiKey: process.env.PINECONE_API_KEY || "",
   pineconeIndex: process.env.PINECONE_INDEX || "",
   pineconeNamespace: process.env.PINECONE_NAMESPACE || "college-knowledge",
+  pineconeIndexHost: asString(process.env.PINECONE_INDEX_HOST, ""),
+  pineconeIntegratedEmbedding: asBoolean(process.env.PINECONE_INTEGRATED_EMBEDDING, true),
+  pineconeEmbedField: asString(process.env.PINECONE_EMBED_FIELD, "chunk_text"),
   dataDir:
     process.env.DATA_DIR || path.resolve(__dirname, "../../../data/sample"),
   chunksStorePath: path.resolve(__dirname, "../../storage/chunks.json"),
@@ -136,8 +139,10 @@ export function validateEnvironment() {
       if (!env.pineconeIndex) {
         errors.push("PINECONE_INDEX is required when VECTOR_DB_PROVIDER=pinecone");
       }
-      if (!env.openaiApiKey) {
-        errors.push("OPENAI_API_KEY is required when VECTOR_DB_PROVIDER=pinecone");
+      if (env.pineconeIntegratedEmbedding && !env.pineconeIndexHost) {
+        warnings.push(
+          "PINECONE_INDEX_HOST is not set. Integrated embedding flow will be skipped and standard vector mode will be used."
+        );
       }
     }
 
