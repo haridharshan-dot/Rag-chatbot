@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useState } from "react";
-import EmbeddedStudentChatbot from "../components/EmbeddedStudentChatbot";
+import CollegeChatbotWidget from "../components/CollegeChatbotWidget";
 
 export default function ChatbotEmbedPage() {
   const [siteContext, setSiteContext] = useState(null);
@@ -65,7 +65,7 @@ export default function ChatbotEmbedPage() {
   return (
     <div className="chatbot-embed-page">
       {ready ? (
-        <EmbeddedStudentChatbot defaultOpen={false} hideFab={false} siteContext={siteContext} />
+        <CollegeChatbotWidget siteContext={siteContext} />
       ) : null}
     </div>
   );

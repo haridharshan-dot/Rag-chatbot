@@ -1,4 +1,4 @@
-import EmbeddedStudentChatbot from "../components/EmbeddedStudentChatbot";
+import CollegeChatbotWidget from "../components/CollegeChatbotWidget";
 
 export default function StudentPage() {
   return (
@@ -12,7 +12,7 @@ export default function StudentPage() {
         </p>
       </section>
 
-      <EmbeddedStudentChatbot defaultOpen={false} hideFab={false} />
+      <CollegeChatbotWidget />
     </div>
   );
 }
