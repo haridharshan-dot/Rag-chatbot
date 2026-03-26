@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { BRANDING } from "../../config/branding";
 import RichCards from "./RichCards";
+import ChatMarkdown from "./ChatMarkdown";
 
 function formatTime(dateLike) {
   const date = new Date(dateLike || Date.now());
@@ -64,7 +65,11 @@ export default function MessageBubble({ message, onRichAction, index = 0 }) {
       )}
 
       <article className={`cc-bubble cc-bubble-${variant}`} aria-label={`${senderLabel} at ${timestamp}`}>
-        <p className="cc-bubble-text">{visibleText}</p>
+        {variant === "bot" ? (
+          <ChatMarkdown content={visibleText} />
+        ) : (
+          <p className="cc-bubble-text">{visibleText}</p>
+        )}
         <small className="cc-bubble-time">{timestamp}</small>
         {variant === "bot" && visibleText.length === text.length ? <RichCards message={text} onAction={onRichAction} /> : null}
       </article>

@@ -18,6 +18,7 @@ export default function ChatHeader({
 }) {
   const statusTone = connectionStatus === "online" ? "online" : "offline";
   const statusLabel = connectionStatus === "online" ? "Online" : "Reconnecting";
+  const sessionLabel = historyCount === 1 ? "1 chat" : `${historyCount || 0} chats`;
 
   return (
     <motion.header
@@ -26,25 +27,39 @@ export default function ChatHeader({
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.22 }}
     >
-      <div className="cc-brand-wrap">
-        <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
-        <div className="cc-brand-copy">
-          <h3>AI ASSISTANT</h3>
-          <p>
-            <span className={`cc-dot cc-dot-${statusTone}`} />
-            {statusLabel}
-          </p>
+      <div className="cc-header-main">
+        <div className="cc-brand-wrap">
+          <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
+          <div className="cc-brand-copy">
+            <h3>SONA AI CONCIERGE</h3>
+            <p>Admissions, fees, cutoffs, scholarships</p>
+          </div>
+        </div>
+
+        <div className="cc-header-actions">
+          {onStudentLogout ? (
+            <button className="cc-action-btn cc-action-muted" onClick={onStudentLogout} aria-label="Switch account">
+              Switch
+            </button>
+          ) : null}
+          <button className="cc-action-btn cc-action-close" onClick={onClose} aria-label="Close chatbot">
+            X
+          </button>
         </div>
       </div>
 
-      <div className="cc-header-actions">
+      <div className="cc-header-meta">
+        <div className="cc-header-presence">
+          <span className={`cc-dot cc-dot-${statusTone}`} />
+          <span>{statusLabel}</span>
+        </div>
         <div className="cc-hours-group" aria-label="Live agent working slots">
           <span className="cc-hours-pill">{AGENT_TIME_SLOT}</span>
         </div>
         {studentDisplayName ? (
           <div className="cc-student-pill" title={`Recent sessions: ${historyCount || 0}`}>
-            {studentDisplayName}
-            <small>{historyCount || 0} sessions</small>
+            <span>{studentDisplayName}</span>
+            <small>{sessionLabel}</small>
           </div>
         ) : null}
         {!agentConnected && (
@@ -57,18 +72,10 @@ export default function ChatHeader({
               title="Live agent hours are 9AM to 5PM IST"
               aria-busy={handoffPending}
             >
-              {handoffPending ? "Requested" : `${agentButtonLabel} (${agentAvailabilityLabel})`}
+              {handoffPending ? "Requested" : `${agentButtonLabel} ${agentAvailabilityLabel}`}
             </button>
           </div>
         )}
-        {onStudentLogout ? (
-          <button className="cc-action-btn cc-action-muted" onClick={onStudentLogout} aria-label="Switch account">
-            Switch
-          </button>
-        ) : null}
-        <button className="cc-action-btn" onClick={onClose} aria-label="Close chatbot">
-          Close
-        </button>
       </div>
     </motion.header>
   );
