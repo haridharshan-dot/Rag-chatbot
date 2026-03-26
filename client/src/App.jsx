@@ -10,6 +10,7 @@ const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminAgentsPage = lazy(() => import("./pages/AdminAgentsPage"));
 const ChatbotEmbedPage = lazy(() => import("./pages/ChatbotEmbedPage"));
 const Login = lazy(() => import("./pages/Login"));
+const StudentForgotPasswordPage = lazy(() => import("./pages/StudentForgotPasswordPage"));
 
 function ProtectedRoute({ children }) {
   if (!isSupportAgentAuthenticated()) {
@@ -39,6 +40,7 @@ function App() {
       <Suspense fallback={<div className="app-route-loading" role="status" aria-live="polite">Loading...</div>}>
         <Routes>
           <Route path="/" element={<StudentPage />} />
+          <Route path="/forgot-password" element={<StudentForgotPasswordPage />} />
           <Route path="/chatbot" element={<ChatbotEmbedPage />} />
           <Route path="/status" element={<StatusPage />} />
           <Route path="/login" element={<Login />} />

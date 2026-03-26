@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
+import { Link } from "react-router-dom";
 import EmbeddedStudentChatbot from "../components/EmbeddedStudentChatbot";
 import {
   fetchStudentHistory,
   fetchStudentMe,
-  requestStudentForgotPasswordOtp,
   requestStudentOtp,
   setStudentToken,
   studentGoogleLogin,
   studentLogin,
   studentSignup,
-  verifyStudentForgotPasswordOtp,
   verifyStudentOtp,
 } from "../api";
 import {
@@ -33,10 +32,6 @@ export default function StudentPage() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [forgotMobile, setForgotMobile] = useState("");
-  const [forgotOtp, setForgotOtp] = useState("");
-  const [forgotNewPassword, setForgotNewPassword] = useState("");
-  const [forgotOtpRequested, setForgotOtpRequested] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -152,51 +147,6 @@ export default function StudentPage() {
     }
   }
 
-  async function onForgotRequest(event) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    setDebugOtp("");
-    try {
-      const data = await requestStudentForgotPasswordOtp({
-        mobile: String(forgotMobile || "").trim(),
-      });
-      setForgotOtpRequested(true);
-      setSuccess("OTP sent to your mobile for password reset.");
-      if (data?.otp) {
-        setDebugOtp(data.otp);
-      }
-    } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not send reset OTP.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function onForgotVerify(event) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    try {
-      await verifyStudentForgotPasswordOtp({
-        mobile: String(forgotMobile || "").trim(),
-        otp: String(forgotOtp || "").trim(),
-        newPassword: String(forgotNewPassword || "").trim(),
-      });
-      setForgotOtpRequested(false);
-      setForgotOtp("");
-      setForgotNewPassword("");
-      setLoginMethod("password");
-      setSuccess("Password updated. Login using your email and new password.");
-    } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Unable to reset password.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function onGoogleSuccess(response) {
     const credential = String(response?.credential || "").trim();
     if (!credential) {
@@ -287,35 +237,40 @@ export default function StudentPage() {
             </div>
 
             {tab === "login" ? (
-              <>
-                <div className="student-auth-method-toggle">
-                  <button
-                    type="button"
-                    className={loginMethod === "password" ? "active" : ""}
-                    onClick={() => setLoginMethod("password")}
-                  >
-                    Password Login
-                  </button>
-                  <button
-                    type="button"
-                    className={loginMethod === "otp" ? "active" : ""}
-                    onClick={() => setLoginMethod("otp")}
-                  >
-                    OTP Login
-                  </button>
-                </div>
-
-                {googleEnabled ? (
-                  <div className="student-google-wrap">
-                    <GoogleLogin
-                      onSuccess={onGoogleSuccess}
-                      onError={() => setError("Google login failed.")}
-                      text="continue_with"
-                    />
-                  </div>
-                ) : null}
-              </>
+              <div className="student-auth-method-toggle">
+                <button
+                  type="button"
+                  className={loginMethod === "password" ? "active" : ""}
+                  onClick={() => setLoginMethod("password")}
+                >
+                  Password Login
+                </button>
+                <button
+                  type="button"
+                  className={loginMethod === "otp" ? "active" : ""}
+                  onClick={() => setLoginMethod("otp")}
+                >
+                  OTP Login
+                </button>
+              </div>
             ) : null}
+
+            <div className="student-google-wrap">
+              {googleEnabled ? (
+                <>
+                  <GoogleLogin
+                    onSuccess={onGoogleSuccess}
+                    onError={() => setError("Google login failed.")}
+                    text="continue_with"
+                  />
+                  <p className="student-auth-note">Use Google for instant login or signup.</p>
+                </>
+              ) : (
+                <p className="student-auth-note">
+                  Google login/signup is unavailable. Configure `VITE_GOOGLE_CLIENT_ID`.
+                </p>
+              )}
+            </div>
 
             <form className="student-auth-form" onSubmit={onSubmit}>
               {tab === "register" ? (
@@ -433,57 +388,9 @@ export default function StudentPage() {
             </form>
 
             {tab === "login" && loginMethod === "password" ? (
-              <>
-                <button
-                  type="button"
-                  className="student-link-btn"
-                  onClick={() => {
-                    setForgotOtpRequested(false);
-                    setForgotOtp("");
-                    setForgotNewPassword("");
-                    setError("");
-                    setSuccess("");
-                  }}
-                >
-                  Forgot password? Reset with OTP
-                </button>
-
-                <form className="student-auth-form student-forgot-form" onSubmit={onForgotRequest}>
-                  <input
-                    placeholder="Registered mobile number"
-                    value={forgotMobile}
-                    onChange={(event) => setForgotMobile(event.target.value)}
-                    required
-                  />
-                  <button type="submit" disabled={loading}>
-                    {loading ? "Sending OTP..." : "Send Reset OTP"}
-                  </button>
-                </form>
-
-                {forgotOtpRequested ? (
-                  <form className="student-auth-form student-forgot-form" onSubmit={onForgotVerify}>
-                    <input
-                      placeholder="Enter OTP"
-                      value={forgotOtp}
-                      onChange={(event) => setForgotOtp(event.target.value)}
-                      inputMode="numeric"
-                      maxLength={6}
-                      required
-                    />
-                    <input
-                      type="password"
-                      placeholder="New password"
-                      value={forgotNewPassword}
-                      onChange={(event) => setForgotNewPassword(event.target.value)}
-                      minLength={6}
-                      required
-                    />
-                    <button type="submit" disabled={loading}>
-                      {loading ? "Updating..." : "Verify OTP & Update Password"}
-                    </button>
-                  </form>
-                ) : null}
-              </>
+              <Link to="/forgot-password" className="student-link-btn">
+                Forgot password? Reset with OTP
+              </Link>
             ) : null}
           </div>
         </section>
