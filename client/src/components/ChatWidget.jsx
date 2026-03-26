@@ -11,6 +11,7 @@ export default function ChatWidget({
   defaultOpen = false,
   hideFab = false,
   preChatContent = null,
+  chatContainerProps = {},
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -121,6 +122,7 @@ export default function ChatWidget({
                 setIsFullscreen(false);
                 setOpen(false);
               }}
+              {...chatContainerProps}
             />
           )}
         </aside>

@@ -87,7 +87,17 @@ function shouldTriggerEscalationFromMessage(message) {
   );
 }
 
-export default function ChatContainer({ sessionId, studentId, loading, isFullscreen, setFullscreen, onClose }) {
+export default function ChatContainer({
+  sessionId,
+  studentId,
+  loading,
+  isFullscreen,
+  setFullscreen,
+  onClose,
+  studentDisplayName = "",
+  historyCount = 0,
+  onStudentLogout = null,
+}) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -368,6 +378,9 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         isAgentAvailable={isAgentAvailable}
         agentButtonLabel={text.escalateButton}
         agentAvailabilityLabel={text.availabilityCompact}
+        studentDisplayName={studentDisplayName}
+        historyCount={historyCount}
+        onStudentLogout={onStudentLogout}
         onClose={onClose}
       />
 

@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import ChatWidget from "./ChatWidget";
 import {
   createSession,
+  fetchStudentHistory,
   requestStudentOtp,
   studentSignup,
   verifyStudentOtp,
 } from "../api";
-import { getStudentFromToken, setStudentToken } from "../utils/auth";
+import { clearStudentToken, getStudentFromToken, setStudentToken } from "../utils/auth";
 
 export default function EmbeddedStudentChatbot({
   studentId: providedStudentId,
@@ -23,6 +24,7 @@ export default function EmbeddedStudentChatbot({
   }, [providedStudentId]);
 
   const [student, setStudent] = useState(initialStudent);
+  const [historyCount, setHistoryCount] = useState(0);
   const [sessionId, setSessionId] = useState("");
   const [loading, setLoading] = useState(Boolean(initialStudent?.id));
   const [error, setError] = useState("");
@@ -73,6 +75,41 @@ export default function EmbeddedStudentChatbot({
       mounted = false;
     };
   }, [siteContext, student?.id]);
+
+  useEffect(() => {
+    if (!requiresPopupAuth || !student?.id) {
+      setHistoryCount(0);
+      return;
+    }
+
+    let mounted = true;
+    fetchStudentHistory()
+      .then((sessions) => {
+        if (!mounted) return;
+        setHistoryCount(Array.isArray(sessions) ? sessions.length : 0);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setHistoryCount(0);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [requiresPopupAuth, student?.id]);
+
+  function handleSwitchAccount() {
+    clearStudentToken();
+    setStudent(null);
+    setHistoryCount(0);
+    setSessionId("");
+    setError("");
+    setAuthError("");
+    setAuthMessage("Signed out. Login to continue.");
+    setDebugOtp("");
+    setOtp("");
+    setAuthMode("login");
+  }
 
   async function handleSignup(event) {
     event.preventDefault();
@@ -292,6 +329,11 @@ export default function EmbeddedStudentChatbot({
       loading={loading}
       error={error}
       preChatContent={preChatContent}
+      chatContainerProps={{
+        studentDisplayName: requiresPopupAuth ? student?.name || "Student" : "",
+        historyCount: requiresPopupAuth ? historyCount : 0,
+        onStudentLogout: requiresPopupAuth && student?.id ? handleSwitchAccount : null,
+      }}
       onRetry={() => {
         if (!student?.id) return;
         setSessionId("");

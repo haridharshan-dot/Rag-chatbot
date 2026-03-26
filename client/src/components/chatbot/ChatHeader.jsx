@@ -11,6 +11,9 @@ export default function ChatHeader({
   isAgentAvailable,
   agentButtonLabel,
   agentAvailabilityLabel,
+  studentDisplayName,
+  historyCount,
+  onStudentLogout,
   onClose,
 }) {
   const statusTone = connectionStatus === "online" ? "online" : "offline";
@@ -38,6 +41,12 @@ export default function ChatHeader({
         <div className="cc-hours-group" aria-label="Live agent working slots">
           <span className="cc-hours-pill">{AGENT_TIME_SLOT}</span>
         </div>
+        {studentDisplayName ? (
+          <div className="cc-student-pill" title={`Recent sessions: ${historyCount || 0}`}>
+            {studentDisplayName}
+            <small>{historyCount || 0} sessions</small>
+          </div>
+        ) : null}
         {!agentConnected && (
           <div className="cc-agent-wrap">
             <button
@@ -52,6 +61,11 @@ export default function ChatHeader({
             </button>
           </div>
         )}
+        {onStudentLogout ? (
+          <button className="cc-action-btn cc-action-muted" onClick={onStudentLogout} aria-label="Switch account">
+            Switch
+          </button>
+        ) : null}
         <button className="cc-action-btn" onClick={onClose} aria-label="Close chatbot">
           Close
         </button>
