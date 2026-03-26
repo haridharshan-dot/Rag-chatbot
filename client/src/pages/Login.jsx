@@ -7,7 +7,7 @@ import { getAgentRole, isAgentAuthenticated, setAgentToken } from "../utils/auth
 export default function Login() {
   const navigate = useNavigate();
   const [mode, setMode] = useState("agent");
-  const [email, setEmail] = useState("agent@sona.com");
+  const [email, setEmail] = useState("agent");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -103,7 +103,7 @@ export default function Login() {
               className={mode === "agent" ? "active" : ""}
               onClick={() => {
                 setMode("agent");
-                setEmail("agent@sona.com");
+                setEmail("agent");
                 setError("");
                 setSuccessMessage("");
               }}
@@ -151,11 +151,11 @@ export default function Login() {
 
           <form onSubmit={onSubmit} className="agent-auth-form">
             <input
-              type={mode === "admin" ? "text" : "email"}
+              type="text"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder={mode === "admin" ? "admin" : "agent@sona.com"}
-              autoComplete={mode === "admin" ? "username" : "email"}
+              placeholder={mode === "admin" ? "admin" : "agent"}
+              autoComplete="username"
               required
             />
             <input
