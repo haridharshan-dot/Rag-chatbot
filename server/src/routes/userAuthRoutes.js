@@ -6,6 +6,7 @@ import { ChatSession } from "../models/ChatSession.js";
 import { env, isProd } from "../config/env.js";
 import { sendOtp } from "../services/otpDeliveryService.js";
 import { OAuth2Client } from "google-auth-library";
+import { getRuntimeSettings } from "../services/adminSettingsService.js";
 
 const router = Router();
 
@@ -63,6 +64,38 @@ function generateOtp() {
 function getDebugOtp(otp) {
   if (isProd) return undefined;
   return env.otpDebugExpose ? otp : undefined;
+}
+
+function resolveOtpDestination({ preferredChannel = "mobile", email = "", mobile = "" }) {
+  const normalizedPreferred = String(preferredChannel || "mobile").trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedMobile = normalizeMobile(mobile);
+
+  if (normalizedPreferred === "email" && normalizedEmail) {
+    return {
+      channel: "email",
+      target: normalizedEmail,
+      deliveryTarget: normalizedEmail,
+    };
+  }
+
+  if (normalizedMobile) {
+    return {
+      channel: "mobile",
+      target: normalizedMobile,
+      deliveryTarget: formatMobileForDelivery(normalizedMobile),
+    };
+  }
+
+  if (normalizedEmail) {
+    return {
+      channel: "email",
+      target: normalizedEmail,
+      deliveryTarget: normalizedEmail,
+    };
+  }
+
+  throw new Error("Unable to resolve OTP destination");
 }
 
 async function setUserOtp({ user, channel, target }) {
@@ -223,6 +256,14 @@ router.post("/signup", async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
     }
 
+    const runtimeSettings = await getRuntimeSettings();
+    const preferredChannel = runtimeSettings?.otpPreferredChannel || env.otpPreferredChannel || "mobile";
+    const destination = resolveOtpDestination({
+      preferredChannel,
+      email,
+      mobile,
+    });
+
     const emailMatch = await StudentUser.findOne({ email });
     const mobileMatch = await StudentUser.findOne({ mobile });
 
@@ -238,13 +279,13 @@ router.post("/signup", async (req, res, next) => {
       }
       const otpPayload = await issueAndDeliverOtp({
         user: emailMatch,
-        channel: "mobile",
-        target: mobile,
-        deliveryTarget: formatMobileForDelivery(mobile),
+        channel: destination.channel,
+        target: destination.target,
+        deliveryTarget: destination.deliveryTarget,
       });
       return res.json({
         success: true,
-        message: "Signup complete. OTP sent to mobile.",
+        message: `Signup complete. OTP sent to ${otpPayload.channel}.`,
         data: {
           ...otpPayload,
           user: buildOtpPayload(emailMatch),
@@ -260,13 +301,13 @@ router.post("/signup", async (req, res, next) => {
       }
       const otpPayload = await issueAndDeliverOtp({
         user: mobileMatch,
-        channel: "mobile",
-        target: mobile,
-        deliveryTarget: formatMobileForDelivery(mobile),
+        channel: destination.channel,
+        target: destination.target,
+        deliveryTarget: destination.deliveryTarget,
       });
       return res.json({
         success: true,
-        message: "Signup complete. OTP sent to mobile.",
+        message: `Signup complete. OTP sent to ${otpPayload.channel}.`,
         data: {
           ...otpPayload,
           user: buildOtpPayload(mobileMatch),
@@ -281,13 +322,13 @@ router.post("/signup", async (req, res, next) => {
       }
       const otpPayload = await issueAndDeliverOtp({
         user: emailMatch,
-        channel: "mobile",
-        target: mobile,
-        deliveryTarget: formatMobileForDelivery(mobile),
+        channel: destination.channel,
+        target: destination.target,
+        deliveryTarget: destination.deliveryTarget,
       });
       return res.json({
         success: true,
-        message: "Profile exists. OTP sent to mobile.",
+        message: `Profile exists. OTP sent to ${otpPayload.channel}.`,
         data: {
           ...otpPayload,
           user: buildOtpPayload(emailMatch),
@@ -303,13 +344,13 @@ router.post("/signup", async (req, res, next) => {
     });
     const otpPayload = await issueAndDeliverOtp({
       user,
-      channel: "mobile",
-      target: mobile,
-      deliveryTarget: formatMobileForDelivery(mobile),
+      channel: destination.channel,
+      target: destination.target,
+      deliveryTarget: destination.deliveryTarget,
     });
     return res.status(201).json({
       success: true,
-      message: "Signup complete. OTP sent to mobile.",
+      message: `Signup complete. OTP sent to ${otpPayload.channel}.`,
       data: {
         ...otpPayload,
         user: buildOtpPayload(user),
@@ -322,7 +363,9 @@ router.post("/signup", async (req, res, next) => {
 
 router.post("/otp/request", async (req, res, next) => {
   try {
-    const channel = String(req.body?.channel || "").trim().toLowerCase();
+    const runtimeSettings = await getRuntimeSettings();
+    const fallbackChannel = runtimeSettings?.otpPreferredChannel || env.otpPreferredChannel || "mobile";
+    const channel = String(req.body?.channel || fallbackChannel).trim().toLowerCase();
     if (channel !== "email" && channel !== "mobile") {
       return res.status(400).json({ success: false, message: "channel must be email or mobile" });
     }

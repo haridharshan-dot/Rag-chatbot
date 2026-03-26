@@ -92,6 +92,8 @@ export default function AdminDashboard() {
   const [uploadPreview, setUploadPreview] = useState("");
   const [datasetPreviewOpen, setDatasetPreviewOpen] = useState(false);
   const [siteConfigOpen, setSiteConfigOpen] = useState(false);
+  const [otpConfigOpen, setOtpConfigOpen] = useState(false);
+  const [otpChannelDraft, setOtpChannelDraft] = useState("mobile");
   const [datasetPreviewMeta, setDatasetPreviewMeta] = useState(null);
   const [datasetPreviewText, setDatasetPreviewText] = useState("");
   const [datasetPreviewSearch, setDatasetPreviewSearch] = useState("");
@@ -111,6 +113,7 @@ export default function AdminDashboard() {
   const [runningReindex, setRunningReindex] = useState(false);
   const [runningStatusCheck, setRunningStatusCheck] = useState(false);
   const [runningOtpProviderCheck, setRunningOtpProviderCheck] = useState(false);
+  const [savingOtpChannel, setSavingOtpChannel] = useState(false);
   const [warmingRag, setWarmingRag] = useState(false);
   const [otpProviderHealth, setOtpProviderHealth] = useState(null);
   const [feedback, setFeedback] = useState("");
@@ -153,6 +156,10 @@ export default function AdminDashboard() {
     const timer = setInterval(load, 30000);
     return () => clearInterval(timer);
   }, [sessionFilter]);
+
+  useEffect(() => {
+    setOtpChannelDraft(settings?.otpPreferredChannel || "mobile");
+  }, [settings?.otpPreferredChannel]);
 
   async function refreshAll() {
     const [overview, runtime, logs, queueData, datasetsData] = await Promise.all([
@@ -247,6 +254,35 @@ export default function AdminDashboard() {
       setFeedback(error?.response?.data?.message || "OTP provider check failed.");
     } finally {
       setRunningOtpProviderCheck(false);
+    }
+  }
+
+  async function onOpenOtpConfig() {
+    setOtpConfigOpen(true);
+    setOtpChannelDraft(settings?.otpPreferredChannel || "mobile");
+    if (!otpProviderHealth) {
+      await onCheckOtpProviders();
+    }
+  }
+
+  async function onSaveOtpPreference() {
+    setSavingOtpChannel(true);
+    setFeedback("");
+    try {
+      const updated = await updateAdminSettings({
+        otpPreferredChannel: otpChannelDraft,
+      });
+      setSettings((prev) => ({
+        ...prev,
+        ...updated,
+      }));
+      setFeedback(`Default OTP channel updated to ${updated?.otpPreferredChannel || otpChannelDraft}.`);
+      setOtpConfigOpen(false);
+    } catch (error) {
+      console.error(error);
+      setFeedback(error?.response?.data?.message || "Failed to update OTP preference.");
+    } finally {
+      setSavingOtpChannel(false);
     }
   }
 
@@ -874,6 +910,9 @@ export default function AdminDashboard() {
                 <button className="pill-btn" onClick={onCheckOtpProviders} disabled={runningOtpProviderCheck}>
                   {runningOtpProviderCheck ? "Checking OTP Providers..." : "Check OTP Providers"}
                 </button>
+                <button className="pill-btn" onClick={onOpenOtpConfig}>
+                  OTP Channel Settings
+                </button>
                 <p>
                   API: {readiness?.apiStatus?.toUpperCase() || "UNKNOWN"} • LLM: {readiness?.llmStatus?.toUpperCase() || "UNKNOWN"}
                 </p>
@@ -1171,6 +1210,70 @@ export default function AdminDashboard() {
               </button>
               <button className="pill-btn" onClick={() => setSiteConfigOpen(false)}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {otpConfigOpen && (
+        <div className="admin-modal-backdrop" onClick={() => setOtpConfigOpen(false)}>
+          <div className="admin-modal otp-config-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-head">
+              <h3>OTP Channel Settings</h3>
+              <button className="pill-btn" onClick={() => setOtpConfigOpen(false)}>
+                Close
+              </button>
+            </div>
+
+            <div className="site-config-modal-body">
+              <p>Choose the preferred OTP channel for signup and default OTP requests.</p>
+
+              <label>
+                Preferred OTP Channel
+                <select
+                  className="admin-input"
+                  value={otpChannelDraft}
+                  onChange={(e) => setOtpChannelDraft(e.target.value)}
+                >
+                  <option value="mobile">Mobile OTP</option>
+                  <option value="email">Email OTP</option>
+                </select>
+              </label>
+
+              <div className="otp-provider-status-list">
+                <article className="otp-provider-status">
+                  <div>
+                    <strong>Email (SMTP)</strong>
+                    <p>{otpProviderHealth?.email?.message || "Not checked yet"}</p>
+                  </div>
+                  <span className={`otp-status-pill ${otpProviderHealth?.email?.ready ? "ok" : "warn"}`}>
+                    {otpProviderHealth?.email?.ready ? "Configured" : "Not configured"}
+                  </span>
+                </article>
+
+                <article className="otp-provider-status">
+                  <div>
+                    <strong>Mobile (Twilio)</strong>
+                    <p>{otpProviderHealth?.sms?.message || "Not checked yet"}</p>
+                  </div>
+                  <span className={`otp-status-pill ${otpProviderHealth?.sms?.ready ? "ok" : "warn"}`}>
+                    {otpProviderHealth?.sms?.ready ? "Configured" : "Not configured"}
+                  </span>
+                </article>
+              </div>
+
+              <p>
+                Last Checked: <strong>{formatDate(otpProviderHealth?.checkedAt)}</strong>
+              </p>
+            </div>
+
+            <div className="admin-modal-actions site-config-modal-footer">
+              <button className="pill-btn" onClick={onCheckOtpProviders} disabled={runningOtpProviderCheck}>
+                {runningOtpProviderCheck ? "Refreshing..." : "Refresh Provider Status"}
+              </button>
+              <button className="pill-btn" onClick={onSaveOtpPreference} disabled={savingOtpChannel}>
+                {savingOtpChannel ? "Saving..." : "Save OTP Preference"}
               </button>
             </div>
           </div>

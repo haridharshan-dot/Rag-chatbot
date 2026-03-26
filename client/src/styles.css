@@ -2104,6 +2104,65 @@ body.chatbot-embed-mode #root {
   padding-bottom: 0;
 }
 
+.otp-config-modal {
+  width: min(620px, 100%);
+  max-height: min(84vh, 720px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding-bottom: 0;
+}
+
+.otp-provider-status-list {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.otp-provider-status {
+  border: 1px solid #d7e2ed;
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 0.55rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.otp-provider-status strong {
+  display: block;
+  color: #183a58;
+}
+
+.otp-provider-status p {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: #557086;
+}
+
+.otp-status-pill {
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border: 1px solid #d2dce8;
+  background: #f1f4f8;
+  color: #536d82;
+  white-space: nowrap;
+}
+
+.otp-status-pill.ok {
+  border-color: #b9dfc6;
+  background: #eaf9f0;
+  color: #18683e;
+}
+
+.otp-status-pill.warn {
+  border-color: #ecc9c9;
+  background: #fff2f2;
+  color: #8a2d2d;
+}
+
 .site-config-modal-body {
   min-height: 0;
   overflow-y: auto;

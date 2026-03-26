@@ -87,6 +87,9 @@ export const env = {
   agentJwtExpiry: process.env.AGENT_JWT_EXPIRY || "12h",
   otpTtlMinutes: asNumber(process.env.OTP_TTL_MINUTES, 5),
   otpMaxAttempts: asNumber(process.env.OTP_MAX_ATTEMPTS, 5),
+  otpPreferredChannel: ["email", "mobile"].includes(asString(process.env.OTP_PREFERRED_CHANNEL, "mobile"))
+    ? asString(process.env.OTP_PREFERRED_CHANNEL, "mobile")
+    : "mobile",
   otpDebugExpose: asBoolean(process.env.OTP_DEBUG_EXPOSE, process.env.NODE_ENV !== "production"),
   smtpHost: asString(process.env.SMTP_HOST, ""),
   smtpPort: asNumber(process.env.SMTP_PORT, 587),

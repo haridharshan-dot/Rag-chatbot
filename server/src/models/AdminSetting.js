@@ -7,6 +7,7 @@ const adminSettingSchema = new mongoose.Schema(
     ragConfidenceThreshold: { type: Number, default: null },
     ragOutOfScopeThreshold: { type: Number, default: null },
     autoEscalationEnabled: { type: Boolean, default: null },
+    otpPreferredChannel: { type: String, enum: ["email", "mobile", null], default: null },
     microsoftAuthEnabled: { type: Boolean, default: null },
     microsoftAllowedDomains: [{ type: String }],
     microsoftAllowedEmails: [{ type: String }],
