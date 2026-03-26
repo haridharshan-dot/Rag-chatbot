@@ -20,13 +20,15 @@ export default function ChatbotEmbedPage() {
         document.documentElement.scrollHeight,
         window.innerHeight
       );
-      window.parent?.postMessage(
-        {
-          type: "sona-chatbot:resize",
-          height,
-        },
-        "*"
-      );
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: "sona-chatbot:resize",
+            height,
+          },
+          "*"
+        );
+      }
     }
 
     postHeight();
@@ -48,7 +50,9 @@ export default function ChatbotEmbedPage() {
     }
 
     window.addEventListener("message", onMessage);
-    window.parent?.postMessage({ type: "sona-chatbot:requestHostContext" }, "*");
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "sona-chatbot:requestHostContext" }, "*");
+    }
 
     const fallback = setTimeout(() => setReady(true), 700);
 

@@ -39,7 +39,7 @@ export default function ChatWidget({
 
   useEffect(() => {
     if (!open) return;
-    if (viewport.width <= 900) {
+    if (viewport.width <= 760) {
       setIsFullscreen(true);
     }
   }, [open, viewport.width]);
@@ -75,14 +75,16 @@ export default function ChatWidget({
   useEffect(() => {
     const closedDimensions = { width: 124, height: 92 };
 
-    window.parent?.postMessage(
-      {
-        type: "sona-chatbot:state",
-        open,
-        dimensions: open ? openDimensions : closedDimensions,
-      },
-      "*"
-    );
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(
+        {
+          type: "sona-chatbot:state",
+          open,
+          dimensions: open ? openDimensions : closedDimensions,
+        },
+        "*"
+      );
+    }
   }, [open, openDimensions]);
 
   return (

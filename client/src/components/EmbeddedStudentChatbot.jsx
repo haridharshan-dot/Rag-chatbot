@@ -5,9 +5,9 @@ import {
   createSession,
   fetchStudentHistory,
   requestStudentForgotPasswordOtp,
+  studentRegister,
   studentGoogleLogin,
   studentLogin,
-  studentSignup,
   verifyStudentForgotPasswordOtp,
 } from "../api";
 import { clearStudentToken, getStudentFromToken, setStudentToken } from "../utils/auth";
@@ -141,7 +141,7 @@ export default function EmbeddedStudentChatbot({
     setAuthError("");
     setAuthMessage("");
     try {
-      const data = await studentSignup({
+      const data = await studentRegister({
         name: signupName,
         email: signupEmail,
         mobile: signupMobile,
