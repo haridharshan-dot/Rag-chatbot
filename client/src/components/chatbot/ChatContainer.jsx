@@ -345,8 +345,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         connectionStatus={connectionStatus}
         handoffPending={handoffPending}
         agentConnected={agentConnected}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={() => setFullscreen((value) => !value)}
         onClose={onClose}
         language={language}
         onChangeLanguage={setLanguage}

@@ -8,8 +8,6 @@ const LANG_OPTIONS = [
 
 export default function ChatHeader({
   connectionStatus,
-  isFullscreen,
-  onToggleFullscreen,
   onClose,
   language,
   onChangeLanguage,
@@ -48,9 +46,6 @@ export default function ChatHeader({
             </option>
           ))}
         </select>
-        <button className="cc-action-btn" onClick={onToggleFullscreen} aria-label="Toggle fullscreen">
-          {isFullscreen ? "Exit" : "Expand"}
-        </button>
         <button className="cc-action-btn" onClick={onClose} aria-label="Close chatbot">
           Close
         </button>
