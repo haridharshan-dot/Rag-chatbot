@@ -86,15 +86,6 @@ export default function EmbeddedStudentChatbot({
     });
   }
 
-  async function createNewChatSession() {
-    if (!student?.id) return null;
-    const session = await createSession(student.id, siteContext);
-    const normalized = buildSessionShell(session);
-    upsertHistorySession(normalized);
-    setSessionId(getSessionIdValue(normalized));
-    return normalized;
-  }
-
   useEffect(() => {
     if (!student?.id) {
       setLoading(false);
@@ -524,30 +515,6 @@ export default function EmbeddedStudentChatbot({
       chatContainerProps={{
         studentDisplayName: requiresPopupAuth ? student?.name || "Student" : "",
         historyCount: requiresPopupAuth ? historyCount : 0,
-        historySessions: requiresPopupAuth ? historySessions : [],
-        currentSessionId: sessionId,
-        onSelectSession:
-          requiresPopupAuth && student?.id
-            ? (nextSessionId) => {
-                setSessionId(String(nextSessionId || ""));
-                setError("");
-              }
-            : null,
-        onNewChat:
-          requiresPopupAuth && student?.id
-            ? async () => {
-                setLoading(true);
-                setError("");
-                try {
-                  await createNewChatSession();
-                } catch (createError) {
-                  console.error("Failed to create new chat session", createError);
-                  setError("Unable to start a new chat right now.");
-                } finally {
-                  setLoading(false);
-                }
-              }
-            : null,
         onSessionSnapshot:
           requiresPopupAuth && student?.id
             ? (session) => {

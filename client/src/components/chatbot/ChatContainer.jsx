@@ -6,7 +6,6 @@ import { trackChatFunnelEvent } from "../../utils/chatAnalytics";
 import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
 import InputBox from "./InputBox";
-import SessionShelf from "./SessionShelf";
 
 const PROCESSING_STAGES = [
   "Analyzing your query...",
@@ -151,10 +150,6 @@ export default function ChatContainer({
   onClose,
   studentDisplayName = "",
   historyCount = 0,
-  historySessions = [],
-  currentSessionId = "",
-  onSelectSession = null,
-  onNewChat = null,
   onSessionSnapshot = null,
   siteContext = null,
   onStudentLogout = null,
@@ -474,16 +469,6 @@ export default function ChatContainer({
 
       <div className="cc-body">
         <div className="cc-chat-column">
-          {historySessions.length || onNewChat ? (
-            <SessionShelf
-              sessions={historySessions}
-              activeSessionId={currentSessionId || sessionId}
-              onSelectSession={onSelectSession}
-              onNewChat={onNewChat}
-              loading={loading}
-            />
-          ) : null}
-
           <MessageList
             messages={messages}
             listRef={listRef}

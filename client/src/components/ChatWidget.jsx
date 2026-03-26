@@ -55,20 +55,20 @@ export default function ChatWidget({
 
       if (isFullscreen) {
         return {
-        width: Math.max(320, viewportWidth - 12),
-        height: Math.max(540, viewportHeight - 12),
+        width: Math.max(320, viewportWidth - 6),
+        height: Math.max(560, viewportHeight - 6),
       };
     }
 
     const isSmallScreen = viewportWidth <= 640;
     return isSmallScreen
       ? {
-          width: Math.max(300, viewportWidth - 16),
-          height: Math.round(Math.max(520, viewportHeight * 0.84)),
+          width: Math.max(300, viewportWidth - 8),
+          height: Math.round(Math.max(560, viewportHeight * 0.94)),
         }
       : {
-          width: Math.max(380, Math.min(520, viewportWidth - 34)),
-          height: Math.round(Math.max(640, Math.min(760, viewportHeight * 0.9))),
+          width: Math.max(400, Math.min(540, viewportWidth - 24)),
+          height: Math.round(Math.max(680, Math.min(840, viewportHeight * 0.94))),
         };
   }, [isFullscreen, viewport.height, viewport.width]);
 
