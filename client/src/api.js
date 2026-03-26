@@ -142,6 +142,21 @@ export async function studentLogin(payload) {
   return response.data.data;
 }
 
+export async function studentSignup(payload) {
+  const response = await api.post("/auth/signup", payload);
+  return response.data.data;
+}
+
+export async function requestStudentOtp(payload) {
+  const response = await api.post("/auth/otp/request", payload);
+  return response.data.data;
+}
+
+export async function verifyStudentOtp(payload) {
+  const response = await api.post("/auth/otp/verify", payload);
+  return response.data.data;
+}
+
 export async function fetchStudentMe() {
   const response = await api.get("/auth/me", studentAuthConfig());
   return response.data.data;
@@ -229,6 +244,11 @@ export async function runAdminStatusCheck() {
 
 export async function runAdminWarmRag() {
   const response = await api.post('/admin/actions/warm-rag', {}, agentAuthConfig());
+  return response.data.data;
+}
+
+export async function runAdminOtpProviderHealthCheck() {
+  const response = await api.post('/admin/actions/check-otp-providers', {}, agentAuthConfig());
   return response.data.data;
 }
 

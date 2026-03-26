@@ -9,6 +9,7 @@ import { getRuntimeSettings, updateRuntimeSettings } from "../services/adminSett
 import { checkAndRecordStatus } from "../services/statusService.js";
 import { ChatSession } from "../models/ChatSession.js";
 import { AgentActivity } from "../models/AgentActivity.js";
+import { checkOtpProviderHealth } from "../services/otpDeliveryService.js";
 
 const router = Router();
 
@@ -210,6 +211,15 @@ router.post("/actions/warm-rag", async (req, res, next) => {
       message: error?.message || "Failed to initialize RAG service",
       data: ragService.getStatus(),
     });
+  }
+});
+
+router.post("/actions/check-otp-providers", async (req, res, next) => {
+  try {
+    const health = await checkOtpProviderHealth();
+    return res.json({ success: true, data: health });
+  } catch (error) {
+    next(error);
   }
 });
 

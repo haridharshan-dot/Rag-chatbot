@@ -31,6 +31,12 @@ function asString(value, fallback = "") {
   return normalized || fallback;
 }
 
+function asBoolean(value, fallback = false) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes";
+}
+
 const configuredClientUrls = asList(process.env.CLIENT_URLS, asList(process.env.CLIENT_URL));
 const defaultClientUrls = configuredClientUrls.length
   ? configuredClientUrls
@@ -79,6 +85,18 @@ export const env = {
   adminEmail: (process.env.ADMIN_EMAIL || "admin@sona.com").toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD || "admin@sona",
   agentJwtExpiry: process.env.AGENT_JWT_EXPIRY || "12h",
+  otpTtlMinutes: asNumber(process.env.OTP_TTL_MINUTES, 5),
+  otpMaxAttempts: asNumber(process.env.OTP_MAX_ATTEMPTS, 5),
+  otpDebugExpose: asBoolean(process.env.OTP_DEBUG_EXPOSE, process.env.NODE_ENV !== "production"),
+  smtpHost: asString(process.env.SMTP_HOST, ""),
+  smtpPort: asNumber(process.env.SMTP_PORT, 587),
+  smtpSecure: asBoolean(process.env.SMTP_SECURE, false),
+  smtpUser: asString(process.env.SMTP_USER, ""),
+  smtpPass: asString(process.env.SMTP_PASS, ""),
+  smtpFrom: asString(process.env.SMTP_FROM, ""),
+  twilioAccountSid: asString(process.env.TWILIO_ACCOUNT_SID, ""),
+  twilioAuthToken: asString(process.env.TWILIO_AUTH_TOKEN, ""),
+  twilioFromNumber: asString(process.env.TWILIO_FROM_NUMBER, ""),
   microsoftAuthEnabled: process.env.MICROSOFT_AUTH_ENABLED === "true",
   microsoftAllowedDomains: asList(process.env.MICROSOFT_ALLOWED_DOMAINS),
   microsoftAllowedEmails: asList(process.env.MICROSOFT_ALLOWED_EMAILS),

@@ -1507,9 +1507,9 @@ body.chatbot-embed-mode #root {
 
 .admin-layout {
   display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 1rem;
-  padding: 1rem;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.75rem;
   min-height: calc(100vh - 90px);
 }
 
@@ -1522,7 +1522,11 @@ body.chatbot-embed-mode #root {
 }
 
 .admin-side {
-  padding: 1rem;
+  position: sticky;
+  top: 0.75rem;
+  max-height: calc(100vh - 1.5rem);
+  overflow-y: auto;
+  padding: 0.85rem;
   background: linear-gradient(180deg, #f4f9ff 0%, #eef5fb 100%);
 }
 
@@ -1538,15 +1542,15 @@ body.chatbot-embed-mode #root {
 .admin-kpi-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
-  margin: 0.8rem 0;
+  gap: 0.45rem;
+  margin: 0.6rem 0;
 }
 
 .admin-kpi {
   background: #fff;
   border: 1px solid #d5e1ec;
   border-radius: 12px;
-  padding: 0.65rem;
+  padding: 0.52rem;
 }
 
 .admin-kpi span {
@@ -1564,7 +1568,7 @@ body.chatbot-embed-mode #root {
 .admin-actions {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.45rem;
+  gap: 0.34rem;
 }
 
 .upload-pill {
@@ -1573,7 +1577,9 @@ body.chatbot-embed-mode #root {
 }
 
 .admin-main {
-  padding: 1rem;
+  padding: 0.8rem;
+  max-height: calc(100vh - 1.5rem);
+  overflow-y: auto;
 }
 
 .admin-main-head {
@@ -1590,6 +1596,69 @@ body.chatbot-embed-mode #root {
 .admin-main-head span {
   color: #587087;
   font-size: 0.85rem;
+}
+
+.admin-view-tabs {
+  margin-top: 0.65rem;
+  display: inline-flex;
+  gap: 0.28rem;
+  background: #edf3fb;
+  border: 1px solid #d6e1ed;
+  border-radius: 12px;
+  padding: 0.25rem;
+}
+
+.admin-view-tab {
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #36546f;
+  font-weight: 700;
+  font-size: 0.78rem;
+  min-height: 32px;
+  padding: 0.32rem 0.62rem;
+  cursor: pointer;
+}
+
+.admin-view-tab.active {
+  background: linear-gradient(90deg, #002147, #355e9a);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(0, 33, 71, 0.25);
+}
+
+.admin-chip-row {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.admin-chip {
+  border: 1px solid #d8e3ef;
+  border-radius: 11px;
+  padding: 0.46rem 0.54rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(53, 94, 154, 0.1) 0, transparent 36%),
+    linear-gradient(180deg, #ffffff 0%, #f5f9fd 100%);
+  box-shadow: 0 6px 16px rgba(16, 35, 55, 0.06);
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1rem;
+}
+
+.admin-chip span {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5b748b;
+}
+
+.admin-chip strong {
+  font-size: 0.86rem;
+  line-height: 1.3;
+  color: #17344e;
 }
 
 .admin-search-bar {
@@ -1649,17 +1718,21 @@ body.chatbot-embed-mode #root {
 }
 
 .admin-manage-grid {
-  margin: 0.9rem 0;
+  margin: 0.65rem 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
+  gap: 0.5rem;
+}
+
+.admin-manage-grid-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .manage-card {
   background: linear-gradient(180deg, #fcfdff 0%, #f5f9fd 100%);
   border: 1px solid #d9e4ef;
   border-radius: 12px;
-  padding: 0.85rem;
+  padding: 0.7rem;
 }
 
 .manage-card h4 {
@@ -1670,7 +1743,8 @@ body.chatbot-embed-mode #root {
 .manage-card p {
   margin: 0;
   color: #577085;
-  line-height: 1.5;
+  line-height: 1.4;
+  font-size: 0.84rem;
 }
 
 .site-config-list {
@@ -1828,11 +1902,15 @@ body.chatbot-embed-mode #root {
 }
 
 .admin-live-queue {
-  margin-top: 0.75rem;
+  margin-top: 0.55rem;
   border: 1px solid #dbe5ef;
   border-radius: 12px;
   background: #fbfdff;
-  padding: 0.8rem;
+  padding: 0.65rem;
+}
+
+.admin-compact-card {
+  box-shadow: 0 10px 24px rgba(15, 36, 58, 0.06);
 }
 
 .admin-report-export {
@@ -1977,10 +2055,10 @@ body.chatbot-embed-mode #root {
 }
 
 .admin-status-block {
-  margin-top: 0.6rem;
+  margin-top: 0.5rem;
   border: 1px solid #d8e2ec;
   border-radius: 14px;
-  padding: 0.85rem;
+  padding: 0.65rem;
   background: #fbfdff;
 }
 
@@ -2008,6 +2086,13 @@ body.chatbot-embed-mode #root {
   .agent-layout,
   .admin-layout {
     grid-template-columns: 1fr;
+  }
+
+  .admin-side,
+  .admin-main {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
 
   .queue-panel {
@@ -2173,6 +2258,16 @@ body.chatbot-embed-mode #root {
   .admin-kpi-grid,
   .admin-manage-grid,
   .runtime-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-view-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-chip-row {
     grid-template-columns: 1fr;
   }
 

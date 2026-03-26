@@ -10,6 +10,7 @@ export default function ChatWidget({
   onRetry,
   defaultOpen = false,
   hideFab = false,
+  preChatContent = null,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -90,7 +91,18 @@ export default function ChatWidget({
 
       {open && (
         <aside className={`chat-widget cc-widget ${isFullscreen ? "cc-widget-full" : ""}`}>
-          {error && !loading && !sessionId ? (
+          {preChatContent ? (
+            typeof preChatContent === "function" ? (
+              preChatContent({
+                onClose: () => {
+                  setIsFullscreen(false);
+                  setOpen(false);
+                },
+              })
+            ) : (
+              preChatContent
+            )
+          ) : error && !loading && !sessionId ? (
             <section className="cc-shell cc-error-shell">
               <div className="cc-error-content">
                 <h3>Chat unavailable</h3>
