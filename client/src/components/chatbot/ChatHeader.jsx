@@ -30,7 +30,7 @@ export default function ChatHeader({
           <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
           <div className="cc-brand-copy">
             <h3>SONA AI CONCIERGE</h3>
-            <p>Admissions, fees, cutoffs, scholarships</p>
+            <p>Admissions, cutoffs, scholarships, courses</p>
           </div>
         </div>
 

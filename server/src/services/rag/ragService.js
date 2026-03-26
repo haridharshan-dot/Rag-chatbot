@@ -35,6 +35,12 @@ function isCutoffQuestion(question) {
   return /\bcutoff|cut off\b/i.test(String(question || ""));
 }
 
+function isRestrictedFeeQuestion(question) {
+  return /\bfees?\b|\bfee structure\b|\btuition\b|\bpayment\b|\brefund\b|\binstallment\b|\bhostel fee\b|\blab fee\b|\bexam fee\b/i.test(
+    String(question || "")
+  );
+}
+
 function extractRequestedYear(question) {
   const match = String(question || "").match(/\b(20\d{2})\b/);
   return match ? Number(match[1]) : null;
@@ -351,7 +357,18 @@ class RAGService {
     if (isGreetingOnly(question)) {
       return {
         answer:
-          "Hi! I can help with admissions, fees, cutoffs, courses, and deadlines. Ask your specific college question.",
+          "Hi! I can help with admissions, cutoffs, courses, scholarships, documents, and deadlines. Ask your specific college question.",
+        confidence: 1,
+        sources: [],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    if (isRestrictedFeeQuestion(question)) {
+      return {
+        answer:
+          "Fee details are not shared in this public chatbot. Please contact the admissions office or use the live agent for fee-related help.",
         confidence: 1,
         sources: [],
         escalationSuggested: false,

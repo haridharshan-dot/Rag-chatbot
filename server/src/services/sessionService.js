@@ -29,7 +29,7 @@ export async function createSession(
     messages: [
       {
         sender: "system",
-        content: "Session started. Ask your question about admissions, courses, fees, or cutoffs.",
+        content: "Session started. Ask your question about admissions, courses, cutoffs, scholarships, or deadlines.",
       },
     ],
   });

@@ -1,21 +1,3 @@
-function parseRupee(text, labelRegex) {
-  const pattern = new RegExp(`${labelRegex}[^\\d]*(?:INR|Rs\\.?)?\\s*([\\d,]+)`, "i");
-  const match = text.match(pattern);
-  return match ? `INR ${match[1]}` : null;
-}
-
-function extractFees(text) {
-  const tuition = parseRupee(text, "tuition(?:\\s+fee)?");
-  const hostel = parseRupee(text, "hostel(?:\\s+fee)?");
-  const lab = parseRupee(text, "(?:lab|exam)(?:\\s+and\\s+exam)?\\s+fee");
-  const items = [
-    tuition ? { key: "Tuition", value: tuition } : null,
-    hostel ? { key: "Hostel", value: hostel } : null,
-    lab ? { key: "Lab/Exam", value: lab } : null,
-  ].filter(Boolean);
-  return items;
-}
-
 function extractCourses(text) {
   const matches = [...text.matchAll(/(CSE|ECE|Mechanical|Mech|Civil|IT|AI\/ML)[^\n.]{0,40}(\d\s*years?)/gi)];
   const seen = new Set();
@@ -46,22 +28,6 @@ function detectScholarship(text) {
 
 function detectHostel(text) {
   return /(hostel|mess|accommodation|room|warden)/i.test(text);
-}
-
-function FeeCard({ fees }) {
-  return (
-    <div className="cc-rich-card">
-      <h5>Fee Snapshot</h5>
-      <div className="cc-rich-grid">
-        {fees.map((fee) => (
-          <div key={fee.key} className="cc-rich-metric">
-            <span>{fee.key}</span>
-            <strong>{fee.value}</strong>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function CourseCard({ courses }) {
@@ -96,27 +62,24 @@ function DeadlineBadges({ months }) {
 
 export default function RichCards({ message, onAction }) {
   const text = String(message || "");
-  const fees = extractFees(text);
   const courses = extractCourses(text);
   const months = extractDeadlines(text);
   const hasScholarship = detectScholarship(text);
   const hasHostel = detectHostel(text);
 
-  if (!fees.length && !courses.length && !months.length && !hasScholarship && !hasHostel) return null;
+  if (!courses.length && !months.length && !hasScholarship && !hasHostel) return null;
 
   return (
     <div className="cc-rich-wrap">
-      {fees.length > 0 && <FeeCard fees={fees} />}
       {courses.length > 0 && <CourseCard courses={courses} />}
       <DeadlineBadges months={months} />
       <div className="cc-rich-actions">
         <button type="button" onClick={() => onAction("I want to apply now. Please guide me with exact steps and required documents.")}>Apply Now</button>
-        <button type="button" onClick={() => onAction("Share fee payment options, installment plans, and refund policy.")}>Fee Details</button>
         {hasScholarship ? (
           <button type="button" onClick={() => onAction("List scholarship options, eligibility, and deadlines in a table.")}>Scholarships</button>
         ) : null}
         {hasHostel ? (
-          <button type="button" onClick={() => onAction("Share hostel fee, room types, and hostel admission process.")}>Hostel Info</button>
+          <button type="button" onClick={() => onAction("Share hostel facilities, room types, rules, and hostel admission process.")}>Hostel Info</button>
         ) : null}
       </div>
     </div>

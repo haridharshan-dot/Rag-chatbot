@@ -20,7 +20,7 @@ const AGENT_END_HOUR = 17;
 
 const COPY = {
   en: {
-    placeholder: "Ask about fees, cutoffs, scholarships, courses...",
+    placeholder: "Ask about cutoffs, scholarships, courses, admissions...",
     escalateButton: "Live Agent",
     offHours: "Live agents are available only from 9:00 AM to 5:00 PM IST.",
     requestSent: "Live agent request sent. Please wait while we connect you.",
@@ -28,7 +28,7 @@ const COPY = {
     availabilityCompact: "9AM-5PM IST",
   },
   hi: {
-    placeholder: "Fees, cutoffs, scholarship, courses ke bare me puchhiye...",
+    placeholder: "Cutoffs, scholarship, courses, admissions ke bare me puchhiye...",
     escalateButton: "Live Agent",
     offHours: "Live agent sirf 9:00 AM se 5:00 PM IST tak available hain.",
     requestSent: "Live agent request bhej diya gaya hai. Kripya wait karein.",
@@ -103,13 +103,13 @@ function deriveConversationStarters(siteContext, fallbackLanguage = "en") {
     fallbackLanguage === "hi"
       ? [
           "Admission process explain kijiye",
-          "Fee structure details dijiye",
+          "Cutoff details share kijiye",
           "Scholarship eligibility kya hai?",
           "Hostel facilities batayiye",
         ]
       : [
           "Explain the admission process",
-          "Share fee structure details",
+          "Share cutoff details",
           "What are scholarship eligibility criteria?",
           "Tell me about hostel facilities",
         ];
@@ -117,7 +117,7 @@ function deriveConversationStarters(siteContext, fallbackLanguage = "en") {
   if (!contextText) return base;
   if (contextText.includes("hostel")) {
     return [
-      "Hostel fee and room types",
+      "Hostel facilities and room types",
       "Hostel rules and timing",
       "Mess and transport options",
       "How to apply for hostel",
