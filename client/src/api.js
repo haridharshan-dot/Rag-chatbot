@@ -132,6 +132,11 @@ export async function fetchHistory(sessionId) {
   return response.data.data;
 }
 
+export async function clearStudentChat(sessionId) {
+  const response = await api.post(`/chat/${sessionId}/clear`, {}, studentAuthConfig());
+  return response.data.data;
+}
+
 export async function studentRegister(payload) {
   const response = await api.post("/auth/register", payload);
   return response.data.data;

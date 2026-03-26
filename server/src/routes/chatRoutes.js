@@ -5,6 +5,7 @@ import { attachOptionalStudentAuth } from "../middleware/studentAuth.js";
 
 const router = Router();
 router.use(attachOptionalStudentAuth);
+const SESSION_START_MESSAGE = "Session started. Ask your question about admissions, courses, cutoffs, scholarships, or deadlines.";
 
 function sanitizeSiteContext(raw) {
   if (!raw || typeof raw !== "object") return null;
@@ -162,6 +163,44 @@ router.post("/:sessionId/escalate", async (req, res, next) => {
     });
 
     return res.json({ success: true, data: session });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:sessionId/clear", async (req, res, next) => {
+  try {
+    const session = await ChatSession.findById(req.params.sessionId);
+    if (!session) {
+      return res.status(404).json({ success: false, message: "Session not found" });
+    }
+    if (req.student?.studentId && String(session.studentId) !== String(req.student.studentId)) {
+      return res.status(403).json({ success: false, message: "Not allowed for this session" });
+    }
+
+    session.status = "bot";
+    session.assignedAgentId = null;
+    session.escalationRequestedAt = null;
+    session.resolvedAt = null;
+    session.messages = [
+      {
+        sender: "system",
+        content: SESSION_START_MESSAGE,
+      },
+    ];
+
+    await session.save();
+    req.app.locals.io.to(`session:${session.id}`).emit("chat:cleared", {
+      sessionId: session.id,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        sessionId: session.id,
+        sessionStatus: session.status,
+      },
+    });
   } catch (error) {
     next(error);
   }

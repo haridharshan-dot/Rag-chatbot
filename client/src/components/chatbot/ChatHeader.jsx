@@ -11,6 +11,8 @@ export default function ChatHeader({
   agentAvailabilityLabel,
   studentDisplayName,
   historyCount,
+  onClearChat,
+  clearBusy = false,
   onStudentLogout,
   onClose,
 }) {
@@ -35,6 +37,16 @@ export default function ChatHeader({
         </div>
 
         <div className="cc-header-actions">
+          {onClearChat ? (
+            <button
+              className="cc-action-btn"
+              onClick={onClearChat}
+              aria-label="Clear current chat"
+              disabled={clearBusy}
+            >
+              {clearBusy ? "Clearing..." : "Clear"}
+            </button>
+          ) : null}
           {onStudentLogout ? (
             <button className="cc-action-btn cc-action-muted" onClick={onStudentLogout} aria-label="Switch account">
               Switch

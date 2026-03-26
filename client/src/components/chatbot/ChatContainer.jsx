@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { escalateToAgent, fetchHistory, sendStudentMessage } from "../../api";
+import { clearStudentChat, escalateToAgent, fetchHistory, sendStudentMessage } from "../../api";
 import { socket } from "../../socket";
 import { trackChatFunnelEvent } from "../../utils/chatAnalytics";
 import ChatHeader from "./ChatHeader";
@@ -166,6 +166,7 @@ export default function ChatContainer({
   const [language, setLanguage] = useState(() => localStorage.getItem("chat-lang") || "en");
   const [isAgentAvailable, setIsAgentAvailable] = useState(() => isAgentWithinWorkingHours());
   const [resumeBannerVisible, setResumeBannerVisible] = useState(false);
+  const [clearBusy, setClearBusy] = useState(false);
 
   const stageIntervalRef = useRef(null);
   const agentTypingTimeoutRef = useRef(null);
@@ -268,6 +269,23 @@ export default function ChatContainer({
       }, 1800);
     };
 
+    const onCleared = () => {
+      fetchHistory(sessionId)
+        .then((data) => {
+          const history = Array.isArray(data.messages)
+            ? data.messages
+                .map(normalizeMessage)
+                .filter((message) => !isAgentJoinMessage(message))
+            : [];
+          setMessages(history);
+          setHandoffPending(false);
+          setAgentConnected(false);
+        })
+        .catch((error) => {
+          console.error("Unable to refresh chat after clear", error);
+        });
+    };
+
     socket.connect();
     socket.emit("session:join", { sessionId, role: "student", studentId });
 
@@ -276,6 +294,7 @@ export default function ChatContainer({
     socket.on("chat:message", pushMessage);
     socket.on("agent:joined", onAgentJoined);
     socket.on("agent:typing", onTyping);
+    socket.on("chat:cleared", onCleared);
 
     return () => {
       clearTimeout(agentTypingTimeoutRef.current);
@@ -284,6 +303,7 @@ export default function ChatContainer({
       socket.off("chat:message", pushMessage);
       socket.off("agent:joined", onAgentJoined);
       socket.off("agent:typing", onTyping);
+      socket.off("chat:cleared", onCleared);
     };
   }, [sessionId, studentId]);
 
@@ -449,6 +469,39 @@ export default function ChatContainer({
     socket.emit("chat:typing", { sessionId, role: "student" });
   };
 
+  const onClearChat = async () => {
+    if (!sessionId || clearBusy) return;
+    const confirmed = window.confirm("Clear this chat conversation?");
+    if (!confirmed) return;
+
+    setClearBusy(true);
+    try {
+      await clearStudentChat(sessionId);
+      const data = await fetchHistory(sessionId);
+      const history = Array.isArray(data.messages)
+        ? data.messages
+            .map(normalizeMessage)
+            .filter((message) => !isAgentJoinMessage(message))
+        : [];
+      setMessages(history);
+      setHandoffPending(false);
+      setAgentConnected(false);
+    } catch (error) {
+      const serverMessage = String(error?.response?.data?.message || "").trim();
+      const uiMessage = serverMessage || "Unable to clear chat right now. Please try again.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          content: uiMessage,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setClearBusy(false);
+    }
+  };
+
   return (
     <motion.section className="cc-shell" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
       <ChatHeader
@@ -463,6 +516,8 @@ export default function ChatContainer({
         agentAvailabilityLabel={text.availabilityCompact}
         studentDisplayName={studentDisplayName}
         historyCount={historyCount}
+        onClearChat={onClearChat}
+        clearBusy={clearBusy}
         onStudentLogout={onStudentLogout}
         onClose={onClose}
       />
