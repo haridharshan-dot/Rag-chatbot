@@ -415,6 +415,7 @@ router.get("/sessions/:sessionId/transcript", async (req, res, next) => {
 
 router.get("/datasets", async (req, res, next) => {
   try {
+    await fs.mkdir(env.dataDir, { recursive: true });
     const entries = await fs.readdir(env.dataDir, { withFileTypes: true });
     const files = [];
 
@@ -431,6 +432,9 @@ router.get("/datasets", async (req, res, next) => {
 
     return res.json({ success: true, data: files.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)) });
   } catch (error) {
+    if (error?.code === "ENOENT" || error?.code === "EACCES" || error?.code === "EPERM") {
+      return res.json({ success: true, data: [] });
+    }
     next(error);
   }
 });

@@ -41,8 +41,6 @@ export default function EmbeddedStudentChatbot({
   const [signupMobile, setSignupMobile] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [googleMobile, setGoogleMobile] = useState("");
-  const [pendingGoogleCredential, setPendingGoogleCredential] = useState("");
   const [forgotMobile, setForgotMobile] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
   const [forgotNewPassword, setForgotNewPassword] = useState("");
@@ -130,8 +128,6 @@ export default function EmbeddedStudentChatbot({
     setForgotOtpRequested(false);
     setAuthMode("login");
     setShowForgotFlow(false);
-    setPendingGoogleCredential("");
-    setGoogleMobile("");
   }
 
   function resetAuthFeedback() {
@@ -267,43 +263,8 @@ export default function EmbeddedStudentChatbot({
       });
       trackChatFunnelEvent("auth_success");
       setAuthMessage("Google login successful. Starting your chat session...");
-      setPendingGoogleCredential("");
-      setGoogleMobile("");
     } catch (googleError) {
-      if (googleError?.response?.data?.code === "MOBILE_REQUIRED") {
-        setPendingGoogleCredential(credential);
-        setAuthError("Enter mobile number to complete Google signup.");
-        return;
-      }
       const message = googleError?.response?.data?.message || "Google login failed";
-      setAuthError(message);
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  async function handleGoogleMobileSubmit(event) {
-    event.preventDefault();
-    if (!pendingGoogleCredential) return;
-    setAuthBusy(true);
-    setAuthError("");
-    setAuthMessage("");
-    try {
-      const data = await studentGoogleLogin(pendingGoogleCredential, googleMobile);
-      if (!data?.token || !data?.user?.id) throw new Error("Invalid Google signup response");
-
-      setStudentToken(data.token);
-      setStudent({
-        id: data.user.id,
-        name: data.user.name || "Student",
-        email: data.user.email || "",
-      });
-      trackChatFunnelEvent("auth_success");
-      setPendingGoogleCredential("");
-      setGoogleMobile("");
-      setAuthMessage("Google signup completed. Starting your chat session...");
-    } catch (verifyError) {
-      const message = verifyError?.response?.data?.message || "Unable to complete Google signup";
       setAuthError(message);
     } finally {
       setAuthBusy(false);
@@ -425,21 +386,6 @@ export default function EmbeddedStudentChatbot({
                         {authBusy ? "Signing in..." : "Login"}
                       </button>
                     </form>
-
-                    {pendingGoogleCredential ? (
-                      <form className="cc-auth-form cc-auth-verify" onSubmit={handleGoogleMobileSubmit}>
-                        <input
-                          className="cc-auth-input"
-                          placeholder="Enter mobile number for Google signup"
-                          value={googleMobile}
-                          onChange={(event) => setGoogleMobile(event.target.value)}
-                          required
-                        />
-                        <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                          {authBusy ? "Saving..." : "Save Mobile & Continue"}
-                        </button>
-                      </form>
-                    ) : null}
 
                     <div className="cc-auth-inline-actions">
                       <button

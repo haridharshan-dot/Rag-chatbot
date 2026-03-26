@@ -417,27 +417,20 @@ router.post("/login/google", async (req, res, next) => {
     }
 
     let user = await StudentUser.findOne({ email });
-    if (!user || !user.mobile) {
-      if (!mobile || mobile.length < 10) {
-        return res.status(428).json({
-          success: false,
-          message: "Mobile number required for Google signup",
-          code: "MOBILE_REQUIRED",
-        });
-      }
-    }
 
     if (!user) {
-      const mobileExists = await StudentUser.findOne({ mobile });
-      if (mobileExists) {
-        return res.status(409).json({ success: false, message: "Mobile number already registered" });
+      if (mobile) {
+        const mobileExists = await StudentUser.findOne({ mobile });
+        if (mobileExists) {
+          return res.status(409).json({ success: false, message: "Mobile number already registered" });
+        }
       }
       user = await StudentUser.create({
         name: name || "Student",
         email,
-        mobile,
+        mobile: mobile || undefined,
       });
-    } else if (!user.mobile) {
+    } else if (!user.mobile && mobile) {
       const mobileExists = await StudentUser.findOne({ mobile, _id: { $ne: user._id } });
       if (mobileExists) {
         return res.status(409).json({ success: false, message: "Mobile number already registered" });
