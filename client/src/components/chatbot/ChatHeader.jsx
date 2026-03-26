@@ -45,9 +45,10 @@ export default function ChatHeader({
             <button
               className="cc-agent-cta"
               onClick={onEscalate}
-              disabled={!isAgentAvailable}
+              disabled={!isAgentAvailable || handoffPending}
               aria-label="Connect to live agent"
               title="Live agent hours are 9AM to 5PM IST"
+              aria-busy={handoffPending}
             >
               {handoffPending ? "Requested" : agentButtonLabel}
             </button>

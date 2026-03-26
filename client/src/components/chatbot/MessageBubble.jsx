@@ -18,6 +18,8 @@ export default function MessageBubble({ message, onRichAction }) {
   const variant = getVariant(message.sender);
   const isStudent = variant === "student";
   const showAvatar = !isStudent;
+  const timestamp = formatTime(message.createdAt);
+  const senderLabel = variant === "student" ? "You" : variant === "bot" ? "Assistant" : variant;
 
   return (
     <motion.div
@@ -27,14 +29,14 @@ export default function MessageBubble({ message, onRichAction }) {
       transition={{ duration: 0.18 }}
     >
       {showAvatar && (
-        <div className={`cc-mini-avatar cc-mini-${variant}`}>
+        <div className={`cc-mini-avatar cc-mini-${variant}`} aria-hidden="true">
           {variant === "agent" ? "A" : <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} />}
         </div>
       )}
 
-      <article className={`cc-bubble cc-bubble-${variant}`}>
+      <article className={`cc-bubble cc-bubble-${variant}`} aria-label={`${senderLabel} at ${timestamp}`}>
         <p className="cc-bubble-text">{message.content}</p>
-        <small className="cc-bubble-time">{formatTime(message.createdAt)}</small>
+        <small className="cc-bubble-time">{timestamp}</small>
         {variant === "bot" && <RichCards message={message.content} onAction={onRichAction} />}
       </article>
     </motion.div>

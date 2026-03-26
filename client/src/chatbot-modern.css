@@ -44,6 +44,14 @@
   z-index: 9999;
 }
 
+.app-route-loading {
+  display: grid;
+  place-items: center;
+  min-height: 28vh;
+  color: #355e9a;
+  font-weight: 700;
+}
+
 .cc-widget.cc-widget-full {
   top: 12px;
   left: 50%;
@@ -225,6 +233,17 @@
   border-color: #b7c8de;
 }
 
+.cc-action-btn:focus-visible,
+.cc-lang:focus-visible,
+.cc-agent-cta:focus-visible,
+.cc-send:focus-visible,
+.cc-input:focus-visible,
+.cc-rich-actions button:focus-visible,
+.cc-chip:focus-visible {
+  outline: 2px solid #355e9a;
+  outline-offset: 2px;
+}
+
 .cc-message-list {
   flex: 1;
   overflow-y: auto;
@@ -238,6 +257,15 @@
     var(--cc-bg);
   scrollbar-width: thin;
   scrollbar-color: rgba(91, 120, 151, 0.5) transparent;
+}
+
+.cc-message-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cc-message-list::-webkit-scrollbar-thumb {
+  background: rgba(53, 94, 154, 0.4);
+  border-radius: 999px;
 }
 
 .cc-row {
@@ -661,7 +689,25 @@
   }
 
   .cc-header-actions {
-    justify-content: space-between;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    row-gap: 0.32rem;
+  }
+
+  .cc-agent-wrap {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .cc-agent-hours-mini {
+    display: none;
+  }
+
+  .cc-agent-cta {
+    min-height: 28px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.66rem;
   }
 
   .cc-rich-grid {
@@ -669,7 +715,7 @@
   }
 
   .cc-bubble {
-    max-width: 92%;
+    max-width: 94%;
   }
 
   .cc-send {
@@ -677,7 +723,7 @@
   }
 
   .cc-input-zone {
-    padding: 0 0.72rem 0.62rem;
+    padding: 0 0.64rem 0.56rem;
   }
 
   .cc-input-wrap {

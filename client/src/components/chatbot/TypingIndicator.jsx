@@ -4,6 +4,8 @@ export default function TypingIndicator({ label = "Generating response...", acto
   return (
     <motion.div
       className={`cc-typing cc-typing-${actor}`}
+      role="status"
+      aria-live="polite"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}

@@ -11,7 +11,14 @@ export default function MessageList({
   onRichAction,
 }) {
   return (
-    <section className="cc-message-list" ref={listRef}>
+    <section
+      className="cc-message-list"
+      ref={listRef}
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-label="Chat conversation"
+    >
       {messages.map((message, index) => (
         <MessageBubble
           key={`${index}-${message.sender}-${String(message.content || "").slice(0, 22)}`}

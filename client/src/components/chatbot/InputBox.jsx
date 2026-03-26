@@ -37,6 +37,8 @@ export default function InputBox({
           placeholder={placeholder}
           rows={1}
           className="cc-input"
+          aria-label="Type your message"
+          aria-disabled={disabled}
           disabled={disabled}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -45,7 +47,13 @@ export default function InputBox({
             }
           }}
         />
-        <button type="button" className="cc-send" onClick={onSend} disabled={!canSend}>
+        <button
+          type="button"
+          className="cc-send"
+          onClick={onSend}
+          disabled={!canSend}
+          aria-label="Send message"
+        >
           Send
         </button>
       </div>
