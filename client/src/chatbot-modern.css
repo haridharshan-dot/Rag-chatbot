@@ -377,7 +377,10 @@
 }
 
 .cc-escalate:disabled {
-  opacity: 0.55;
+  opacity: 1;
+  background: #c9d0da;
+  color: #5e6675;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
