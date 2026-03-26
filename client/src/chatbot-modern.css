@@ -392,36 +392,38 @@
 
 .cc-input-wrap {
   border: 1px solid var(--cc-border);
-  border-radius: 16px;
-  padding: 0.36rem;
+  border-radius: 999px;
+  padding: 0.18rem 0.22rem 0.18rem 0.62rem;
   display: flex;
-  gap: 0.4rem;
-  align-items: flex-end;
+  gap: 0.28rem;
+  align-items: center;
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .cc-input-zone {
   border-top: 0;
-  padding: 0 1rem 1rem;
+  padding: 0 1rem 0.9rem;
   background: transparent;
 }
 
 .cc-input-zone .cc-input-wrap {
   border-top: 1px solid var(--cc-border);
-  padding-top: 0.36rem;
+  padding-top: 0.18rem;
 }
 
 .cc-input {
   flex: 1;
   resize: none;
   overflow: hidden;
-  max-height: 98px;
-  min-height: 42px;
+  max-height: 90px;
+  min-height: 36px;
   border: 0;
-  border-radius: 12px;
-  padding: 0.62rem 0.72rem;
+  border-radius: 999px;
+  padding: 0.5rem 0.25rem;
   font: inherit;
+  font-size: 0.93rem;
+  line-height: 1.38;
   background: transparent;
   color: var(--cc-text);
   caret-color: var(--cc-text);
@@ -440,13 +442,14 @@
 
 .cc-send {
   border: 0;
-  border-radius: 12px;
-  min-width: 86px;
-  min-height: 41px;
-  padding: 0 0.8rem;
+  border-radius: 999px;
+  min-width: 76px;
+  min-height: 36px;
+  padding: 0 0.72rem;
   background: linear-gradient(100deg, var(--cc-grad-a), var(--cc-grad-b));
   color: #fff;
   font-weight: 700;
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
@@ -661,5 +664,19 @@
 
   .cc-input-zone {
     padding: 0 0.8rem 0.85rem;
+  }
+
+  .cc-input-wrap {
+    padding: 0.16rem 0.2rem 0.16rem 0.54rem;
+  }
+
+  .cc-input {
+    min-height: 34px;
+    font-size: 0.9rem;
+  }
+
+  .cc-send {
+    min-width: 68px;
+    min-height: 34px;
   }
 }

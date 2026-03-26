@@ -94,6 +94,7 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
   const [agentTyping, setAgentTyping] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? "online" : "offline");
   const [language, setLanguage] = useState(() => localStorage.getItem("chat-lang") || "en");
+  const [isAgentAvailable, setIsAgentAvailable] = useState(() => isAgentWithinWorkingHours());
 
   const stageIntervalRef = useRef(null);
   const agentTypingTimeoutRef = useRef(null);
@@ -107,11 +108,19 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
     [lastEscalateShownAt]
   );
 
-  const isAgentAvailable = useMemo(() => isAgentWithinWorkingHours(), []);
-
   useEffect(() => {
     localStorage.setItem("chat-lang", language);
   }, [language]);
+
+  useEffect(() => {
+    const refreshAvailability = () => {
+      setIsAgentAvailable(isAgentWithinWorkingHours());
+    };
+
+    refreshAvailability();
+    const timer = setInterval(refreshAvailability, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -303,6 +312,7 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
 
   const onEscalate = async () => {
     if (!sessionId) return;
+    if (handoffPending) return;
     if (!isAgentAvailable) {
       setMessages((prev) => [
         ...prev,
@@ -359,7 +369,7 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
             <motion.button
               className="cc-escalate"
               onClick={onEscalate}
-              disabled={handoffPending || !isAgentAvailable}
+              disabled={!isAgentAvailable}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
