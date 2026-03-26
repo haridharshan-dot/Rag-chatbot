@@ -29,6 +29,7 @@ export default function EmbeddedStudentChatbot({
 
   const [student, setStudent] = useState(initialStudent);
   const [historyCount, setHistoryCount] = useState(0);
+  const [historySessions, setHistorySessions] = useState([]);
   const [sessionId, setSessionId] = useState("");
   const [loading, setLoading] = useState(Boolean(initialStudent?.id));
   const [error, setError] = useState("");
@@ -51,26 +52,86 @@ export default function EmbeddedStudentChatbot({
   const googleEnabled = Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim());
 
   useEffect(() => {
+    if (!requiresPopupAuth) {
+      setHistoryCount(0);
+      return;
+    }
+    setHistoryCount(historySessions.length);
+  }, [historySessions, requiresPopupAuth]);
+
+  function getSessionIdValue(session) {
+    return String(session?._id || session?.id || "").trim();
+  }
+
+  function buildSessionShell(session) {
+    return {
+      _id: session?._id || session?.id || "",
+      id: session?.id || session?._id || "",
+      status: session?.status || "bot",
+      createdAt: session?.createdAt || new Date().toISOString(),
+      updatedAt: session?.updatedAt || session?.createdAt || new Date().toISOString(),
+      messages: Array.isArray(session?.messages) ? session.messages : [],
+    };
+  }
+
+  function upsertHistorySession(session, options = {}) {
+    const sessionRecord = buildSessionShell(session);
+    const targetId = getSessionIdValue(sessionRecord);
+    if (!targetId) return;
+
+    setHistorySessions((prev) => {
+      const filtered = prev.filter((item) => getSessionIdValue(item) !== targetId);
+      const next = options.prepend === false ? [...filtered, sessionRecord] : [sessionRecord, ...filtered];
+      return next.slice(0, 20);
+    });
+  }
+
+  async function createNewChatSession() {
+    if (!student?.id) return null;
+    const session = await createSession(student.id, siteContext);
+    const normalized = buildSessionShell(session);
+    upsertHistorySession(normalized);
+    setSessionId(getSessionIdValue(normalized));
+    return normalized;
+  }
+
+  useEffect(() => {
     if (!student?.id) {
       setLoading(false);
       setSessionId("");
+      setHistorySessions([]);
       return;
     }
 
     let mounted = true;
 
-    async function startSession() {
+    async function bootstrapStudentChat() {
       setLoading(true);
       setError("");
       try {
+        if (requiresPopupAuth) {
+          const sessions = await fetchStudentHistory();
+          if (!mounted) return;
+          const normalizedSessions = Array.isArray(sessions) ? sessions.map(buildSessionShell) : [];
+          setHistorySessions(normalizedSessions);
+
+          if (normalizedSessions.length > 0) {
+            setSessionId(getSessionIdValue(normalizedSessions[0]));
+            return;
+          }
+        }
+
         const session = await createSession(student.id, siteContext);
         if (mounted) {
-          setSessionId(session._id || session.id);
+          const normalized = buildSessionShell(session);
+          setHistorySessions(requiresPopupAuth ? [normalized] : []);
+          setSessionId(getSessionIdValue(normalized));
         }
       } catch (error) {
         console.error("Failed to create chatbot session", error);
         if (mounted) {
           setSessionId("");
+          setHistorySessions([]);
           setError("Unable to start chat session. Please retry.");
         }
       } finally {
@@ -78,33 +139,11 @@ export default function EmbeddedStudentChatbot({
       }
     }
 
-    startSession();
+    bootstrapStudentChat();
     return () => {
       mounted = false;
     };
-  }, [siteContext, student?.id]);
-
-  useEffect(() => {
-    if (!requiresPopupAuth || !student?.id) {
-      setHistoryCount(0);
-      return;
-    }
-
-    let mounted = true;
-    fetchStudentHistory()
-      .then((sessions) => {
-        if (!mounted) return;
-        setHistoryCount(Array.isArray(sessions) ? sessions.length : 0);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setHistoryCount(0);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [requiresPopupAuth, student?.id]);
+  }, [requiresPopupAuth, siteContext, student?.id]);
 
   useEffect(() => {
     if (!requiresPopupAuth || student?.id) return;
@@ -120,6 +159,7 @@ export default function EmbeddedStudentChatbot({
     clearStudentToken();
     setStudent(null);
     setHistoryCount(0);
+    setHistorySessions([]);
     setSessionId("");
     setError("");
     setAuthError("");
@@ -484,6 +524,36 @@ export default function EmbeddedStudentChatbot({
       chatContainerProps={{
         studentDisplayName: requiresPopupAuth ? student?.name || "Student" : "",
         historyCount: requiresPopupAuth ? historyCount : 0,
+        historySessions: requiresPopupAuth ? historySessions : [],
+        currentSessionId: sessionId,
+        onSelectSession:
+          requiresPopupAuth && student?.id
+            ? (nextSessionId) => {
+                setSessionId(String(nextSessionId || ""));
+                setError("");
+              }
+            : null,
+        onNewChat:
+          requiresPopupAuth && student?.id
+            ? async () => {
+                setLoading(true);
+                setError("");
+                try {
+                  await createNewChatSession();
+                } catch (createError) {
+                  console.error("Failed to create new chat session", createError);
+                  setError("Unable to start a new chat right now.");
+                } finally {
+                  setLoading(false);
+                }
+              }
+            : null,
+        onSessionSnapshot:
+          requiresPopupAuth && student?.id
+            ? (session) => {
+                upsertHistorySession(session);
+              }
+            : null,
         siteContext,
         onStudentLogout: requiresPopupAuth && student?.id ? handleSwitchAccount : null,
       }}
@@ -494,7 +564,9 @@ export default function EmbeddedStudentChatbot({
         setLoading(true);
         createSession(student.id, siteContext)
           .then((session) => {
-            setSessionId(session._id || session.id);
+            const normalized = buildSessionShell(session);
+            upsertHistorySession(normalized);
+            setSessionId(getSessionIdValue(normalized));
           })
           .catch((retryError) => {
             console.error("Retry create session failed", retryError);

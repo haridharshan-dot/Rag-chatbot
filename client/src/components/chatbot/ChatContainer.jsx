@@ -6,6 +6,7 @@ import { trackChatFunnelEvent } from "../../utils/chatAnalytics";
 import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
 import InputBox from "./InputBox";
+import SessionShelf from "./SessionShelf";
 
 const PROCESSING_STAGES = [
   "Analyzing your query...",
@@ -150,6 +151,11 @@ export default function ChatContainer({
   onClose,
   studentDisplayName = "",
   historyCount = 0,
+  historySessions = [],
+  currentSessionId = "",
+  onSelectSession = null,
+  onNewChat = null,
+  onSessionSnapshot = null,
   siteContext = null,
   onStudentLogout = null,
 }) {
@@ -306,6 +312,16 @@ export default function ChatContainer({
   }, [messages, isSending, agentTyping]);
 
   useEffect(() => {
+    if (!sessionId || !onSessionSnapshot) return;
+    onSessionSnapshot({
+      _id: sessionId,
+      id: sessionId,
+      updatedAt: new Date().toISOString(),
+      messages,
+    });
+  }, [messages, onSessionSnapshot, sessionId]);
+
+  useEffect(() => {
     return () => {
       clearInterval(stageIntervalRef.current);
       clearTimeout(agentTypingTimeoutRef.current);
@@ -457,30 +473,42 @@ export default function ChatContainer({
       />
 
       <div className="cc-body">
-        <MessageList
-          messages={messages}
-          listRef={listRef}
-          aiStageLabel={stageLabel}
-          isSending={isSending}
-          agentTyping={agentTyping}
-          onRichAction={sendMessage}
-          starterPrompts={messages.length === 0 ? starterPrompts : []}
-          onStarterClick={sendMessage}
-          resumeBannerVisible={resumeBannerVisible}
-          historyCount={historyCount}
-          onResume={() => {
-            setResumeBannerVisible(false);
-            sendMessage("Please summarize my previous chats and continue from there.");
-          }}
-          onDismissResume={() => {
-            setResumeBannerVisible(false);
-            try {
-              localStorage.setItem(`cc-resume-dismissed:${studentDisplayName}`, "1");
-            } catch {
-              // Ignore local storage failures.
-            }
-          }}
-        />
+        <div className="cc-chat-column">
+          {historySessions.length || onNewChat ? (
+            <SessionShelf
+              sessions={historySessions}
+              activeSessionId={currentSessionId || sessionId}
+              onSelectSession={onSelectSession}
+              onNewChat={onNewChat}
+              loading={loading}
+            />
+          ) : null}
+
+          <MessageList
+            messages={messages}
+            listRef={listRef}
+            aiStageLabel={stageLabel}
+            isSending={isSending}
+            agentTyping={agentTyping}
+            onRichAction={sendMessage}
+            starterPrompts={messages.length === 0 ? starterPrompts : []}
+            onStarterClick={sendMessage}
+            resumeBannerVisible={resumeBannerVisible}
+            historyCount={historyCount}
+            onResume={() => {
+              setResumeBannerVisible(false);
+              sendMessage("Please summarize my previous chats and continue from there.");
+            }}
+            onDismissResume={() => {
+              setResumeBannerVisible(false);
+              try {
+                localStorage.setItem(`cc-resume-dismissed:${studentDisplayName}`, "1");
+              } catch {
+                // Ignore local storage failures.
+              }
+            }}
+          />
+        </div>
       </div>
 
       <div className="cc-footer">
