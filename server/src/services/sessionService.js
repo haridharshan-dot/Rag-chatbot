@@ -63,7 +63,20 @@ export async function handleStudentMessage(sessionId, content) {
         .join("\n")
     : "";
 
-  const ragResponse = await ragService.ask(content, { supplementalContext });
+  let ragResponse;
+  try {
+    ragResponse = await ragService.ask(content, { supplementalContext });
+  } catch (error) {
+    console.error("RAG message handling failed:", error?.message || error);
+    ragResponse = {
+      answer:
+        "I’m unable to retrieve knowledge right now. Please try again in a moment or connect to a live agent.",
+      confidence: 0,
+      sources: [],
+      escalationSuggested: true,
+      outOfScope: true,
+    };
+  }
   const settings = await getRuntimeSettings();
   const shouldAutoEscalate = Boolean(
     settings.autoEscalationEnabled && ragResponse.outOfScope && session.status === "bot"

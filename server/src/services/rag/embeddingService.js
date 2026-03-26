@@ -43,6 +43,13 @@ function hashedVector(text) {
 }
 
 export function createEmbeddings() {
+  if (env.vectorDbProvider === "pinecone" && env.pineconeIntegratedEmbedding) {
+    return {
+      embedQuery: async (text) => hashedVector(text),
+      embedDocuments: async (texts) => texts.map((text) => hashedVector(text)),
+    };
+  }
+
   if (env.openaiApiKey) {
     return new OpenAIEmbeddings({
       openAIApiKey: env.openaiApiKey,
@@ -51,9 +58,7 @@ export function createEmbeddings() {
     });
   }
 
-  if (!(env.vectorDbProvider === "pinecone" && env.pineconeIntegratedEmbedding)) {
-    console.warn("OPENAI_API_KEY not set. Falling back to deterministic hash embeddings.");
-  }
+  console.warn("OPENAI_API_KEY not set. Falling back to deterministic hash embeddings.");
   return {
     embedQuery: async (text) => hashedVector(text),
     embedDocuments: async (texts) => texts.map((text) => hashedVector(text)),
