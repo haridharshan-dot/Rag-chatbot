@@ -369,8 +369,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         agentButtonLabel={text.escalateButton}
         agentAvailabilityLabel={text.availabilityCompact}
         onClose={onClose}
-        language={language}
-        onChangeLanguage={setLanguage}
       />
 
       <div className="cc-body">

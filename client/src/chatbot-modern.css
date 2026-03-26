@@ -176,6 +176,28 @@
   align-items: center;
   gap: 0.22rem;
   margin-left: auto;
+  min-width: 0;
+}
+
+.cc-hours-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.cc-hours-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0.08rem 0.34rem;
+  border: 1px solid #e6d08c;
+  background: rgba(253, 200, 0, 0.14);
+  color: #5f4a00;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .cc-agent-cta {
@@ -682,8 +704,20 @@
     row-gap: 0.24rem;
   }
 
+  .cc-hours-group {
+    width: 100%;
+    justify-content: flex-end;
+    order: 1;
+  }
+
+  .cc-hours-pill {
+    min-height: 20px;
+    padding: 0.06rem 0.28rem;
+    font-size: 0.55rem;
+  }
+
   .cc-agent-wrap {
-    order: 3;
+    order: 2;
     width: auto;
     justify-content: flex-end;
   }

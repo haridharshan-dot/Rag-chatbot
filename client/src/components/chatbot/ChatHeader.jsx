@@ -1,10 +1,7 @@
 import { motion } from "framer-motion";
 import { BRANDING } from "../../config/branding";
 
-const LANG_OPTIONS = [
-  { value: "en", label: "EN" },
-  { value: "hi", label: "HI" },
-];
+const AGENT_TIME_SLOTS = ["9AM-12PM", "12PM-3PM", "3PM-5PM"];
 
 export default function ChatHeader({
   connectionStatus,
@@ -15,12 +12,9 @@ export default function ChatHeader({
   agentButtonLabel,
   agentAvailabilityLabel,
   onClose,
-  language,
-  onChangeLanguage,
 }) {
   const statusTone = connectionStatus === "online" ? "online" : "offline";
   const statusLabel = connectionStatus === "online" ? "Online" : "Reconnecting";
-  const liveAgentLabel = handoffPending ? "Requested" : `${agentButtonLabel} (${agentAvailabilityLabel})`;
 
   return (
     <motion.header
@@ -32,7 +26,7 @@ export default function ChatHeader({
       <div className="cc-brand-wrap">
         <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
         <div className="cc-brand-copy">
-          <h3>SONATECH AI ASSISTANT</h3>
+          <h3>AI ASSISTANT</h3>
           <p>
             <span className={`cc-dot cc-dot-${statusTone}`} />
             {statusLabel}
@@ -41,6 +35,11 @@ export default function ChatHeader({
       </div>
 
       <div className="cc-header-actions">
+        <div className="cc-hours-group" aria-label="Live agent working slots">
+          {AGENT_TIME_SLOTS.map((slot) => (
+            <span key={slot} className="cc-hours-pill">{slot}</span>
+          ))}
+        </div>
         {!agentConnected && (
           <div className="cc-agent-wrap">
             <button
@@ -51,22 +50,10 @@ export default function ChatHeader({
               title="Live agent hours are 9AM to 5PM IST"
               aria-busy={handoffPending}
             >
-              {liveAgentLabel}
+              {handoffPending ? "Requested" : `${agentButtonLabel} (${agentAvailabilityLabel})`}
             </button>
           </div>
         )}
-        <select
-          className="cc-lang"
-          value={language}
-          onChange={(event) => onChangeLanguage(event.target.value)}
-          aria-label="Chat language"
-        >
-          {LANG_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
         <button className="cc-action-btn" onClick={onClose} aria-label="Close chatbot">
           Close
         </button>
