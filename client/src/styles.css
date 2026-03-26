@@ -821,6 +821,62 @@ body.chatbot-embed-mode #root {
   color: #1a324a;
 }
 
+.ad-report-box {
+  border: 1px solid #d4dfec;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(53, 94, 154, 0.12) 0, transparent 36%),
+    linear-gradient(180deg, #ffffff 0%, #f5f9fe 100%);
+  padding: 0.65rem;
+  box-shadow: 0 8px 18px rgba(17, 42, 65, 0.07);
+}
+
+.ad-report-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.45rem;
+  margin-bottom: 0.48rem;
+}
+
+.ad-report-head strong {
+  font-size: 0.92rem;
+  color: #12324d;
+}
+
+.ad-report-head small {
+  font-size: 0.72rem;
+  color: #5c7489;
+}
+
+.ad-report-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.42rem;
+}
+
+.ad-report-select {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid #cfdbea;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f3a55;
+  padding: 0.36rem 0.55rem;
+}
+
+.ad-report-download {
+  min-height: 36px;
+  border-color: #355e9a;
+  background: linear-gradient(90deg, #002147, #355e9a);
+  color: #ffffff;
+}
+
+.ad-report-download:hover {
+  border-color: #002147;
+  background: linear-gradient(90deg, #001a3a, #2f548c);
+}
+
 .ad-side-meta {
   margin: 0;
   font-size: 0.8rem;
@@ -1779,6 +1835,31 @@ body.chatbot-embed-mode #root {
   padding: 0.8rem;
 }
 
+.admin-report-export {
+  background:
+    radial-gradient(circle at 97% 0%, rgba(53, 94, 154, 0.12) 0, transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #f6fafe 100%);
+}
+
+.admin-report-controls {
+  align-items: center;
+}
+
+.admin-report-range {
+  min-width: 150px;
+}
+
+.admin-report-download {
+  border-color: #355e9a;
+  color: #ffffff;
+  background: linear-gradient(90deg, #002147, #355e9a);
+}
+
+.admin-report-download:hover {
+  border-color: #002147;
+  background: linear-gradient(90deg, #001a3a, #2f548c);
+}
+
 .queue-controls {
   display: flex;
   gap: 0.4rem;
@@ -2098,6 +2179,14 @@ body.chatbot-embed-mode #root {
   .queue-controls {
     width: 100%;
     flex-direction: column;
+  }
+
+  .admin-report-controls {
+    width: 100%;
+  }
+
+  .ad-report-controls {
+    grid-template-columns: 1fr;
   }
 
   .admin-layout {

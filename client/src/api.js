@@ -152,6 +152,11 @@ export async function fetchAgentQueue() {
   return response.data.data;
 }
 
+export async function fetchAgentReport(range = "week") {
+  const response = await api.get(`/agent/reports?range=${encodeURIComponent(range)}`, agentAuthConfig());
+  return response.data.data;
+}
+
 export async function joinAgentSession(sessionId, agentId) {
   const response = await api.post(
     `/agent/${sessionId}/join`,
@@ -224,6 +229,11 @@ export async function runAdminWarmRag() {
 
 export async function fetchAdminSessions(status = 'queued', limit = 50) {
   const response = await api.get(`/admin/sessions?status=${encodeURIComponent(status)}&limit=${limit}`, agentAuthConfig());
+  return response.data.data;
+}
+
+export async function fetchAdminReport(range = "week") {
+  const response = await api.get(`/admin/reports?range=${encodeURIComponent(range)}`, agentAuthConfig());
   return response.data.data;
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  fetchAgentReport,
   fetchAgentQueue,
   fetchHistory,
   getAgentToken,
@@ -9,6 +10,7 @@ import {
   setAgentToken,
   sendAgentMessage,
 } from "../api";
+import { downloadDashboardReportPdf } from "../utils/reportPdf";
 import { socket } from "../socket";
 import Sidebar from "../components/agent/Sidebar";
 import ChatWindow from "../components/agent/ChatWindow";
@@ -65,6 +67,8 @@ export default function AgentDashboard() {
   const [search, setSearch] = useState("");
   const [showMobileQueue, setShowMobileQueue] = useState(() => window.innerWidth <= 1024);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 1024);
+  const [reportRange, setReportRange] = useState("week");
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     const onResize = () => {
@@ -190,6 +194,47 @@ export default function AgentDashboard() {
     setQueue(updatedQueue);
   }
 
+  async function onDownloadAgentReport() {
+    setReportLoading(true);
+    setQueueError("");
+    try {
+      const report = await fetchAgentReport(reportRange);
+      const summary = report?.summary || {};
+      const items = Array.isArray(report?.items) ? report.items : [];
+
+      const tableRows = items.map((item) => [
+        String(item.sessionId || "-").slice(-8),
+        item.studentId || "-",
+        item.status || "-",
+        item.messageCount ?? 0,
+        item.resolvedAt ? "Yes" : "No",
+        item.updatedAt ? new Date(item.updatedAt).toLocaleString() : "-",
+      ]);
+
+      downloadDashboardReportPdf({
+        title: `Agent Report - ${resolvedDisplayName}`,
+        range: report?.range || reportRange,
+        generatedAt: report?.generatedAt || new Date().toISOString(),
+        startDate: report?.startDate,
+        summaryRows: [
+          { label: "Total Sessions", value: summary.totalSessions ?? 0 },
+          { label: "Active", value: summary.activeSessions ?? 0 },
+          { label: "Resolved", value: summary.resolvedSessions ?? 0 },
+          { label: "Escalated", value: summary.escalatedSessions ?? 0 },
+          { label: "Avg Resolution (min)", value: summary.avgResolutionMinutes ?? 0 },
+        ],
+        tableColumns: ["Session", "Student", "Status", "Messages", "Resolved", "Updated"],
+        tableRows,
+        fileName: `agent-report-${report?.range || reportRange}.pdf`,
+      });
+    } catch (error) {
+      console.error(error);
+      setQueueError("Unable to download report right now.");
+    } finally {
+      setReportLoading(false);
+    }
+  }
+
   const authProfile = decodeJwtPayload(authToken || "");
   const resolvedDisplayName = displayName || authProfile?.agentId || agentId || "Agent";
   const avgWait = queue.length
@@ -235,6 +280,10 @@ export default function AgentDashboard() {
           avgWait={avgWait}
           search={search}
           onSearchChange={setSearch}
+          reportRange={reportRange}
+          onReportRangeChange={setReportRange}
+          onDownloadReport={onDownloadAgentReport}
+          reportLoading={reportLoading}
           onOpenAdmin={() => navigate("/admin")}
           onOpenStatus={() => navigate("/status")}
           onLogout={onLogout}

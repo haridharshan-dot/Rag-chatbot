@@ -9,15 +9,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return undefined;
-          if (id.includes("react") || id.includes("scheduler")) return "react-vendor";
-          if (id.includes("react-router")) return "router-vendor";
-          if (id.includes("framer-motion")) return "motion-vendor";
-          if (id.includes("socket.io-client")) return "socket-vendor";
-          if (id.includes("chart.js") || id.includes("react-chartjs-2")) return "charts-vendor";
-          if (id.includes("@azure/msal-browser")) return "auth-vendor";
-          return "vendor";
+        manualChunks: {
+          "router-vendor": ["react-router-dom"],
+          "motion-vendor": ["framer-motion"],
+          "socket-vendor": ["socket.io-client"],
+          "charts-vendor": ["chart.js", "react-chartjs-2"],
+          "auth-vendor": ["@azure/msal-browser"],
+          "pdf-vendor": ["jspdf", "jspdf-autotable"],
         },
       },
     },

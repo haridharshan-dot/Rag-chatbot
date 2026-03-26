@@ -4,6 +4,7 @@ import StatusDashboard from "../components/StatusDashboard";
 import {
   downloadTranscript,
   downloadDataset,
+  fetchAdminReport,
   removeDataset,
   fetchAdminSessions,
   fetchAdminOverview,
@@ -20,6 +21,7 @@ import {
   uploadDataset,
   updateAdminSettings,
 } from "../api";
+import { downloadDashboardReportPdf } from "../utils/reportPdf";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -98,6 +100,8 @@ export default function AdminDashboard() {
   const [datasetDownloading, setDatasetDownloading] = useState(false);
   const [datasetRemovingName, setDatasetRemovingName] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [reportRange, setReportRange] = useState("week");
+  const [reportLoading, setReportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -410,6 +414,50 @@ export default function AdminDashboard() {
     }
   }
 
+  async function onDownloadAdminReport() {
+    setReportLoading(true);
+    setFeedback("");
+    try {
+      const report = await fetchAdminReport(reportRange);
+      const summary = report?.summary || {};
+      const items = Array.isArray(report?.items) ? report.items : [];
+
+      const tableRows = items.map((item) => [
+        String(item.sessionId || "-").slice(-8),
+        item.studentId || "-",
+        item.status || "-",
+        item.agentId || "-",
+        item.messageCount ?? 0,
+        formatDate(item.updatedAt),
+      ]);
+
+      downloadDashboardReportPdf({
+        title: "Admin Dashboard Report",
+        range: report?.range || reportRange,
+        generatedAt: report?.generatedAt || new Date().toISOString(),
+        startDate: report?.startDate,
+        summaryRows: [
+          { label: "Total Sessions", value: summary.totalSessions ?? 0 },
+          { label: "Queued", value: summary.queuedSessions ?? 0 },
+          { label: "Active", value: summary.activeSessions ?? 0 },
+          { label: "Resolved", value: summary.resolvedSessions ?? 0 },
+          { label: "Bot", value: summary.botSessions ?? 0 },
+          { label: "Escalated", value: summary.escalatedSessions ?? 0 },
+          { label: "Avg Resolution (min)", value: summary.avgResolutionMinutes ?? 0 },
+        ],
+        tableColumns: ["Session", "Student", "Status", "Agent", "Messages", "Updated"],
+        tableRows,
+        fileName: `admin-report-${report?.range || reportRange}.pdf`,
+      });
+      setFeedback("Admin report downloaded successfully.");
+    } catch (error) {
+      console.error(error);
+      setFeedback("Failed to download admin report.");
+    } finally {
+      setReportLoading(false);
+    }
+  }
+
   const kpis = useMemo(() => {
     const apiUp = statusLogs.filter((log) => log.apiStatus === "up").length;
     const llmUp = statusLogs.filter((log) => log.llmStatus === "up").length;
@@ -555,6 +603,27 @@ export default function AdminDashboard() {
           <h3>Operations Overview</h3>
           <span>Updated: {formatDate(readiness?.timestamp)}</span>
         </div>
+
+        <section className="admin-live-queue admin-report-export">
+          <div className="admin-main-head">
+            <h3>Download Reports</h3>
+            <div className="queue-controls admin-report-controls">
+              <select
+                className="admin-input admin-report-range"
+                value={reportRange}
+                onChange={(e) => setReportRange(e.target.value)}
+              >
+                <option value="day">Per Day</option>
+                <option value="week">Per Week</option>
+                <option value="month">Per Month</option>
+              </select>
+              <button className="pill-btn admin-report-download" onClick={onDownloadAdminReport} disabled={reportLoading}>
+                {reportLoading ? "Preparing PDF..." : "Download PDF"}
+              </button>
+            </div>
+          </div>
+          <p className="admin-note">Export polished PDF reports with KPI cards, session analytics, and time-filtered data.</p>
+        </section>
 
         <div className="admin-manage-grid">
           <article className="manage-card">

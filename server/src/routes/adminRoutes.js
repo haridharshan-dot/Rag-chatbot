@@ -14,6 +14,15 @@ const router = Router();
 
 router.use(requireAgentAuth);
 
+function getRangeStart(range) {
+  const now = Date.now();
+  const value = String(range || "week").toLowerCase();
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (value === "day") return new Date(now - dayMs);
+  if (value === "month") return new Date(now - 30 * dayMs);
+  return new Date(now - 7 * dayMs);
+}
+
 async function readDatasetPreview(fileName, includeFull = false) {
   const requested = String(fileName || "").trim();
   if (!requested) {
@@ -184,6 +193,76 @@ router.get("/sessions", async (req, res, next) => {
       .lean();
 
     return res.json({ success: true, data: sessions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/reports", async (req, res, next) => {
+  try {
+    const range = String(req.query?.range || "week").toLowerCase();
+    const startDate = getRangeStart(range);
+
+    const sessions = await ChatSession.find({ updatedAt: { $gte: startDate } })
+      .sort({ updatedAt: -1 })
+      .limit(1200)
+      .lean();
+
+    const statusCounts = sessions.reduce(
+      (acc, session) => {
+        const status = String(session.status || "bot");
+        if (status === "queued") acc.queued += 1;
+        else if (status === "active") acc.active += 1;
+        else if (status === "resolved") acc.resolved += 1;
+        else acc.bot += 1;
+        if (session.escalationRequestedAt) acc.escalated += 1;
+        return acc;
+      },
+      { queued: 0, active: 0, resolved: 0, bot: 0, escalated: 0 }
+    );
+
+    const resolutionMinutes = sessions
+      .map((session) => {
+        if (!session.escalationRequestedAt || !session.resolvedAt) return null;
+        const delta = new Date(session.resolvedAt).getTime() - new Date(session.escalationRequestedAt).getTime();
+        if (!Number.isFinite(delta) || delta < 0) return null;
+        return Math.round(delta / 60000);
+      })
+      .filter((value) => Number.isFinite(value));
+
+    const avgResolutionMinutes = resolutionMinutes.length
+      ? Math.round(resolutionMinutes.reduce((sum, value) => sum + value, 0) / resolutionMinutes.length)
+      : 0;
+
+    const items = sessions.map((session) => ({
+      sessionId: String(session._id || session.id || ""),
+      studentId: session.studentId || "-",
+      status: session.status || "bot",
+      agentId: session.assignedAgentId || "-",
+      updatedAt: session.updatedAt || session.createdAt || null,
+      escalationRequestedAt: session.escalationRequestedAt || null,
+      resolvedAt: session.resolvedAt || null,
+      messageCount: Array.isArray(session.messages) ? session.messages.length : 0,
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        generatedAt: new Date().toISOString(),
+        range,
+        startDate: startDate.toISOString(),
+        summary: {
+          totalSessions: sessions.length,
+          queuedSessions: statusCounts.queued,
+          activeSessions: statusCounts.active,
+          resolvedSessions: statusCounts.resolved,
+          botSessions: statusCounts.bot,
+          escalatedSessions: statusCounts.escalated,
+          avgResolutionMinutes,
+        },
+        items,
+      },
+    });
   } catch (error) {
     next(error);
   }

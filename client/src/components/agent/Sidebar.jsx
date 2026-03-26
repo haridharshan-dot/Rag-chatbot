@@ -30,6 +30,10 @@ export default function Sidebar({
   avgWait,
   search,
   onSearchChange,
+  reportRange,
+  onReportRangeChange,
+  onDownloadReport,
+  reportLoading,
   onOpenAdmin,
   onOpenStatus,
   onLogout,
@@ -71,6 +75,32 @@ export default function Sidebar({
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Search by name, email, id..."
         />
+      </div>
+
+      <div className="ad-report-box">
+        <div className="ad-report-head">
+          <strong>Reports</strong>
+          <small>Day / Week / Month PDF</small>
+        </div>
+        <div className="ad-report-controls">
+          <select
+            className="ad-report-select"
+            value={reportRange}
+            onChange={(event) => onReportRangeChange(event.target.value)}
+          >
+            <option value="day">Per Day</option>
+            <option value="week">Per Week</option>
+            <option value="month">Per Month</option>
+          </select>
+          <button
+            type="button"
+            className="pill-btn ad-report-download"
+            onClick={onDownloadReport}
+            disabled={reportLoading}
+          >
+            {reportLoading ? "Preparing..." : "Download PDF"}
+          </button>
+        </div>
       </div>
 
       <p className="ad-side-meta">Last sync: {formatDate(lastSyncAt)}</p>
