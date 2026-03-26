@@ -21,11 +21,17 @@ const COPY = {
     placeholder: "Ask about fees, cutoffs, scholarships, courses...",
     escalateButton: "Live Agent",
     offHours: "Live agents are available only from 9:00 AM to 5:00 PM IST.",
+    requestSent: "Live agent request sent. Please wait while we connect you.",
+    requestFailed: "Unable to reach a live agent right now. Please try again.",
+    availabilityCompact: "9AM-5PM IST",
   },
   hi: {
     placeholder: "Fees, cutoffs, scholarship, courses ke bare me puchhiye...",
     escalateButton: "Live Agent",
     offHours: "Live agent sirf 9:00 AM se 5:00 PM IST tak available hain.",
+    requestSent: "Live agent request bhej diya gaya hai. Kripya wait karein.",
+    requestFailed: "Abhi live agent se connect nahi ho pa raha. Kripya dubara try karein.",
+    availabilityCompact: "9AM-5PM IST",
   },
 };
 
@@ -310,7 +316,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
 
   const onEscalate = async () => {
     if (!sessionId) return;
-    if (handoffPending) return;
     if (!isAgentAvailable) {
       setMessages((prev) => [
         ...prev,
@@ -326,8 +331,24 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
     try {
       await escalateToAgent(sessionId);
       setHandoffPending(true);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          content: text.requestSent,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     } catch (error) {
       console.error("Escalation failed", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          content: text.requestFailed,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     }
   };
 
@@ -346,6 +367,7 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         onEscalate={onEscalate}
         isAgentAvailable={isAgentAvailable}
         agentButtonLabel={text.escalateButton}
+        agentAvailabilityLabel={text.availabilityCompact}
         onClose={onClose}
         language={language}
         onChangeLanguage={setLanguage}

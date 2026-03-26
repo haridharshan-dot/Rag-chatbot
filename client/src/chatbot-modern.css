@@ -1,17 +1,20 @@
+@import url("https://fonts.googleapis.com/css2?family=Dosis:wght@600;700&family=Open+Sans:wght@400;600;700&display=swap");
+
 :root {
-  --cc-bg: #eef3ff;
+  --cc-bg: #f4f7fb;
   --cc-surface: rgba(255, 255, 255, 0.92);
   --cc-panel: #ffffff;
-  --cc-border: #d8e2f0;
-  --cc-shadow: 0 24px 60px rgba(13, 27, 42, 0.18);
-  --cc-text: #17263b;
-  --cc-soft-text: #5f7088;
-  --cc-grad-a: #0f766e;
-  --cc-grad-b: #1b5dd8;
-  --cc-user: linear-gradient(135deg, #0f766e 0%, #1470b5 100%);
+  --cc-border: #cfdaea;
+  --cc-shadow: 0 20px 46px rgba(0, 33, 71, 0.18);
+  --cc-text: #112b49;
+  --cc-soft-text: #5f6f84;
+  --cc-grad-a: #002147;
+  --cc-grad-b: #355e9a;
+  --cc-gold: #fdc800;
+  --cc-user: linear-gradient(135deg, #002147 0%, #355e9a 100%);
   --cc-ai: #f4f8ff;
-  --cc-agent: #e8fff0;
-  --cc-system: #fff6dc;
+  --cc-agent: #eef4ff;
+  --cc-system: #fff6d8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,7 +33,11 @@
 }
 
 .cc-widget {
-  background: radial-gradient(circle at 8% 8%, rgba(126, 185, 255, 0.2) 0, transparent 35%), var(--cc-surface);
+  font-family: "Open Sans", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 6% 8%, rgba(53, 94, 154, 0.2) 0, transparent 34%),
+    radial-gradient(circle at 98% 0%, rgba(253, 200, 0, 0.15) 0, transparent 28%),
+    var(--cc-surface);
   border: 1px solid var(--cc-border);
   box-shadow: var(--cc-shadow);
   backdrop-filter: blur(12px);
@@ -97,7 +104,7 @@
   justify-content: space-between;
   gap: 0.55rem;
   padding: 0.58rem 0.78rem;
-  background: linear-gradient(110deg, rgba(15, 118, 110, 0.16), rgba(27, 93, 216, 0.18));
+  background: linear-gradient(110deg, rgba(0, 33, 71, 0.12), rgba(53, 94, 154, 0.18));
   border-bottom: 1px solid var(--cc-border);
 }
 
@@ -120,8 +127,9 @@
 
 .cc-brand-copy h3 {
   margin: 0;
+  font-family: "Dosis", "Open Sans", sans-serif;
   font-size: 0.82rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .cc-brand-copy p {
@@ -141,8 +149,8 @@
 }
 
 .cc-dot-online {
-  background: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  background: #0ea75a;
+  box-shadow: 0 0 0 3px rgba(14, 167, 90, 0.2);
 }
 
 .cc-dot-offline {
@@ -165,8 +173,8 @@
   border-radius: 999px;
   min-height: 30px;
   padding: 0.24rem 0.58rem;
-  background: linear-gradient(90deg, #ef4444, #e11d48);
-  color: #fff;
+  background: linear-gradient(90deg, #002147, #355e9a);
+  color: #ffffff;
   font-size: 0.69rem;
   font-weight: 700;
   cursor: pointer;
@@ -177,6 +185,26 @@
   background: #c9d0da;
   color: #5e6675;
   cursor: not-allowed;
+}
+
+.cc-agent-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.cc-agent-hours-mini {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e6d08c;
+  background: rgba(253, 200, 0, 0.16);
+  color: #5f4a00;
+  border-radius: 999px;
+  min-height: 24px;
+  padding: 0.1rem 0.44rem;
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .cc-lang,
@@ -205,8 +233,8 @@
   flex-direction: column;
   gap: 0.6rem;
   background:
-    radial-gradient(circle at 95% 0%, rgba(58, 130, 246, 0.12) 0, transparent 24%),
-    radial-gradient(circle at 0% 100%, rgba(15, 118, 110, 0.11) 0, transparent 34%),
+    radial-gradient(circle at 95% 0%, rgba(53, 94, 154, 0.14) 0, transparent 24%),
+    radial-gradient(circle at 0% 100%, rgba(253, 200, 0, 0.1) 0, transparent 34%),
     var(--cc-bg);
   scrollbar-width: thin;
   scrollbar-color: rgba(91, 120, 151, 0.5) transparent;
@@ -430,8 +458,8 @@
 }
 
 .cc-input-wrap:focus-within {
-  border-color: #98b4d8;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 8px 18px rgba(15, 23, 42, 0.07);
+  border-color: #7c9bc2;
+  box-shadow: 0 0 0 3px rgba(53, 94, 154, 0.17), 0 8px 18px rgba(15, 23, 42, 0.07);
 }
 
 .cc-send {

@@ -13,6 +13,7 @@ export default function ChatHeader({
   onEscalate,
   isAgentAvailable,
   agentButtonLabel,
+  agentAvailabilityLabel,
   onClose,
   language,
   onChangeLanguage,
@@ -40,14 +41,18 @@ export default function ChatHeader({
 
       <div className="cc-header-actions">
         {!agentConnected && (
-          <button
-            className="cc-agent-cta"
-            onClick={onEscalate}
-            disabled={!isAgentAvailable}
-            aria-label="Connect to live agent"
-          >
-            {handoffPending ? "Requested" : agentButtonLabel}
-          </button>
+          <div className="cc-agent-wrap">
+            <button
+              className="cc-agent-cta"
+              onClick={onEscalate}
+              disabled={!isAgentAvailable}
+              aria-label="Connect to live agent"
+              title="Live agent hours are 9AM to 5PM IST"
+            >
+              {handoffPending ? "Requested" : agentButtonLabel}
+            </button>
+            <span className="cc-agent-hours-mini">{agentAvailabilityLabel}</span>
+          </div>
         )}
         <select
           className="cc-lang"
