@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { escalateToAgent, fetchHistory, sendStudentMessage } from "../../api";
 import { socket } from "../../socket";
+import { trackChatFunnelEvent } from "../../utils/chatAnalytics";
 import ChatHeader from "./ChatHeader";
 import MessageList from "./MessageList";
 import InputBox from "./InputBox";
@@ -87,6 +88,59 @@ function shouldTriggerEscalationFromMessage(message) {
   );
 }
 
+function deriveConversationStarters(siteContext, fallbackLanguage = "en") {
+  const contextText = [
+    siteContext?.title,
+    siteContext?.url,
+    siteContext?.description,
+    ...(Array.isArray(siteContext?.headings) ? siteContext.headings : []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const base =
+    fallbackLanguage === "hi"
+      ? [
+          "Admission process explain kijiye",
+          "Fee structure details dijiye",
+          "Scholarship eligibility kya hai?",
+          "Hostel facilities batayiye",
+        ]
+      : [
+          "Explain the admission process",
+          "Share fee structure details",
+          "What are scholarship eligibility criteria?",
+          "Tell me about hostel facilities",
+        ];
+
+  if (!contextText) return base;
+  if (contextText.includes("hostel")) {
+    return [
+      "Hostel fee and room types",
+      "Hostel rules and timing",
+      "Mess and transport options",
+      "How to apply for hostel",
+    ];
+  }
+  if (contextText.includes("scholarship")) {
+    return [
+      "Available scholarships",
+      "Merit cutoff for scholarship",
+      "Documents needed for scholarship",
+      "Scholarship renewal rules",
+    ];
+  }
+  if (contextText.includes("admission")) {
+    return [
+      "Admission timeline and last dates",
+      "Eligibility by department",
+      "How to apply online",
+      "Required documents checklist",
+    ];
+  }
+  return base;
+}
+
 export default function ChatContainer({
   sessionId,
   studentId,
@@ -96,6 +150,7 @@ export default function ChatContainer({
   onClose,
   studentDisplayName = "",
   historyCount = 0,
+  siteContext = null,
   onStudentLogout = null,
 }) {
   const [messages, setMessages] = useState([]);
@@ -109,6 +164,7 @@ export default function ChatContainer({
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? "online" : "offline");
   const [language, setLanguage] = useState(() => localStorage.getItem("chat-lang") || "en");
   const [isAgentAvailable, setIsAgentAvailable] = useState(() => isAgentWithinWorkingHours());
+  const [resumeBannerVisible, setResumeBannerVisible] = useState(false);
 
   const stageIntervalRef = useRef(null);
   const agentTypingTimeoutRef = useRef(null);
@@ -121,6 +177,7 @@ export default function ChatContainer({
     () => Date.now() - lastEscalateShownAt < ESCALATE_COOLDOWN_MS,
     [lastEscalateShownAt]
   );
+  const starterPrompts = useMemo(() => deriveConversationStarters(siteContext, language), [siteContext, language]);
 
   useEffect(() => {
     localStorage.setItem("chat-lang", language);
@@ -228,6 +285,20 @@ export default function ChatContainer({
       socket.off("agent:typing", onTyping);
     };
   }, [sessionId, studentId]);
+
+  useEffect(() => {
+    if (!studentDisplayName || !historyCount) {
+      setResumeBannerVisible(false);
+      return;
+    }
+    const key = `cc-resume-dismissed:${studentDisplayName}`;
+    try {
+      const dismissed = localStorage.getItem(key) === "1";
+      setResumeBannerVisible(!dismissed);
+    } catch {
+      setResumeBannerVisible(true);
+    }
+  }, [historyCount, studentDisplayName]);
 
   useEffect(() => {
     if (!listRef.current) return;
@@ -340,6 +411,7 @@ export default function ChatContainer({
 
     try {
       await escalateToAgent(sessionId);
+      trackChatFunnelEvent("agent_escalation");
       setHandoffPending(true);
       setMessages((prev) => [
         ...prev,
@@ -392,6 +464,22 @@ export default function ChatContainer({
           isSending={isSending}
           agentTyping={agentTyping}
           onRichAction={sendMessage}
+          starterPrompts={messages.length === 0 ? starterPrompts : []}
+          onStarterClick={sendMessage}
+          resumeBannerVisible={resumeBannerVisible}
+          historyCount={historyCount}
+          onResume={() => {
+            setResumeBannerVisible(false);
+            sendMessage("Please summarize my previous chats and continue from there.");
+          }}
+          onDismissResume={() => {
+            setResumeBannerVisible(false);
+            try {
+              localStorage.setItem(`cc-resume-dismissed:${studentDisplayName}`, "1");
+            } catch {
+              // Ignore local storage failures.
+            }
+          }}
         />
       </div>
 

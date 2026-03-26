@@ -13,6 +13,7 @@ import {
   verifyStudentOtp,
 } from "../api";
 import { clearStudentToken, getStudentFromToken, setStudentToken } from "../utils/auth";
+import { trackChatFunnelEvent } from "../utils/chatAnalytics";
 
 export default function EmbeddedStudentChatbot({
   studentId: providedStudentId,
@@ -36,6 +37,7 @@ export default function EmbeddedStudentChatbot({
 
   const [authMode, setAuthMode] = useState("login");
   const [loginMethod, setLoginMethod] = useState("password");
+  const [showForgotFlow, setShowForgotFlow] = useState(false);
   const [otpChannel, setOtpChannel] = useState("mobile");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
@@ -111,6 +113,16 @@ export default function EmbeddedStudentChatbot({
     };
   }, [requiresPopupAuth, student?.id]);
 
+  useEffect(() => {
+    if (!requiresPopupAuth || student?.id) return;
+    trackChatFunnelEvent("auth_start");
+  }, [requiresPopupAuth, student?.id]);
+
+  useEffect(() => {
+    if (!sessionId || !student?.id) return;
+    trackChatFunnelEvent("chat_started");
+  }, [sessionId, student?.id]);
+
   function handleSwitchAccount() {
     clearStudentToken();
     setStudent(null);
@@ -125,6 +137,7 @@ export default function EmbeddedStudentChatbot({
     setForgotOtpRequested(false);
     setAuthMode("login");
     setLoginMethod("password");
+    setShowForgotFlow(false);
   }
 
   function resetAuthFeedback() {
@@ -148,6 +161,7 @@ export default function EmbeddedStudentChatbot({
       });
       setAuthMode("login");
       setLoginMethod("otp");
+      setShowForgotFlow(false);
       setOtpChannel("mobile");
       setLoginEmail(signupEmail.trim().toLowerCase());
       setLoginMobile(signupMobile.trim());
@@ -207,6 +221,7 @@ export default function EmbeddedStudentChatbot({
         name: data.user.name || "Student",
         email: data.user.email || "",
       });
+      trackChatFunnelEvent("auth_success");
       setAuthMessage("Login successful. Starting your chat session...");
       setLoginPassword("");
     } catch (loginError) {
@@ -252,8 +267,8 @@ export default function EmbeddedStudentChatbot({
       setForgotOtp("");
       setForgotNewPassword("");
       setForgotOtpRequested(false);
-      setAuthMode("login");
       setLoginMethod("password");
+      setShowForgotFlow(false);
       setAuthMessage("Password updated. Login using your email and new password.");
     } catch (forgotVerifyError) {
       const message = forgotVerifyError?.response?.data?.message || "Unable to reset password";
@@ -285,6 +300,7 @@ export default function EmbeddedStudentChatbot({
         name: data.user.name || "Student",
         email: data.user.email || "",
       });
+      trackChatFunnelEvent("auth_success");
       setAuthMessage("Google login successful. Starting your chat session...");
     } catch (googleError) {
       const message = googleError?.response?.data?.message || "Google login failed";
@@ -316,6 +332,7 @@ export default function EmbeddedStudentChatbot({
         name: data.user.name || "Student",
         email: data.user.email || "",
       });
+      trackChatFunnelEvent("auth_success");
       setAuthMessage("Login successful. Starting your chat session...");
       setOtp("");
     } catch (verifyError) {
@@ -346,6 +363,7 @@ export default function EmbeddedStudentChatbot({
                 className={`cc-auth-tab ${authMode === "login" ? "active" : ""}`}
                 onClick={() => {
                   setAuthMode("login");
+                  setShowForgotFlow(false);
                   resetAuthFeedback();
                 }}
                 role="tab"
@@ -357,6 +375,7 @@ export default function EmbeddedStudentChatbot({
                 className={`cc-auth-tab ${authMode === "signup" ? "active" : ""}`}
                 onClick={() => {
                   setAuthMode("signup");
+                  setShowForgotFlow(false);
                   resetAuthFeedback();
                 }}
                 role="tab"
@@ -364,30 +383,12 @@ export default function EmbeddedStudentChatbot({
               >
                 Signup
               </button>
-              <button
-                className={`cc-auth-tab ${authMode === "forgot" ? "active" : ""}`}
-                onClick={() => {
-                  setAuthMode("forgot");
-                  setForgotMobile(loginMobile || forgotMobile);
-                  resetAuthFeedback();
-                }}
-                role="tab"
-                aria-selected={authMode === "forgot"}
-              >
-                Reset Password
-              </button>
             </div>
 
             <div className="cc-google-wrap">
               {googleEnabled ? (
                 <>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => setAuthError("Google login failed")}
-                    width="100%"
-                    text="continue_with"
-                    shape="pill"
-                  />
+                  <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setAuthError("Google login failed")} text="continue_with" shape="pill" />
                   <p className="cc-auth-note">Use Google for instant login or signup.</p>
                 </>
               ) : (
@@ -434,177 +435,187 @@ export default function EmbeddedStudentChatbot({
               </form>
             ) : authMode === "login" ? (
               <>
-                <div className="cc-auth-channel-toggle">
-                  <button
-                    type="button"
-                    className={loginMethod === "password" ? "active" : ""}
-                    onClick={() => setLoginMethod("password")}
-                  >
-                    Password Login
-                  </button>
-                  <button
-                    type="button"
-                    className={loginMethod === "otp" ? "active" : ""}
-                    onClick={() => setLoginMethod("otp")}
-                  >
-                    OTP Login
-                  </button>
-                </div>
-
-                {loginMethod === "password" ? (
+                {!showForgotFlow ? (
                   <>
-                    <form className="cc-auth-form" onSubmit={handlePasswordLogin}>
+                    <div className="cc-auth-channel-toggle">
+                      <button
+                        type="button"
+                        className={loginMethod === "password" ? "active" : ""}
+                        onClick={() => setLoginMethod("password")}
+                      >
+                        Password Login
+                      </button>
+                      <button
+                        type="button"
+                        className={loginMethod === "otp" ? "active" : ""}
+                        onClick={() => setLoginMethod("otp")}
+                      >
+                        OTP Login
+                      </button>
+                    </div>
+
+                    {loginMethod === "password" ? (
+                      <>
+                        <form className="cc-auth-form" onSubmit={handlePasswordLogin}>
+                          <input
+                            className="cc-auth-input"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={loginEmail}
+                            onChange={(event) => setLoginEmail(event.target.value)}
+                            required
+                          />
+                          <input
+                            className="cc-auth-input"
+                            type="password"
+                            placeholder="Enter password"
+                            value={loginPassword}
+                            onChange={(event) => setLoginPassword(event.target.value)}
+                            required
+                          />
+                          <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
+                            {authBusy ? "Signing in..." : "Login"}
+                          </button>
+                        </form>
+
+                        <div className="cc-auth-inline-actions">
+                          <button
+                            type="button"
+                            className="cc-link-btn"
+                            onClick={() => {
+                              setShowForgotFlow(true);
+                              setForgotMobile(loginMobile || forgotMobile);
+                              setForgotOtpRequested(false);
+                              setForgotOtp("");
+                              setForgotNewPassword("");
+                              resetAuthFeedback();
+                            }}
+                          >
+                            Forgot password? Reset with OTP
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <form className="cc-auth-form" onSubmit={handleRequestOtp}>
+                          <div className="cc-auth-channel-toggle">
+                            <button
+                              type="button"
+                              className={otpChannel === "mobile" ? "active" : ""}
+                              onClick={() => setOtpChannel("mobile")}
+                            >
+                              Mobile OTP
+                            </button>
+                            <button
+                              type="button"
+                              className={otpChannel === "email" ? "active" : ""}
+                              onClick={() => setOtpChannel("email")}
+                            >
+                              Email OTP
+                            </button>
+                          </div>
+                          {otpChannel === "mobile" ? (
+                            <input
+                              className="cc-auth-input"
+                              placeholder="Enter your mobile number"
+                              value={loginMobile}
+                              onChange={(event) => setLoginMobile(event.target.value)}
+                              required
+                            />
+                          ) : (
+                            <input
+                              className="cc-auth-input"
+                              type="email"
+                              placeholder="Enter your email"
+                              value={loginEmail}
+                              onChange={(event) => setLoginEmail(event.target.value)}
+                              required
+                            />
+                          )}
+                          <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
+                            {authBusy ? "Sending OTP..." : "Send OTP"}
+                          </button>
+                        </form>
+
+                        <form className="cc-auth-form cc-auth-verify" onSubmit={handleVerifyOtp}>
+                          <input
+                            className="cc-auth-input"
+                            inputMode="numeric"
+                            maxLength={6}
+                            placeholder="Enter 6-digit OTP"
+                            value={otp}
+                            onChange={(event) => setOtp(event.target.value)}
+                            required
+                          />
+                          <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
+                            {authBusy ? "Verifying..." : "Verify OTP & Start Chat"}
+                          </button>
+                        </form>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="cc-auth-form">
+                      <p className="cc-auth-subtitle">Reset password with OTP</p>
+                    </div>
+
+                    <form className="cc-auth-form" onSubmit={handleForgotPasswordRequest}>
                       <input
                         className="cc-auth-input"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={loginEmail}
-                        onChange={(event) => setLoginEmail(event.target.value)}
-                        required
-                      />
-                      <input
-                        className="cc-auth-input"
-                        type="password"
-                        placeholder="Enter password"
-                        value={loginPassword}
-                        onChange={(event) => setLoginPassword(event.target.value)}
+                        placeholder="Enter registered mobile"
+                        value={forgotMobile}
+                        onChange={(event) => setForgotMobile(event.target.value)}
                         required
                       />
                       <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                        {authBusy ? "Signing in..." : "Login"}
+                        {authBusy ? "Sending OTP..." : "Send Reset OTP"}
                       </button>
                     </form>
+
+                    {forgotOtpRequested ? (
+                      <form className="cc-auth-form cc-auth-verify" onSubmit={handleForgotPasswordVerify}>
+                        <input
+                          className="cc-auth-input"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="Enter OTP"
+                          value={forgotOtp}
+                          onChange={(event) => setForgotOtp(event.target.value)}
+                          required
+                        />
+                        <input
+                          className="cc-auth-input"
+                          type="password"
+                          minLength={6}
+                          placeholder="Enter new password"
+                          value={forgotNewPassword}
+                          onChange={(event) => setForgotNewPassword(event.target.value)}
+                          required
+                        />
+                        <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
+                          {authBusy ? "Updating..." : "Verify OTP & Reset Password"}
+                        </button>
+                      </form>
+                    ) : null}
 
                     <div className="cc-auth-inline-actions">
                       <button
                         type="button"
                         className="cc-link-btn"
                         onClick={() => {
-                          setAuthMode("forgot");
-                          setForgotMobile(loginMobile || forgotMobile);
-                          setForgotOtpRequested(false);
-                          setForgotOtp("");
-                          setForgotNewPassword("");
+                          setShowForgotFlow(false);
                           resetAuthFeedback();
                         }}
                       >
-                        Forgot password? Reset with OTP
+                        Back to Login
                       </button>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <form className="cc-auth-form" onSubmit={handleRequestOtp}>
-                      <div className="cc-auth-channel-toggle">
-                        <button
-                          type="button"
-                          className={otpChannel === "mobile" ? "active" : ""}
-                          onClick={() => setOtpChannel("mobile")}
-                        >
-                          Mobile OTP
-                        </button>
-                        <button
-                          type="button"
-                          className={otpChannel === "email" ? "active" : ""}
-                          onClick={() => setOtpChannel("email")}
-                        >
-                          Email OTP
-                        </button>
-                      </div>
-                      {otpChannel === "mobile" ? (
-                        <input
-                          className="cc-auth-input"
-                          placeholder="Enter your mobile number"
-                          value={loginMobile}
-                          onChange={(event) => setLoginMobile(event.target.value)}
-                          required
-                        />
-                      ) : (
-                        <input
-                          className="cc-auth-input"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={loginEmail}
-                          onChange={(event) => setLoginEmail(event.target.value)}
-                          required
-                        />
-                      )}
-                      <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                        {authBusy ? "Sending OTP..." : "Send OTP"}
-                      </button>
-                    </form>
-
-                    <form className="cc-auth-form cc-auth-verify" onSubmit={handleVerifyOtp}>
-                      <input
-                        className="cc-auth-input"
-                        inputMode="numeric"
-                        maxLength={6}
-                        placeholder="Enter 6-digit OTP"
-                        value={otp}
-                        onChange={(event) => setOtp(event.target.value)}
-                        required
-                      />
-                      <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                        {authBusy ? "Verifying..." : "Verify OTP & Start Chat"}
-                      </button>
-                    </form>
                   </>
                 )}
               </>
             ) : (
-              <>
-                <form className="cc-auth-form" onSubmit={handleForgotPasswordRequest}>
-                  <input
-                    className="cc-auth-input"
-                    placeholder="Enter registered mobile"
-                    value={forgotMobile}
-                    onChange={(event) => setForgotMobile(event.target.value)}
-                    required
-                  />
-                  <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                    {authBusy ? "Sending OTP..." : "Send Reset OTP"}
-                  </button>
-                </form>
-
-                {forgotOtpRequested ? (
-                  <form className="cc-auth-form cc-auth-verify" onSubmit={handleForgotPasswordVerify}>
-                    <input
-                      className="cc-auth-input"
-                      inputMode="numeric"
-                      maxLength={6}
-                      placeholder="Enter OTP"
-                      value={forgotOtp}
-                      onChange={(event) => setForgotOtp(event.target.value)}
-                      required
-                    />
-                    <input
-                      className="cc-auth-input"
-                      type="password"
-                      minLength={6}
-                      placeholder="Enter new password"
-                      value={forgotNewPassword}
-                      onChange={(event) => setForgotNewPassword(event.target.value)}
-                      required
-                    />
-                    <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                      {authBusy ? "Updating..." : "Verify OTP & Reset Password"}
-                    </button>
-                  </form>
-                ) : null}
-
-                <div className="cc-auth-inline-actions">
-                  <button
-                    type="button"
-                    className="cc-link-btn"
-                    onClick={() => {
-                      setAuthMode("login");
-                      resetAuthFeedback();
-                    }}
-                  >
-                    Back to Login
-                  </button>
-                </div>
-              </>
+              null
             )}
 
             {authMessage ? <p className="cc-auth-message">{authMessage}</p> : null}
@@ -624,6 +635,7 @@ export default function EmbeddedStudentChatbot({
       chatContainerProps={{
         studentDisplayName: requiresPopupAuth ? student?.name || "Student" : "",
         historyCount: requiresPopupAuth ? historyCount : 0,
+        siteContext,
         onStudentLogout: requiresPopupAuth && student?.id ? handleSwitchAccount : null,
       }}
       onRetry={() => {

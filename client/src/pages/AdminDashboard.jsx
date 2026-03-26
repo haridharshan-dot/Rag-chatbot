@@ -23,6 +23,7 @@ import {
   updateAdminSettings,
 } from "../api";
 import { downloadDashboardReportPdf } from "../utils/reportPdf";
+import { getChatFunnelSnapshot } from "../utils/chatAnalytics";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -117,12 +118,20 @@ export default function AdminDashboard() {
   const [warmingRag, setWarmingRag] = useState(false);
   const [otpProviderHealth, setOtpProviderHealth] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [chatFunnel, setChatFunnel] = useState(() => getChatFunnelSnapshot());
   const previewRef = useRef(null);
 
   useEffect(() => {
     if (authToken) return;
     navigate("/agent", { replace: true });
   }, [authToken, navigate]);
+
+  useEffect(() => {
+    const refreshFunnel = () => setChatFunnel(getChatFunnelSnapshot());
+    refreshFunnel();
+    const timer = setInterval(refreshFunnel, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -529,6 +538,27 @@ export default function AdminDashboard() {
     };
   }, [statusLogs]);
 
+  const funnelMetrics = useMemo(() => {
+    const counts = chatFunnel?.counts || {};
+    const open = Number(counts.widget_open || 0);
+    const authStart = Number(counts.auth_start || 0);
+    const authSuccess = Number(counts.auth_success || 0);
+    const chatStarted = Number(counts.chat_started || 0);
+    const escalations = Number(counts.agent_escalation || 0);
+
+    const asPercent = (value, base) => (base > 0 ? Math.round((value / base) * 100) : 0);
+    return {
+      open,
+      authStart,
+      authSuccess,
+      chatStarted,
+      escalations,
+      authConversion: asPercent(authSuccess, authStart || open),
+      chatConversion: asPercent(chatStarted, authSuccess),
+      escalationRate: asPercent(escalations, chatStarted),
+    };
+  }, [chatFunnel]);
+
   const frontendConfig = useMemo(
     () => ({
       msClientId: Boolean(import.meta.env.VITE_MS_CLIENT_ID),
@@ -651,6 +681,28 @@ export default function AdminDashboard() {
             <strong>{kpis.totalLogs}</strong>
           </article>
         </div>
+
+        <section className="admin-live-queue admin-compact-card">
+          <div className="admin-main-head">
+            <h3>Chatbot Funnel Analytics</h3>
+          </div>
+          <p className="admin-note">
+            Widget Open -> Auth Start -> Auth Success -> Chat Started -> Agent Escalation
+          </p>
+          <div className="runtime-grid">
+            <p>Widget Open: <strong>{funnelMetrics.open}</strong></p>
+            <p>Auth Start: <strong>{funnelMetrics.authStart}</strong></p>
+            <p>Auth Success: <strong>{funnelMetrics.authSuccess}</strong></p>
+            <p>Chat Started: <strong>{funnelMetrics.chatStarted}</strong></p>
+            <p>Agent Escalation: <strong>{funnelMetrics.escalations}</strong></p>
+            <p>Auth Conversion: <strong>{funnelMetrics.authConversion}%</strong></p>
+            <p>Chat Conversion: <strong>{funnelMetrics.chatConversion}%</strong></p>
+            <p>Escalation Rate: <strong>{funnelMetrics.escalationRate}%</strong></p>
+          </div>
+          <p className="admin-note">
+            Last event: {formatDate(chatFunnel?.lastEventAt)}
+          </p>
+        </section>
 
         <div className="admin-actions">
           <button className="pill-btn" onClick={() => navigate("/agent")}>Agent Dashboard</button>

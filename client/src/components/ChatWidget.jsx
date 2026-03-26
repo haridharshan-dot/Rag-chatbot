@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BRANDING } from "../config/branding";
 import ChatContainer from "./chatbot/ChatContainer";
+import { trackChatFunnelEvent } from "../utils/chatAnalytics";
 
 export default function ChatWidget({
   sessionId,
@@ -42,6 +43,11 @@ export default function ChatWidget({
       setIsFullscreen(true);
     }
   }, [open, viewport.width]);
+
+  useEffect(() => {
+    if (!open) return;
+    trackChatFunnelEvent("widget_open");
+  }, [open]);
 
   const openDimensions = useMemo(() => {
     const viewportWidth = viewport.width;

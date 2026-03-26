@@ -40,6 +40,14 @@ function extractDeadlines(text) {
   return [...new Set(mentions)].slice(0, 3);
 }
 
+function detectScholarship(text) {
+  return /(scholarship|stipend|financial aid|tuition waiver)/i.test(text);
+}
+
+function detectHostel(text) {
+  return /(hostel|mess|accommodation|room|warden)/i.test(text);
+}
+
 function FeeCard({ fees }) {
   return (
     <div className="cc-rich-card">
@@ -91,8 +99,10 @@ export default function RichCards({ message, onAction }) {
   const fees = extractFees(text);
   const courses = extractCourses(text);
   const months = extractDeadlines(text);
+  const hasScholarship = detectScholarship(text);
+  const hasHostel = detectHostel(text);
 
-  if (!fees.length && !courses.length && !months.length) return null;
+  if (!fees.length && !courses.length && !months.length && !hasScholarship && !hasHostel) return null;
 
   return (
     <div className="cc-rich-wrap">
@@ -100,8 +110,14 @@ export default function RichCards({ message, onAction }) {
       {courses.length > 0 && <CourseCard courses={courses} />}
       <DeadlineBadges months={months} />
       <div className="cc-rich-actions">
-        <button type="button" onClick={() => onAction("I want to apply now. Please guide me.")}>Apply Now</button>
-        <button type="button" onClick={() => onAction("Share more details about this.")}>View Details</button>
+        <button type="button" onClick={() => onAction("I want to apply now. Please guide me with exact steps and required documents.")}>Apply Now</button>
+        <button type="button" onClick={() => onAction("Share fee payment options, installment plans, and refund policy.")}>Fee Details</button>
+        {hasScholarship ? (
+          <button type="button" onClick={() => onAction("List scholarship options, eligibility, and deadlines in a table.")}>Scholarships</button>
+        ) : null}
+        {hasHostel ? (
+          <button type="button" onClick={() => onAction("Share hostel fee, room types, and hostel admission process.")}>Hostel Info</button>
+        ) : null}
       </div>
     </div>
   );

@@ -9,6 +9,12 @@ export default function MessageList({
   isSending,
   agentTyping,
   onRichAction,
+  starterPrompts = [],
+  onStarterClick,
+  resumeBannerVisible = false,
+  historyCount = 0,
+  onResume,
+  onDismissResume,
 }) {
   return (
     <section
@@ -19,10 +25,31 @@ export default function MessageList({
       aria-relevant="additions text"
       aria-label="Chat conversation"
     >
+      {starterPrompts.length ? (
+        <div className="cc-suggestions" aria-label="Conversation starters">
+          {starterPrompts.map((prompt) => (
+            <button key={prompt} type="button" className="cc-chip" onClick={() => onStarterClick?.(prompt)}>
+              {prompt}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {resumeBannerVisible ? (
+        <div className="cc-resume-banner">
+          <p>You have {historyCount} previous sessions.</p>
+          <div className="cc-resume-actions">
+            <button type="button" className="cc-chip" onClick={onResume}>Resume Context</button>
+            <button type="button" className="cc-link-btn" onClick={onDismissResume}>Dismiss</button>
+          </div>
+        </div>
+      ) : null}
+
       {messages.map((message, index) => (
         <MessageBubble
-          key={`${index}-${message.sender}-${String(message.content || "").slice(0, 22)}`}
+          key={`${message.createdAt || index}-${message.sender}-${String(message.content || "").slice(0, 32)}`}
           message={message}
+          index={index}
           onRichAction={onRichAction}
         />
       ))}
