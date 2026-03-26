@@ -160,6 +160,25 @@
   gap: 0.28rem;
 }
 
+.cc-agent-cta {
+  border: 0;
+  border-radius: 999px;
+  min-height: 30px;
+  padding: 0.24rem 0.58rem;
+  background: linear-gradient(90deg, #ef4444, #e11d48);
+  color: #fff;
+  font-size: 0.69rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cc-agent-cta:disabled {
+  background: #c9d0da;
+  color: #5e6675;
+  cursor: not-allowed;
+}
+
 .cc-lang,
 .cc-action-btn {
   border: 1px solid var(--cc-border);
@@ -363,32 +382,6 @@
   transform: translateY(-1px);
   border-color: #b6c9e1;
   background: #ffffff;
-}
-
-.cc-escalate {
-  margin: 0.08rem 0.9rem 0.25rem;
-  border: 0;
-  border-radius: 13px;
-  padding: 0.46rem 0.72rem;
-  background: linear-gradient(90deg, #ef4444, #e11d48);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.cc-escalate:disabled {
-  opacity: 1;
-  background: #c9d0da;
-  color: #5e6675;
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-.cc-agent-hours-note {
-  margin: 0 0.9rem 0.25rem;
-  font-size: 0.67rem;
-  color: var(--cc-soft-text);
 }
 
 .cc-input-wrap {
@@ -653,14 +646,6 @@
 
   .cc-send {
     min-width: 74px;
-  }
-
-  .cc-suggestions {
-    padding: 0.5rem 0.8rem 0.3rem;
-  }
-
-  .cc-escalate {
-    margin: 0.08rem 0.72rem 0.2rem;
   }
 
   .cc-input-zone {

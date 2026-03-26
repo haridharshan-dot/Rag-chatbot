@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { escalateToAgent, fetchHistory, sendStudentMessage } from "../../api";
 import { socket } from "../../socket";
 import ChatHeader from "./ChatHeader";
@@ -19,15 +19,13 @@ const AGENT_END_HOUR = 17;
 const COPY = {
   en: {
     placeholder: "Ask about fees, cutoffs, scholarships, courses...",
-    escalateButton: "Connect to Live Agent",
+    escalateButton: "Live Agent",
     offHours: "Live agents are available only from 9:00 AM to 5:00 PM IST.",
-    availabilityNote: "Live agent support is available from 9:00 AM to 5:00 PM IST.",
   },
   hi: {
     placeholder: "Fees, cutoffs, scholarship, courses ke bare me puchhiye...",
-    escalateButton: "Human Agent se baat karein",
+    escalateButton: "Live Agent",
     offHours: "Live agent sirf 9:00 AM se 5:00 PM IST tak available hain.",
-    availabilityNote: "Live agent support 9:00 AM se 5:00 PM IST tak available hai.",
   },
 };
 
@@ -345,6 +343,9 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
         connectionStatus={connectionStatus}
         handoffPending={handoffPending}
         agentConnected={agentConnected}
+        onEscalate={onEscalate}
+        isAgentAvailable={isAgentAvailable}
+        agentButtonLabel={text.escalateButton}
         onClose={onClose}
         language={language}
         onChangeLanguage={setLanguage}
@@ -362,23 +363,6 @@ export default function ChatContainer({ sessionId, studentId, loading, isFullscr
       </div>
 
       <div className="cc-footer">
-        <AnimatePresence>
-          {!agentConnected && (
-            <motion.button
-              className="cc-escalate"
-              onClick={onEscalate}
-              disabled={!isAgentAvailable}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-            >
-              {text.escalateButton}
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        <p className="cc-agent-hours-note">{text.availabilityNote}</p>
-
         <InputBox
           value={input}
           loading={isSending}

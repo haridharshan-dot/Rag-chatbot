@@ -8,6 +8,11 @@ const LANG_OPTIONS = [
 
 export default function ChatHeader({
   connectionStatus,
+  handoffPending,
+  agentConnected,
+  onEscalate,
+  isAgentAvailable,
+  agentButtonLabel,
   onClose,
   language,
   onChangeLanguage,
@@ -34,6 +39,16 @@ export default function ChatHeader({
       </div>
 
       <div className="cc-header-actions">
+        {!agentConnected && (
+          <button
+            className="cc-agent-cta"
+            onClick={onEscalate}
+            disabled={!isAgentAvailable}
+            aria-label="Connect to live agent"
+          >
+            {handoffPending ? "Requested" : agentButtonLabel}
+          </button>
+        )}
         <select
           className="cc-lang"
           value={language}
