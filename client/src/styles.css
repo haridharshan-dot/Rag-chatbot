@@ -178,11 +178,6 @@ body.chatbot-embed-mode #root {
   max-width: 460px;
 }
 
-.student-auth-note {
-  margin: 0.45rem 0 0;
-  color: #4d667e;
-  font-size: 0.86rem;
-}
 
 .student-auth-form {
   margin-top: 0.8rem;
@@ -228,14 +223,6 @@ body.chatbot-embed-mode #root {
   margin-top: 0.55rem;
 }
 
-.student-reset-title {
-  margin: 0;
-  color: #0f3552;
-}
-
-.student-reset-links {
-  margin-top: 0.7rem;
-}
 
 .student-dev-otp {
   margin: 0;

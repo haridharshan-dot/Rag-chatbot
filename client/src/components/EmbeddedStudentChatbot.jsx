@@ -127,6 +127,12 @@ export default function EmbeddedStudentChatbot({
     setLoginMethod("password");
   }
 
+  function resetAuthFeedback() {
+    setAuthError("");
+    setAuthMessage("");
+    setDebugOtp("");
+  }
+
   async function handleSignup(event) {
     event.preventDefault();
     setAuthBusy(true);
@@ -246,6 +252,7 @@ export default function EmbeddedStudentChatbot({
       setForgotOtp("");
       setForgotNewPassword("");
       setForgotOtpRequested(false);
+      setAuthMode("login");
       setLoginMethod("password");
       setAuthMessage("Password updated. Login using your email and new password.");
     } catch (forgotVerifyError) {
@@ -337,20 +344,55 @@ export default function EmbeddedStudentChatbot({
             <div className="cc-auth-tabs" role="tablist" aria-label="Authentication mode">
               <button
                 className={`cc-auth-tab ${authMode === "login" ? "active" : ""}`}
-                onClick={() => setAuthMode("login")}
+                onClick={() => {
+                  setAuthMode("login");
+                  resetAuthFeedback();
+                }}
                 role="tab"
                 aria-selected={authMode === "login"}
               >
-                Login with OTP
+                Login
               </button>
               <button
                 className={`cc-auth-tab ${authMode === "signup" ? "active" : ""}`}
-                onClick={() => setAuthMode("signup")}
+                onClick={() => {
+                  setAuthMode("signup");
+                  resetAuthFeedback();
+                }}
                 role="tab"
                 aria-selected={authMode === "signup"}
               >
                 Signup
               </button>
+              <button
+                className={`cc-auth-tab ${authMode === "forgot" ? "active" : ""}`}
+                onClick={() => {
+                  setAuthMode("forgot");
+                  setForgotMobile(loginMobile || forgotMobile);
+                  resetAuthFeedback();
+                }}
+                role="tab"
+                aria-selected={authMode === "forgot"}
+              >
+                Reset Password
+              </button>
+            </div>
+
+            <div className="cc-google-wrap">
+              {googleEnabled ? (
+                <>
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setAuthError("Google login failed")}
+                    width="100%"
+                    text="continue_with"
+                    shape="pill"
+                  />
+                  <p className="cc-auth-note">Use Google for instant login or signup.</p>
+                </>
+              ) : (
+                <p className="cc-auth-note">Google login/signup is unavailable right now.</p>
+              )}
             </div>
 
             {authMode === "signup" ? (
@@ -390,7 +432,7 @@ export default function EmbeddedStudentChatbot({
                   {authBusy ? "Creating account..." : "Signup (Mobile OTP + Password)"}
                 </button>
               </form>
-            ) : (
+            ) : authMode === "login" ? (
               <>
                 <div className="cc-auth-channel-toggle">
                   <button
@@ -408,18 +450,6 @@ export default function EmbeddedStudentChatbot({
                     OTP Login
                   </button>
                 </div>
-
-                {googleEnabled ? (
-                  <div className="cc-google-wrap">
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={() => setAuthError("Google login failed")}
-                      width="100%"
-                      text="continue_with"
-                      shape="pill"
-                    />
-                  </div>
-                ) : null}
 
                 {loginMethod === "password" ? (
                   <>
@@ -450,55 +480,17 @@ export default function EmbeddedStudentChatbot({
                         type="button"
                         className="cc-link-btn"
                         onClick={() => {
+                          setAuthMode("forgot");
+                          setForgotMobile(loginMobile || forgotMobile);
                           setForgotOtpRequested(false);
                           setForgotOtp("");
                           setForgotNewPassword("");
-                          setAuthError("");
-                          setAuthMessage("");
+                          resetAuthFeedback();
                         }}
                       >
                         Forgot password? Reset with OTP
                       </button>
                     </div>
-
-                    <form className="cc-auth-form" onSubmit={handleForgotPasswordRequest}>
-                      <input
-                        className="cc-auth-input"
-                        placeholder="Enter registered mobile"
-                        value={forgotMobile}
-                        onChange={(event) => setForgotMobile(event.target.value)}
-                        required
-                      />
-                      <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                        {authBusy ? "Sending OTP..." : "Send Reset OTP"}
-                      </button>
-                    </form>
-
-                    {forgotOtpRequested ? (
-                      <form className="cc-auth-form cc-auth-verify" onSubmit={handleForgotPasswordVerify}>
-                        <input
-                          className="cc-auth-input"
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="Enter OTP"
-                          value={forgotOtp}
-                          onChange={(event) => setForgotOtp(event.target.value)}
-                          required
-                        />
-                        <input
-                          className="cc-auth-input"
-                          type="password"
-                          minLength={6}
-                          placeholder="Enter new password"
-                          value={forgotNewPassword}
-                          onChange={(event) => setForgotNewPassword(event.target.value)}
-                          required
-                        />
-                        <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
-                          {authBusy ? "Updating..." : "Verify OTP & Reset Password"}
-                        </button>
-                      </form>
-                    ) : null}
                   </>
                 ) : (
                   <>
@@ -558,6 +550,60 @@ export default function EmbeddedStudentChatbot({
                     </form>
                   </>
                 )}
+              </>
+            ) : (
+              <>
+                <form className="cc-auth-form" onSubmit={handleForgotPasswordRequest}>
+                  <input
+                    className="cc-auth-input"
+                    placeholder="Enter registered mobile"
+                    value={forgotMobile}
+                    onChange={(event) => setForgotMobile(event.target.value)}
+                    required
+                  />
+                  <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
+                    {authBusy ? "Sending OTP..." : "Send Reset OTP"}
+                  </button>
+                </form>
+
+                {forgotOtpRequested ? (
+                  <form className="cc-auth-form cc-auth-verify" onSubmit={handleForgotPasswordVerify}>
+                    <input
+                      className="cc-auth-input"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="Enter OTP"
+                      value={forgotOtp}
+                      onChange={(event) => setForgotOtp(event.target.value)}
+                      required
+                    />
+                    <input
+                      className="cc-auth-input"
+                      type="password"
+                      minLength={6}
+                      placeholder="Enter new password"
+                      value={forgotNewPassword}
+                      onChange={(event) => setForgotNewPassword(event.target.value)}
+                      required
+                    />
+                    <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
+                      {authBusy ? "Updating..." : "Verify OTP & Reset Password"}
+                    </button>
+                  </form>
+                ) : null}
+
+                <div className="cc-auth-inline-actions">
+                  <button
+                    type="button"
+                    className="cc-link-btn"
+                    onClick={() => {
+                      setAuthMode("login");
+                      resetAuthFeedback();
+                    }}
+                  >
+                    Back to Login
+                  </button>
+                </div>
               </>
             )}
 

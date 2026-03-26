@@ -707,7 +707,7 @@
 
 .cc-auth-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.42rem;
 }
 
@@ -771,6 +771,12 @@
 
 .cc-google-wrap {
   margin-top: 0.12rem;
+}
+
+.cc-auth-note {
+  margin: 0.34rem 0 0;
+  color: #4a6583;
+  font-size: 0.72rem;
 }
 
 .cc-auth-inline-actions {
