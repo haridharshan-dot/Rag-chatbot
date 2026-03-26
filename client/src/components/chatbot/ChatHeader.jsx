@@ -20,6 +20,7 @@ export default function ChatHeader({
 }) {
   const statusTone = connectionStatus === "online" ? "online" : "offline";
   const statusLabel = connectionStatus === "online" ? "Online" : "Reconnecting";
+  const liveAgentLabel = handoffPending ? "Requested" : `${agentButtonLabel} (${agentAvailabilityLabel})`;
 
   return (
     <motion.header
@@ -50,9 +51,8 @@ export default function ChatHeader({
               title="Live agent hours are 9AM to 5PM IST"
               aria-busy={handoffPending}
             >
-              {handoffPending ? "Requested" : agentButtonLabel}
+              {liveAgentLabel}
             </button>
-            <span className="cc-agent-hours-mini">{agentAvailabilityLabel}</span>
           </div>
         )}
         <select
