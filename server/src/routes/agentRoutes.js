@@ -8,24 +8,36 @@ import { getRuntimeSettings } from "../services/adminSettingsService.js";
 const router = Router();
 
 router.post("/login", (req, res) => {
-  const username = String(req.body?.username || "").trim();
+  const emailInput = String(req.body?.email || req.body?.username || "")
+    .trim()
+    .toLowerCase();
   const password = String(req.body?.password || "").trim();
+  const configuredEmail = String(env.agentEmail || "").trim().toLowerCase();
+  const configuredUsername = String(env.agentUsername || "").trim().toLowerCase();
 
-  if (username !== env.agentUsername || password !== env.agentPassword) {
+  const validIdentity =
+    emailInput === configuredEmail ||
+    emailInput === configuredUsername;
+
+  if (!validIdentity || password !== env.agentPassword) {
     return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 
+  const agentId = configuredEmail.split("@")[0] || configuredUsername || "agent";
+
   const token = signAgentToken({
     role: "agent",
-    agentId: username,
+    agentId,
+    email: configuredEmail,
   });
 
   AgentActivity.findOneAndUpdate(
-    { agentId: username },
+    { agentId },
     {
       $set: {
         provider: "local",
-        displayName: username,
+        email: configuredEmail,
+        displayName: agentId,
         lastLoginAt: new Date(),
         lastLoginIp: req.ip || null,
       },
@@ -37,7 +49,12 @@ router.post("/login", (req, res) => {
     success: true,
     data: {
       token,
-      agentId: username,
+      agent: {
+        id: agentId,
+        email: configuredEmail,
+      },
+      agentId,
+      email: configuredEmail,
       expiresIn: env.agentJwtExpiry,
     },
   });
@@ -122,10 +139,22 @@ router.post("/login/microsoft", async (req, res) => {
 
 router.use(requireAgentAuth);
 
+router.get("/me", (req, res) => {
+  return res.json({
+    success: true,
+    data: {
+      id: req.agent?.agentId || "agent",
+      email: req.agent?.email || env.agentEmail,
+      role: req.agent?.role || "agent",
+    },
+  });
+});
+
 router.get("/queue", async (req, res, next) => {
   try {
-    const queued = await ChatSession.find({ status: "queued" })
-      .sort({ escalationRequestedAt: 1 })
+    const queued = await ChatSession.find({ status: { $in: ["bot", "queued", "active"] } })
+      .sort({ updatedAt: -1, escalationRequestedAt: 1 })
+      .limit(100)
       .lean();
 
     return res.json({ success: true, data: queued });
@@ -146,12 +175,17 @@ router.post("/:sessionId/join", async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Session not found" });
     }
 
+    const alreadyActiveWithSameAgent =
+      session.status === "active" && String(session.assignedAgentId || "") === agentId;
+
     session.status = "active";
     session.assignedAgentId = agentId;
-    session.messages.push({
-      sender: "system",
-      content: `Agent ${agentId} joined the conversation.`,
-    });
+    if (!alreadyActiveWithSameAgent) {
+      session.messages.push({
+        sender: "system",
+        content: `Agent ${agentId} joined the conversation.`,
+      });
+    }
     await session.save();
 
     req.app.locals.io.to(`session:${session.id}`).emit("agent:joined", {

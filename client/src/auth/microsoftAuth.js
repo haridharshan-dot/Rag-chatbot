@@ -1,22 +1,39 @@
 import { PublicClientApplication } from "@azure/msal-browser";
 
-const msClientId = import.meta.env.VITE_MS_CLIENT_ID || "";
-const msTenantId = import.meta.env.VITE_MS_TENANT_ID || "common";
-const msRedirectUri = import.meta.env.VITE_MS_REDIRECT_URI || `${window.location.origin}/agent`;
+const msClientId = String(import.meta.env.VITE_MS_CLIENT_ID || "").trim();
+const msTenantId = String(import.meta.env.VITE_MS_TENANT_ID || "common").trim();
+const msRedirectUri = String(import.meta.env.VITE_MS_REDIRECT_URI || `${window.location.origin}/login`).trim();
 
 let appInstance = null;
 
-function getApp() {
+export function getMicrosoftAuthState() {
   if (!msClientId) {
-    throw new Error("VITE_MS_CLIENT_ID is not configured");
+    return {
+      configured: false,
+      message: "Microsoft login not configured",
+    };
+  }
+  return {
+    configured: true,
+    message: "",
+    clientId: msClientId,
+    tenantId: msTenantId || "common",
+    redirectUri: msRedirectUri,
+  };
+}
+
+function getApp() {
+  const state = getMicrosoftAuthState();
+  if (!state.configured) {
+    throw new Error(state.message);
   }
 
   if (!appInstance) {
     appInstance = new PublicClientApplication({
       auth: {
-        clientId: msClientId,
-        authority: `https://login.microsoftonline.com/${msTenantId}`,
-        redirectUri: msRedirectUri,
+        clientId: state.clientId,
+        authority: `https://login.microsoftonline.com/${state.tenantId}`,
+        redirectUri: state.redirectUri,
       },
       cache: {
         cacheLocation: "localStorage",
@@ -28,6 +45,11 @@ function getApp() {
 }
 
 export async function signInWithMicrosoft() {
+  const state = getMicrosoftAuthState();
+  if (!state.configured) {
+    throw new Error(state.message);
+  }
+
   const app = getApp();
   await app.initialize();
 

@@ -5,7 +5,11 @@ import dotenv from "dotenv";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config(); // Render uses dashboard env vars, local uses .env in current dir
+// Load env files from common local run locations.
+// Existing process env vars (for example Render dashboard vars) take precedence.
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") }); // repo root .env
+dotenv.config({ path: path.resolve(__dirname, "../../.env") }); // server/.env
+dotenv.config(); // current working directory fallback
 
 function asNumber(value, fallback) {
   if (!value) return fallback;
@@ -19,6 +23,12 @@ function asList(value, fallback = []) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function asString(value, fallback = "") {
+  if (value === undefined || value === null) return fallback;
+  const normalized = String(value).trim();
+  return normalized || fallback;
 }
 
 const configuredClientUrls = asList(process.env.CLIENT_URLS, asList(process.env.CLIENT_URL));
@@ -36,10 +46,17 @@ export const env = {
   // Free-tier optimized rate limiting: 30 requests per minute
   rateLimitWindowMs: asNumber(process.env.RATE_LIMIT_WINDOW_MS, 60000),
   rateLimitMax: asNumber(process.env.RATE_LIMIT_MAX, 30),
-  googleApiKey: process.env.GOOGLE_API_KEY || "",
+  // Accept multiple Gemini key variable names to avoid deployment misconfiguration.
+  googleApiKey: asString(
+    process.env.GOOGLE_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    ""
+  ),
   openaiApiKey: process.env.OPENAI_API_KEY || "",
   // Use faster, lighter models for free tier
-  geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
+  geminiModel: asString(process.env.GEMINI_MODEL, "gemini-2.5-flash-lite"),
+  geminiTimeoutMs: asNumber(process.env.GEMINI_TIMEOUT_MS, 9000),
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || "",
   claudeModel: process.env.CLAUDE_MODEL || "claude-3-haiku-20240307",
   // Production defaults tuned for better retrieval coverage and controlled escalation
@@ -56,6 +73,7 @@ export const env = {
   vectorStorePath: path.resolve(__dirname, "../../storage/vectors.json"),
   jwtSecret: process.env.JWT_SECRET || "replace_me_with_strong_secret",
   agentUsername: process.env.AGENT_USERNAME || "agent",
+  agentEmail: (process.env.AGENT_EMAIL || "agent@sona.com").toLowerCase(),
   agentPassword: process.env.AGENT_PASSWORD || "agent123",
   agentJwtExpiry: process.env.AGENT_JWT_EXPIRY || "12h",
   microsoftAuthEnabled: process.env.MICROSOFT_AUTH_ENABLED === "true",

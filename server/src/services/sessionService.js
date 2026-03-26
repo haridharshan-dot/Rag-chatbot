@@ -4,10 +4,25 @@ import { getRuntimeSettings } from "./adminSettingsService.js";
 
 export async function createSession(
   studentId,
-  { clientIp = null, userAgent = null, siteContext = null } = {}
+  { clientIp = null, userAgent = null, siteContext = null, studentEmail = null, studentName = null } = {}
 ) {
+  const existing = await ChatSession.findOne({
+    studentId,
+    status: { $in: ["bot", "queued"] },
+  }).sort({ updatedAt: -1 });
+
+  if (existing) {
+    if (studentEmail && !existing.studentEmail) existing.studentEmail = studentEmail;
+    if (studentName && !existing.studentName) existing.studentName = studentName;
+    if (siteContext) existing.siteContext = siteContext;
+    await existing.save();
+    return existing;
+  }
+
   const session = await ChatSession.create({
     studentId,
+    studentEmail,
+    studentName,
     clientIp,
     userAgent,
     siteContext,

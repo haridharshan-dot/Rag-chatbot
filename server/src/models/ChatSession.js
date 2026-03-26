@@ -21,6 +21,8 @@ const messageSchema = new mongoose.Schema(
 const chatSessionSchema = new mongoose.Schema(
   {
     studentId: { type: String, required: true, index: true },
+    studentEmail: { type: String, default: null, index: true },
+    studentName: { type: String, default: null },
     clientIp: { type: String, default: null },
     userAgent: { type: String, default: null },
     siteContext: {

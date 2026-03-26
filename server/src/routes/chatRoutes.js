@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { ChatSession } from "../models/ChatSession.js";
 import { createSession, handleStudentMessage } from "../services/sessionService.js";
+import { attachOptionalStudentAuth } from "../middleware/studentAuth.js";
 
 const router = Router();
+router.use(attachOptionalStudentAuth);
 
 function sanitizeSiteContext(raw) {
   if (!raw || typeof raw !== "object") return null;
@@ -30,7 +32,9 @@ function sanitizeSiteContext(raw) {
 
 router.post("/session", async (req, res, next) => {
   try {
-    const studentId = String(req.body?.studentId || "").trim();
+    const tokenStudentId = String(req.student?.studentId || "").trim();
+    const bodyStudentId = String(req.body?.studentId || "").trim();
+    const studentId = tokenStudentId || bodyStudentId;
     if (!studentId) {
       return res.status(400).json({ success: false, message: "studentId is required" });
     }
@@ -39,6 +43,8 @@ router.post("/session", async (req, res, next) => {
       clientIp: req.ip || null,
       userAgent: req.headers["user-agent"] || null,
       siteContext: sanitizeSiteContext(req.body?.siteContext),
+      studentEmail: req.student?.email || null,
+      studentName: req.student?.name || null,
     });
     return res.status(201).json({ success: true, data: session });
   } catch (error) {
@@ -52,6 +58,9 @@ router.get("/:sessionId/history", async (req, res, next) => {
     if (!session) {
       return res.status(404).json({ success: false, message: "Session not found" });
     }
+    if (req.student?.studentId && String(session.studentId) !== String(req.student.studentId)) {
+      return res.status(403).json({ success: false, message: "Not allowed for this session" });
+    }
 
     return res.json({ success: true, data: session });
   } catch (error) {
@@ -64,6 +73,16 @@ router.post("/:sessionId/message", async (req, res, next) => {
     const content = String(req.body?.content || "").trim();
     if (!content) {
       return res.status(400).json({ success: false, message: "content is required" });
+    }
+    const currentSession = await ChatSession.findById(req.params.sessionId).select("studentId");
+    if (!currentSession) {
+      return res.status(404).json({ success: false, message: "Session not found" });
+    }
+    if (
+      req.student?.studentId &&
+      String(currentSession.studentId) !== String(req.student.studentId)
+    ) {
+      return res.status(403).json({ success: false, message: "Not allowed for this session" });
     }
 
     const { session, ragResponse, autoEscalated } = await handleStudentMessage(
@@ -80,11 +99,18 @@ router.post("/:sessionId/message", async (req, res, next) => {
       ? session.messages[session.messages.length - 2]
       : session.messages[session.messages.length - 1];
     req.app.locals.io.to(`session:${session.id}`).emit("chat:message", botMessage);
+    // Keep agent dashboard queue/live feed fresh for all student activity.
+    req.app.locals.io.emit("queue:updated");
+    req.app.locals.io.to("agents").emit("agent:sessionActivity", {
+      sessionId: session.id,
+      studentId: session.studentId,
+      status: session.status,
+      lastMessageAt: new Date().toISOString(),
+    });
 
     if (autoEscalated) {
       const systemMessage = session.messages[session.messages.length - 1];
       req.app.locals.io.to(`session:${session.id}`).emit("chat:message", systemMessage);
-      req.app.locals.io.emit("queue:updated");
       req.app.locals.io.to("agents").emit("agent:sessionQueued", {
         sessionId: session.id,
         studentId: session.studentId,
@@ -115,6 +141,9 @@ router.post("/:sessionId/escalate", async (req, res, next) => {
     if (!session) {
       return res.status(404).json({ success: false, message: "Session not found" });
     }
+    if (req.student?.studentId && String(session.studentId) !== String(req.student.studentId)) {
+      return res.status(403).json({ success: false, message: "Not allowed for this session" });
+    }
 
     session.status = "queued";
     session.escalationRequestedAt = new Date();
@@ -124,6 +153,7 @@ router.post("/:sessionId/escalate", async (req, res, next) => {
     });
 
     await session.save();
+    req.app.locals.io.to(`session:${session.id}`).emit("chat:message", session.messages[session.messages.length - 1]);
 
     req.app.locals.io.emit("queue:updated");
     req.app.locals.io.to("agents").emit("agent:sessionQueued", {

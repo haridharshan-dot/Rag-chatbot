@@ -69,6 +69,12 @@ async function bootstrap() {
 
   server.listen(env.port, () => {
     console.log(`Server running on port ${env.port}`);
+    const llmProvider = env.googleApiKey
+      ? `gemini (${env.geminiModel})`
+      : env.anthropicApiKey
+        ? `claude (${env.claudeModel})`
+        : "retrieval-only";
+    console.log(`LLM mode: ${llmProvider}`);
   });
 }
 

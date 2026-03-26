@@ -31,11 +31,14 @@ export default function EmbeddedStudentChatbot({
   );
   const [sessionId, setSessionId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let mounted = true;
 
     async function startSession() {
+      setLoading(true);
+      setError("");
       try {
         const session = await createSession(studentId, siteContext);
         if (mounted) {
@@ -43,6 +46,10 @@ export default function EmbeddedStudentChatbot({
         }
       } catch (error) {
         console.error("Failed to create chatbot session", error);
+        if (mounted) {
+          setSessionId("");
+          setError("Unable to start chat session. Please retry.");
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -59,6 +66,21 @@ export default function EmbeddedStudentChatbot({
       sessionId={sessionId}
       studentId={studentId}
       loading={loading}
+      error={error}
+      onRetry={() => {
+        setSessionId("");
+        setError("");
+        setLoading(true);
+        createSession(studentId, siteContext)
+          .then((session) => {
+            setSessionId(session._id || session.id);
+          })
+          .catch((retryError) => {
+            console.error("Retry create session failed", retryError);
+            setError("Unable to start chat session. Please retry.");
+          })
+          .finally(() => setLoading(false));
+      }}
       defaultOpen={defaultOpen}
       hideFab={hideFab}
     />

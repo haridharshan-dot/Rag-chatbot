@@ -1,11 +1,20 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import StudentPage from "./pages/StudentPage";
-import AgentDashboard from "./pages/AgentDashboard";
+import Dashboard from "./pages/Dashboard";
 import StatusPage from "./pages/StatusPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminAgentsPage from "./pages/AdminAgentsPage";
 import ChatbotEmbedPage from "./pages/ChatbotEmbedPage";
+import Login from "./pages/Login";
+import { isAgentAuthenticated } from "./utils/auth";
+
+function ProtectedRoute({ children }) {
+  if (!isAgentAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
 
 function App() {
   const location = useLocation();
@@ -22,10 +31,40 @@ function App() {
         <Route path="/" element={<StudentPage />} />
         <Route path="/chatbot" element={<ChatbotEmbedPage />} />
         <Route path="/status" element={<StatusPage />} />
-        <Route path="/agent" element={<AgentDashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/users" element={<AdminUsersPage />} />
-        <Route path="/admin/agents" element={<AdminAgentsPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/agent" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/dashboard"
+          element={(
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/admin"
+          element={(
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/admin/users"
+          element={(
+            <ProtectedRoute>
+              <AdminUsersPage />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/admin/agents"
+          element={(
+            <ProtectedRoute>
+              <AdminAgentsPage />
+            </ProtectedRoute>
+          )}
+        />
       </Routes>
     </div>
   );

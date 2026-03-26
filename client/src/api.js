@@ -1,25 +1,43 @@
 import axios from "axios";
+import {
+  clearAgentToken,
+  getAgentToken as getStoredAgentToken,
+  getStudentToken as getStoredStudentToken,
+  setAgentToken as setStoredAgentToken,
+  setStudentToken as setStoredStudentToken,
+} from "./utils/auth";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  // Keep chat snappy; backend should fallback quickly on slow model calls.
+  timeout: 18000,
 });
 
-const AGENT_TOKEN_KEY = "agent-auth-token";
-
 export function getAgentToken() {
-  return localStorage.getItem(AGENT_TOKEN_KEY) || "";
+  return getStoredAgentToken();
 }
 
 export function setAgentToken(token) {
   if (!token) {
-    localStorage.removeItem(AGENT_TOKEN_KEY);
+    clearAgentToken();
     return;
   }
-  localStorage.setItem(AGENT_TOKEN_KEY, token);
+  setStoredAgentToken(token);
+}
+
+export function getStudentToken() {
+  return getStoredStudentToken();
+}
+
+export function setStudentToken(token) {
+  if (!token) {
+    setStoredStudentToken("");
+    return;
+  }
+  setStoredStudentToken(token);
 }
 
 api.interceptors.response.use(
@@ -28,10 +46,10 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     const url = String(error?.config?.url || "");
     if (status === 401 && (url.includes("/admin") || url.includes("/agent"))) {
-      setAgentToken("");
+      clearAgentToken();
       localStorage.setItem("agent-session-expired", "true");
-      if (typeof window !== "undefined" && window.location.pathname !== "/agent") {
-        window.location.assign("/agent");
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.assign("/login");
       }
     }
     return Promise.reject(error);
@@ -49,8 +67,19 @@ function agentAuthConfig() {
     : {};
 }
 
+function studentAuthConfig() {
+  const token = getStudentToken();
+  return token
+    ? {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    : {};
+}
+
 export async function agentLogin(username, password) {
-  const response = await api.post("/agent/login", { username, password });
+  const response = await api.post("/agent/login", { email: username, password });
   return response.data.data;
 }
 
@@ -59,29 +88,62 @@ export async function agentMicrosoftLogin(accessToken) {
   return response.data.data;
 }
 
+export async function fetchAgentMe() {
+  const response = await api.get("/agent/me", agentAuthConfig());
+  return response.data.data;
+}
+
 export async function createSession(studentId, siteContext = null) {
-  const response = await api.post("/chat/session", {
-    studentId,
-    siteContext,
-  });
+  const response = await api.post(
+    "/chat/session",
+    {
+      studentId,
+      siteContext,
+    },
+    studentAuthConfig()
+  );
   return response.data.data;
 }
 
 export async function sendStudentMessage(sessionId, text) {
-  const response = await api.post(`/chat/${sessionId}/message`, {
-    sender: "student",
-    content: text,
-  });
+  const response = await api.post(
+    `/chat/${sessionId}/message`,
+    {
+      sender: "student",
+      content: text,
+    },
+    studentAuthConfig()
+  );
   return response.data.data;
 }
 
 export async function escalateToAgent(sessionId) {
-  const response = await api.post(`/chat/${sessionId}/escalate`);
+  const response = await api.post(`/chat/${sessionId}/escalate`, {}, studentAuthConfig());
   return response.data.data;
 }
 
 export async function fetchHistory(sessionId) {
-  const response = await api.get(`/chat/${sessionId}/history`);
+  const response = await api.get(`/chat/${sessionId}/history`, studentAuthConfig());
+  return response.data.data;
+}
+
+export async function studentRegister(payload) {
+  const response = await api.post("/auth/register", payload);
+  return response.data.data;
+}
+
+export async function studentLogin(payload) {
+  const response = await api.post("/auth/login", payload);
+  return response.data.data;
+}
+
+export async function fetchStudentMe() {
+  const response = await api.get("/auth/me", studentAuthConfig());
+  return response.data.data;
+}
+
+export async function fetchStudentHistory() {
+  const response = await api.get("/auth/history", studentAuthConfig());
   return response.data.data;
 }
 

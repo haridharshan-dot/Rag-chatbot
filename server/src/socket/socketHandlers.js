@@ -29,6 +29,25 @@ export function registerSocketHandlers(io) {
       socket.data.role = role || "student";
     });
 
+    socket.on("agent:typing", ({ sessionId }) => {
+      if (!sessionId) return;
+      if (socket.data.role !== "agent") return;
+      socket.to(`session:${sessionId}`).emit("agent:typing", {
+        sessionId,
+      });
+    });
+
+    socket.on("chat:typing", ({ sessionId, role }) => {
+      if (!sessionId) return;
+      const currentRole = role || socket.data.role || "student";
+      if (currentRole === "student") {
+        socket.to(`session:${sessionId}`).emit("chat:typing", {
+          sessionId,
+          role: "student",
+        });
+      }
+    });
+
     socket.on("disconnect", () => {
       // No-op for now; the server relies on persisted chat state.
     });

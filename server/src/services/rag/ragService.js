@@ -17,12 +17,22 @@ function normalizeScore(rawScore) {
   return 1 / (1 + Math.max(rawScore, 0));
 }
 
+function isGreetingOnly(text) {
+  const normalized = String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return /^(hi|hii|hello|hey|yo|good morning|good afternoon|good evening)$/.test(normalized);
+}
+
 class RAGService {
   constructor() {
     this.vectorStore = createVectorStore(createEmbeddings());
     this.gemini = new GeminiService({
       apiKey: env.googleApiKey,
       model: env.geminiModel,
+      timeoutMs: env.geminiTimeoutMs,
     });
     this.claude = new ClaudeService({
       apiKey: env.anthropicApiKey,
@@ -125,10 +135,25 @@ class RAGService {
     const settings = await getRuntimeSettings();
     const supplementalContext = String(options?.supplementalContext || "").trim();
 
+    if (isGreetingOnly(question)) {
+      return {
+        answer:
+          "Hi! I can help with admissions, fees, cutoffs, courses, and deadlines. Ask your specific college question.",
+        confidence: 1,
+        sources: [],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
     const results = await this.vectorStore.similaritySearch(question, settings.ragTopK);
     const topScores = results.map((item) => normalizeScore(item.score));
-    let confidence = topScores.length
+    const averageScore = topScores.length
       ? topScores.reduce((a, b) => a + b, 0) / topScores.length
+      : 0;
+    const bestScore = topScores.length ? Math.max(...topScores) : 0;
+    let confidence = topScores.length
+      ? bestScore * 0.7 + averageScore * 0.3
       : 0;
 
     const contextChunks = results.map((item) => ({
@@ -167,8 +192,10 @@ class RAGService {
       answer: modelAnswer.content,
       confidence,
       sources: contextChunks.map((chunk) => chunk.source),
-      escalationSuggested: confidence < settings.ragConfidenceThreshold,
-      outOfScope: confidence < settings.ragOutOfScopeThreshold,
+      escalationSuggested:
+        confidence < settings.ragConfidenceThreshold &&
+        bestScore < settings.ragOutOfScopeThreshold * 0.9,
+      outOfScope: bestScore < settings.ragOutOfScopeThreshold * 0.9,
     };
   }
 }
