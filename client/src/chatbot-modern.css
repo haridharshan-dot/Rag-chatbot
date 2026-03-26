@@ -769,6 +769,29 @@
   border-color: #3d66a1;
 }
 
+.cc-google-wrap {
+  margin-top: 0.12rem;
+}
+
+.cc-auth-inline-actions {
+  margin-top: 0.12rem;
+}
+
+.cc-link-btn {
+  border: 0;
+  background: transparent;
+  color: #1f4c88;
+  text-decoration: underline;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+}
+
+.cc-link-btn:hover {
+  color: #163a67;
+}
+
 .cc-auth-verify {
   margin-top: 0.2rem;
 }

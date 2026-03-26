@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 import EmbeddedStudentChatbot from "../components/EmbeddedStudentChatbot";
 import {
   fetchStudentHistory,
   fetchStudentMe,
+  requestStudentForgotPasswordOtp,
+  requestStudentOtp,
   setStudentToken,
+  studentGoogleLogin,
   studentLogin,
-  studentRegister,
+  studentSignup,
+  verifyStudentForgotPasswordOtp,
+  verifyStudentOtp,
 } from "../api";
 import {
   clearStudentToken,
@@ -20,14 +26,24 @@ function formatDate(dateLike) {
 
 export default function StudentPage() {
   const [tab, setTab] = useState("login");
+  const [loginMethod, setLoginMethod] = useState("password");
+  const [otpChannel, setOtpChannel] = useState("mobile");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [forgotMobile, setForgotMobile] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotOtpRequested, setForgotOtpRequested] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [debugOtp, setDebugOtp] = useState("");
   const [student, setStudent] = useState(() => getStudentFromToken());
   const [history, setHistory] = useState([]);
+  const googleEnabled = Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim());
 
   const authenticated = useMemo(() => isStudentAuthenticated() && Boolean(student?.id), [student]);
 
@@ -57,34 +73,147 @@ export default function StudentPage() {
     };
   }, [authenticated]);
 
+  function applyLoginResult(data, successMessage = "Signed in successfully.") {
+    setStudentToken(data.token);
+    setStudent(data.user);
+    setSuccess(successMessage);
+  }
+
   async function onSubmit(event) {
     event.preventDefault();
     setLoading(true);
     setError("");
     setSuccess("");
+    setDebugOtp("");
     try {
       let data;
       if (tab === "register") {
-        data = await studentRegister({
+        data = await studentSignup({
           name: String(name || "").trim(),
           email: String(email || "").trim().toLowerCase(),
+          mobile: String(mobile || "").trim(),
           password: String(password || "").trim(),
         });
-      } else {
+        setLoginMethod("otp");
+        setOtpChannel("mobile");
+        setSuccess("Signup complete. OTP sent to your mobile. You can also login with password.");
+        if (data?.otp) {
+          setDebugOtp(data.otp);
+        }
+        return;
+      }
+
+      if (loginMethod === "password") {
         data = await studentLogin({
           email: String(email || "").trim().toLowerCase(),
           password: String(password || "").trim(),
         });
+        applyLoginResult(data);
+      } else {
+        data = await verifyStudentOtp({
+          channel: otpChannel,
+          email: otpChannel === "email" ? String(email || "").trim().toLowerCase() : "",
+          mobile: otpChannel === "mobile" ? String(mobile || "").trim() : "",
+          otp: String(otp || "").trim(),
+        });
+        applyLoginResult(data, "OTP verified. Signed in successfully.");
+        setOtp("");
       }
 
-      setStudentToken(data.token);
-      setStudent(data.user);
-      setSuccess("Signed in successfully.");
       setPassword("");
       const sessions = await fetchStudentHistory();
       setHistory(Array.isArray(sessions) ? sessions : []);
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Unable to authenticate right now.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onRequestOtp() {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    setDebugOtp("");
+    try {
+      const payload =
+        otpChannel === "mobile"
+          ? { channel: "mobile", mobile: String(mobile || "").trim() }
+          : { channel: "email", email: String(email || "").trim().toLowerCase() };
+      const data = await requestStudentOtp(payload);
+      setSuccess(`OTP sent to your ${otpChannel}.`);
+      if (data?.otp) {
+        setDebugOtp(data.otp);
+      }
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not send OTP.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onForgotRequest(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    setDebugOtp("");
+    try {
+      const data = await requestStudentForgotPasswordOtp({
+        mobile: String(forgotMobile || "").trim(),
+      });
+      setForgotOtpRequested(true);
+      setSuccess("OTP sent to your mobile for password reset.");
+      if (data?.otp) {
+        setDebugOtp(data.otp);
+      }
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not send reset OTP.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onForgotVerify(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      await verifyStudentForgotPasswordOtp({
+        mobile: String(forgotMobile || "").trim(),
+        otp: String(forgotOtp || "").trim(),
+        newPassword: String(forgotNewPassword || "").trim(),
+      });
+      setForgotOtpRequested(false);
+      setForgotOtp("");
+      setForgotNewPassword("");
+      setLoginMethod("password");
+      setSuccess("Password updated. Login using your email and new password.");
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Unable to reset password.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onGoogleSuccess(response) {
+    const credential = String(response?.credential || "").trim();
+    if (!credential) {
+      setError("Google credential was not received.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await studentGoogleLogin(credential);
+      applyLoginResult(data, "Google login successful.");
+      const sessions = await fetchStudentHistory();
+      setHistory(Array.isArray(sessions) ? sessions : []);
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Google login failed.");
     } finally {
       setLoading(false);
     }
@@ -97,6 +226,8 @@ export default function StudentPage() {
     setSuccess("");
     setError("");
     setPassword("");
+    setOtp("");
+    setDebugOtp("");
   }
 
   return (
@@ -136,6 +267,7 @@ export default function StudentPage() {
                   setTab("login");
                   setError("");
                   setSuccess("");
+                  setDebugOtp("");
                 }}
               >
                 Login
@@ -147,42 +279,212 @@ export default function StudentPage() {
                   setTab("register");
                   setError("");
                   setSuccess("");
+                  setDebugOtp("");
                 }}
               >
                 Register
               </button>
             </div>
 
+            {tab === "login" ? (
+              <>
+                <div className="student-auth-method-toggle">
+                  <button
+                    type="button"
+                    className={loginMethod === "password" ? "active" : ""}
+                    onClick={() => setLoginMethod("password")}
+                  >
+                    Password Login
+                  </button>
+                  <button
+                    type="button"
+                    className={loginMethod === "otp" ? "active" : ""}
+                    onClick={() => setLoginMethod("otp")}
+                  >
+                    OTP Login
+                  </button>
+                </div>
+
+                {googleEnabled ? (
+                  <div className="student-google-wrap">
+                    <GoogleLogin
+                      onSuccess={onGoogleSuccess}
+                      onError={() => setError("Google login failed.")}
+                      text="continue_with"
+                    />
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
             <form className="student-auth-form" onSubmit={onSubmit}>
               {tab === "register" ? (
-                <input
-                  type="text"
-                  placeholder="Full name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  required
-                />
+                <>
+                  <input
+                    type="text"
+                    placeholder="Full name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    required
+                  />
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                  <input
+                    placeholder="Mobile number"
+                    value={mobile}
+                    onChange={(event) => setMobile(event.target.value)}
+                    required
+                  />
+                  <input
+                    type="password"
+                    placeholder="Create password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </>
               ) : null}
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
+
+              {tab === "login" && loginMethod === "password" ? (
+                <>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                </>
+              ) : null}
+
+              {tab === "login" && loginMethod === "otp" ? (
+                <>
+                  <div className="student-auth-method-toggle">
+                    <button
+                      type="button"
+                      className={otpChannel === "mobile" ? "active" : ""}
+                      onClick={() => setOtpChannel("mobile")}
+                    >
+                      Mobile OTP
+                    </button>
+                    <button
+                      type="button"
+                      className={otpChannel === "email" ? "active" : ""}
+                      onClick={() => setOtpChannel("email")}
+                    >
+                      Email OTP
+                    </button>
+                  </div>
+                  {otpChannel === "mobile" ? (
+                    <input
+                      placeholder="Enter mobile"
+                      value={mobile}
+                      onChange={(event) => setMobile(event.target.value)}
+                      required
+                    />
+                  ) : (
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      required
+                    />
+                  )}
+                  <button type="button" className="student-secondary-btn" onClick={onRequestOtp} disabled={loading}>
+                    {loading ? "Sending OTP..." : "Send OTP"}
+                  </button>
+                  <input
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={(event) => setOtp(event.target.value)}
+                    inputMode="numeric"
+                    maxLength={6}
+                    required
+                  />
+                </>
+              ) : null}
+
               {error ? <p className="agent-error">{error}</p> : null}
               {success ? <p className="admin-feedback">{success}</p> : null}
+              {debugOtp ? <p className="student-dev-otp">Dev OTP: {debugOtp}</p> : null}
               <button type="submit" disabled={loading}>
-                {loading ? "Please wait..." : tab === "register" ? "Create account" : "Login"}
+                {loading
+                  ? "Please wait..."
+                  : tab === "register"
+                    ? "Create account"
+                    : loginMethod === "otp"
+                      ? "Verify OTP & Login"
+                      : "Login"}
               </button>
             </form>
+
+            {tab === "login" && loginMethod === "password" ? (
+              <>
+                <button
+                  type="button"
+                  className="student-link-btn"
+                  onClick={() => {
+                    setForgotOtpRequested(false);
+                    setForgotOtp("");
+                    setForgotNewPassword("");
+                    setError("");
+                    setSuccess("");
+                  }}
+                >
+                  Forgot password? Reset with OTP
+                </button>
+
+                <form className="student-auth-form student-forgot-form" onSubmit={onForgotRequest}>
+                  <input
+                    placeholder="Registered mobile number"
+                    value={forgotMobile}
+                    onChange={(event) => setForgotMobile(event.target.value)}
+                    required
+                  />
+                  <button type="submit" disabled={loading}>
+                    {loading ? "Sending OTP..." : "Send Reset OTP"}
+                  </button>
+                </form>
+
+                {forgotOtpRequested ? (
+                  <form className="student-auth-form student-forgot-form" onSubmit={onForgotVerify}>
+                    <input
+                      placeholder="Enter OTP"
+                      value={forgotOtp}
+                      onChange={(event) => setForgotOtp(event.target.value)}
+                      inputMode="numeric"
+                      maxLength={6}
+                      required
+                    />
+                    <input
+                      type="password"
+                      placeholder="New password"
+                      value={forgotNewPassword}
+                      onChange={(event) => setForgotNewPassword(event.target.value)}
+                      minLength={6}
+                      required
+                    />
+                    <button type="submit" disabled={loading}>
+                      {loading ? "Updating..." : "Verify OTP & Update Password"}
+                    </button>
+                  </form>
+                ) : null}
+              </>
+            ) : null}
           </div>
         </section>
       ) : (

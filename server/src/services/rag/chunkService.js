@@ -6,6 +6,55 @@ function normalizeText(content) {
   return content.replace(/\r\n/g, "\n").trim();
 }
 
+function formatCutoffValue(value) {
+  if (!value || typeof value !== "object") return "Not available";
+  const max = value.max ?? "NA";
+  const min = value.min ?? "NA";
+  return `max ${max}, min ${min}`;
+}
+
+function isStructuredCutoffDataset(parsed) {
+  return Boolean(parsed && typeof parsed === "object" && Array.isArray(parsed.cutoff_data));
+}
+
+function structuredCutoffDatasetToText(parsed) {
+  const college = String(parsed?.college || "Sona College of Technology").trim();
+  const departments = Array.isArray(parsed?.cutoff_data) ? parsed.cutoff_data : [];
+  const lines = [`college: ${college}`];
+
+  for (const departmentEntry of departments) {
+    if (!departmentEntry || typeof departmentEntry !== "object") continue;
+    const department = String(departmentEntry.department || "Unknown Department").trim();
+    const code = String(departmentEntry.code || "NA").trim();
+    const years = Array.isArray(departmentEntry.years) ? departmentEntry.years : [];
+
+    for (const yearEntry of years) {
+      if (!yearEntry || typeof yearEntry !== "object") continue;
+      const year = yearEntry.year ?? "NA";
+      const seats = yearEntry.available_seats ?? "NA";
+      const cutoff = yearEntry.cutoff && typeof yearEntry.cutoff === "object" ? yearEntry.cutoff : {};
+
+      const categories = Object.keys(cutoff).length
+        ? Object.entries(cutoff)
+            .map(([category, value]) => `${category}: ${formatCutoffValue(value)}`)
+            .join(" | ")
+        : "Not available";
+
+      lines.push(
+        [
+          `department: ${department}`,
+          `code: ${code}`,
+          `year: ${year}`,
+          `available_seats: ${seats}`,
+          `cutoff_categories: ${categories}`,
+        ].join("\n")
+      );
+    }
+  }
+
+  return lines.join("\n\n");
+}
+
 const IMPORTANT_KEYS = new Set([
   "college",
   "department",
@@ -81,6 +130,10 @@ function objectToRecordText(record, prefix = "") {
 }
 
 function jsonToKnowledgeText(parsed) {
+  if (isStructuredCutoffDataset(parsed)) {
+    return structuredCutoffDatasetToText(parsed);
+  }
+
   if (Array.isArray(parsed)) {
     return parsed
       .map((item, index) => objectToRecordText(item, `record: ${index + 1}`))
@@ -132,12 +185,14 @@ async function walkFiles(directoryPath) {
 export async function loadChunksFromDirectory(directoryPath) {
   const files = await walkFiles(directoryPath);
   const chunks = [];
+  const hasJsonDataset = files.some((fullPath) => path.extname(fullPath).toLowerCase() === ".json");
 
   for (const fullPath of files) {
     const ext = path.extname(fullPath).toLowerCase();
     const sourceName = path.relative(directoryPath, fullPath);
 
     if (![".txt", ".md", ".json"].includes(ext)) continue;
+    if (hasJsonDataset && ext !== ".json") continue;
 
     const content = await fs.readFile(fullPath, "utf8");
 

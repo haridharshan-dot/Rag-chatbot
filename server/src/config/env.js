@@ -74,7 +74,7 @@ export const env = {
   pineconeIndex: process.env.PINECONE_INDEX || "",
   pineconeNamespace: process.env.PINECONE_NAMESPACE || "college-knowledge",
   dataDir:
-    process.env.DATA_DIR || path.resolve(__dirname, "../../data/sample"),
+    process.env.DATA_DIR || path.resolve(__dirname, "../../../data/sample"),
   chunksStorePath: path.resolve(__dirname, "../../storage/chunks.json"),
   vectorStorePath: path.resolve(__dirname, "../../storage/vectors.json"),
   jwtSecret: process.env.JWT_SECRET || "replace_me_with_strong_secret",
@@ -100,6 +100,7 @@ export const env = {
   microsoftAuthEnabled: process.env.MICROSOFT_AUTH_ENABLED === "true",
   microsoftAllowedDomains: asList(process.env.MICROSOFT_ALLOWED_DOMAINS),
   microsoftAllowedEmails: asList(process.env.MICROSOFT_ALLOWED_EMAILS),
+  googleClientId: asString(process.env.GOOGLE_CLIENT_ID, ""),
   // Free-tier optimizations
   mongoConnectionPoolSize: asNumber(process.env.MONGO_POOL_SIZE, 2),
   mongoMaxIdleTime: asNumber(process.env.MONGO_MAX_IDLE_TIME, 30000),

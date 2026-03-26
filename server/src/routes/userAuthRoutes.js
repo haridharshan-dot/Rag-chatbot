@@ -5,11 +5,13 @@ import { requireStudentAuth, signStudentToken } from "../middleware/studentAuth.
 import { ChatSession } from "../models/ChatSession.js";
 import { env, isProd } from "../config/env.js";
 import { sendOtp } from "../services/otpDeliveryService.js";
+import { OAuth2Client } from "google-auth-library";
 
 const router = Router();
 
 const OTP_TTL_MS = env.otpTtlMinutes * 60 * 1000;
 const MAX_OTP_ATTEMPTS = env.otpMaxAttempts;
+const googleClient = env.googleClientId ? new OAuth2Client(env.googleClientId) : null;
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
@@ -37,6 +39,20 @@ function buildOtpPayload(user) {
     name: user.name,
     email: user.email,
     mobile: user.mobile || "",
+  };
+}
+
+function buildStudentLoginPayload(user) {
+  const token = signStudentToken({
+    role: "student",
+    studentId: String(user._id),
+    email: user.email,
+    name: user.name,
+  });
+
+  return {
+    token,
+    user: buildOtpPayload(user),
   };
 }
 
@@ -83,9 +99,13 @@ router.post("/register", async (req, res, next) => {
     const name = String(req.body?.name || "").trim();
     const email = String(req.body?.email || "").trim().toLowerCase();
     const password = String(req.body?.password || "").trim();
+    const mobile = normalizeMobile(req.body?.mobile);
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: "name, email and password are required" });
+    }
+    if (mobile && mobile.length < 10) {
+      return res.status(400).json({ success: false, message: "Please enter a valid mobile number" });
     }
     if (password.length < 6) {
       return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
@@ -96,25 +116,23 @@ router.post("/register", async (req, res, next) => {
       return res.status(409).json({ success: false, message: "Email already registered" });
     }
 
+    if (mobile) {
+      const mobileExists = await StudentUser.findOne({ mobile }).lean();
+      if (mobileExists) {
+        return res.status(409).json({ success: false, message: "Mobile number already registered" });
+      }
+    }
+
     const user = await StudentUser.create({
       name,
       email,
+      mobile: mobile || undefined,
       passwordHash: hashPassword(password),
-    });
-
-    const token = signStudentToken({
-      role: "student",
-      studentId: String(user._id),
-      email: user.email,
-      name: user.name,
     });
 
     return res.status(201).json({
       success: true,
-      data: {
-        token,
-        user: { id: String(user._id), name: user.name, email: user.email },
-      },
+      data: buildStudentLoginPayload(user),
     });
   } catch (error) {
     next(error);
@@ -135,19 +153,12 @@ router.post("/login", async (req, res, next) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const token = signStudentToken({
-      role: "student",
-      studentId: String(user._id),
-      email: user.email,
-      name: user.name,
-    });
+    user.lastLoginAt = new Date();
+    await user.save();
 
     return res.json({
       success: true,
-      data: {
-        token,
-        user: { id: String(user._id), name: user.name, email: user.email },
-      },
+      data: buildStudentLoginPayload(user),
     });
   } catch (error) {
     next(error);
@@ -159,12 +170,16 @@ router.post("/signup", async (req, res, next) => {
     const name = String(req.body?.name || "").trim();
     const email = normalizeEmail(req.body?.email);
     const mobile = normalizeMobile(req.body?.mobile);
+    const password = String(req.body?.password || "").trim();
 
     if (!name || !email || !mobile) {
       return res.status(400).json({ success: false, message: "name, email and mobile are required" });
     }
     if (mobile.length < 10) {
       return res.status(400).json({ success: false, message: "Please enter a valid mobile number" });
+    }
+    if (password && password.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
     }
 
     const emailMatch = await StudentUser.findOne({ email });
@@ -177,15 +192,18 @@ router.post("/signup", async (req, res, next) => {
     if (emailMatch && !mobileMatch) {
       emailMatch.mobile = mobile;
       emailMatch.name = name;
+      if (password) {
+        emailMatch.passwordHash = hashPassword(password);
+      }
       const otpPayload = await issueAndDeliverOtp({
         user: emailMatch,
-        channel: "email",
-        target: email,
-        deliveryTarget: email,
+        channel: "mobile",
+        target: mobile,
+        deliveryTarget: formatMobileForDelivery(mobile),
       });
       return res.json({
         success: true,
-        message: "Signup complete. OTP sent to email.",
+        message: "Signup complete. OTP sent to mobile.",
         data: {
           ...otpPayload,
           user: buildOtpPayload(emailMatch),
@@ -196,15 +214,18 @@ router.post("/signup", async (req, res, next) => {
     if (mobileMatch && !emailMatch) {
       mobileMatch.email = email;
       mobileMatch.name = name;
+      if (password) {
+        mobileMatch.passwordHash = hashPassword(password);
+      }
       const otpPayload = await issueAndDeliverOtp({
         user: mobileMatch,
-        channel: "email",
-        target: email,
-        deliveryTarget: email,
+        channel: "mobile",
+        target: mobile,
+        deliveryTarget: formatMobileForDelivery(mobile),
       });
       return res.json({
         success: true,
-        message: "Signup complete. OTP sent to email.",
+        message: "Signup complete. OTP sent to mobile.",
         data: {
           ...otpPayload,
           user: buildOtpPayload(mobileMatch),
@@ -214,15 +235,18 @@ router.post("/signup", async (req, res, next) => {
 
     if (emailMatch && mobileMatch) {
       emailMatch.name = name;
+      if (password) {
+        emailMatch.passwordHash = hashPassword(password);
+      }
       const otpPayload = await issueAndDeliverOtp({
         user: emailMatch,
-        channel: "email",
-        target: email,
-        deliveryTarget: email,
+        channel: "mobile",
+        target: mobile,
+        deliveryTarget: formatMobileForDelivery(mobile),
       });
       return res.json({
         success: true,
-        message: "Profile exists. OTP sent to email.",
+        message: "Profile exists. OTP sent to mobile.",
         data: {
           ...otpPayload,
           user: buildOtpPayload(emailMatch),
@@ -230,16 +254,21 @@ router.post("/signup", async (req, res, next) => {
       });
     }
 
-    const user = await StudentUser.create({ name, email, mobile });
+    const user = await StudentUser.create({
+      name,
+      email,
+      mobile,
+      passwordHash: password ? hashPassword(password) : "",
+    });
     const otpPayload = await issueAndDeliverOtp({
       user,
-      channel: "email",
-      target: email,
-      deliveryTarget: email,
+      channel: "mobile",
+      target: mobile,
+      deliveryTarget: formatMobileForDelivery(mobile),
     });
     return res.status(201).json({
       success: true,
-      message: "Signup complete. OTP sent to email.",
+      message: "Signup complete. OTP sent to mobile.",
       data: {
         ...otpPayload,
         user: buildOtpPayload(user),
@@ -337,23 +366,145 @@ router.post("/otp/verify", async (req, res, next) => {
     user.lastLoginAt = new Date();
     await user.save();
 
-    const token = signStudentToken({
-      role: "student",
-      studentId: String(user._id),
-      email: user.email,
-      name: user.name,
+    return res.json({
+      success: true,
+      message: "OTP verified",
+      data: buildStudentLoginPayload(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/password/forgot/request", async (req, res, next) => {
+  try {
+    const mobile = normalizeMobile(req.body?.mobile);
+    if (!mobile) {
+      return res.status(400).json({ success: false, message: "mobile is required" });
+    }
+
+    const user = await StudentUser.findOne({ mobile });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    const otpPayload = await issueAndDeliverOtp({
+      user,
+      channel: "mobile",
+      target: mobile,
+      deliveryTarget: formatMobileForDelivery(mobile),
     });
 
     return res.json({
       success: true,
-      message: "OTP verified",
-      data: {
-        token,
-        user: buildOtpPayload(user),
-      },
+      message: "OTP sent to your mobile",
+      data: otpPayload,
     });
   } catch (error) {
     next(error);
+  }
+});
+
+router.post("/password/forgot/verify", async (req, res, next) => {
+  try {
+    const mobile = normalizeMobile(req.body?.mobile);
+    const otp = String(req.body?.otp || "").trim();
+    const newPassword = String(req.body?.newPassword || "").trim();
+
+    if (!mobile || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: "mobile, otp, and newPassword are required" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    }
+
+    const user = await StudentUser.findOne({ mobile });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    if (!user.otpCodeHash || !user.otpExpiresAt) {
+      return res.status(400).json({ success: false, message: "No OTP requested. Please request OTP first." });
+    }
+    if (user.otpChannel !== "mobile" || user.otpTarget !== mobile) {
+      return res.status(400).json({ success: false, message: "OTP channel or destination mismatch" });
+    }
+    if (Date.now() > new Date(user.otpExpiresAt).getTime()) {
+      return res.status(400).json({ success: false, message: "OTP expired. Request a new OTP." });
+    }
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(429).json({ success: false, message: "Too many attempts. Request a new OTP." });
+    }
+
+    const valid = verifyPassword(otp, user.otpCodeHash);
+    if (!valid) {
+      user.otpAttempts += 1;
+      await user.save();
+      return res.status(401).json({ success: false, message: "Invalid OTP" });
+    }
+
+    user.passwordHash = hashPassword(newPassword);
+    user.otpCodeHash = "";
+    user.otpChannel = "";
+    user.otpTarget = "";
+    user.otpExpiresAt = null;
+    user.otpAttempts = 0;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/login/google", async (req, res, next) => {
+  try {
+    if (!googleClient) {
+      return res.status(503).json({ success: false, message: "Google login is not configured" });
+    }
+
+    const credential = String(req.body?.credential || "").trim();
+    if (!credential) {
+      return res.status(400).json({ success: false, message: "credential is required" });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: env.googleClientId,
+    });
+
+    const payload = ticket.getPayload();
+    const email = normalizeEmail(payload?.email);
+    const name = String(payload?.name || payload?.given_name || "Student").trim();
+
+    if (!email || !payload?.email_verified) {
+      return res.status(401).json({ success: false, message: "Unable to verify Google account email" });
+    }
+
+    let user = await StudentUser.findOne({ email });
+    if (!user) {
+      user = await StudentUser.create({
+        name: name || "Student",
+        email,
+      });
+    }
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Google login successful",
+      data: buildStudentLoginPayload(user),
+    });
+  } catch (error) {
+    if (String(error?.message || "").toLowerCase().includes("token")) {
+      return res.status(401).json({ success: false, message: "Invalid Google credential" });
+    }
+    return next(error);
   }
 });
 

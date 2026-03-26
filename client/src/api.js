@@ -142,6 +142,11 @@ export async function studentLogin(payload) {
   return response.data.data;
 }
 
+export async function studentGoogleLogin(credential) {
+  const response = await api.post("/auth/login/google", { credential });
+  return response.data.data;
+}
+
 export async function studentSignup(payload) {
   const response = await api.post("/auth/signup", payload);
   return response.data.data;
@@ -154,6 +159,16 @@ export async function requestStudentOtp(payload) {
 
 export async function verifyStudentOtp(payload) {
   const response = await api.post("/auth/otp/verify", payload);
+  return response.data.data;
+}
+
+export async function requestStudentForgotPasswordOtp(payload) {
+  const response = await api.post("/auth/password/forgot/request", payload);
+  return response.data.data;
+}
+
+export async function verifyStudentForgotPasswordOtp(payload) {
+  const response = await api.post("/auth/password/forgot/verify", payload);
   return response.data.data;
 }
 
