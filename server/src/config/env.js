@@ -75,6 +75,8 @@ export const env = {
   agentUsername: process.env.AGENT_USERNAME || "agent",
   agentEmail: (process.env.AGENT_EMAIL || "agent@sona.com").toLowerCase(),
   agentPassword: process.env.AGENT_PASSWORD || "agent123",
+  adminEmail: (process.env.ADMIN_EMAIL || "admin@sona.com").toLowerCase(),
+  adminPassword: process.env.ADMIN_PASSWORD || "admin123",
   agentJwtExpiry: process.env.AGENT_JWT_EXPIRY || "12h",
   microsoftAuthEnabled: process.env.MICROSOFT_AUTH_ENABLED === "true",
   microsoftAllowedDomains: asList(process.env.MICROSOFT_ALLOWED_DOMAINS),

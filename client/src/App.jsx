@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { isAgentAuthenticated } from "./utils/auth";
+import { isAdminAuthenticated, isSupportAgentAuthenticated } from "./utils/auth";
 
 const StudentPage = lazy(() => import("./pages/StudentPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -12,7 +12,14 @@ const ChatbotEmbedPage = lazy(() => import("./pages/ChatbotEmbedPage"));
 const Login = lazy(() => import("./pages/Login"));
 
 function ProtectedRoute({ children }) {
-  if (!isAgentAuthenticated()) {
+  if (!isSupportAgentAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+function AdminRoute({ children }) {
+  if (!isAdminAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
   return children;
@@ -47,25 +54,25 @@ function App() {
           <Route
             path="/admin"
             element={(
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminDashboard />
-              </ProtectedRoute>
+              </AdminRoute>
             )}
           />
           <Route
             path="/admin/users"
             element={(
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminUsersPage />
-              </ProtectedRoute>
+              </AdminRoute>
             )}
           />
           <Route
             path="/admin/agents"
             element={(
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminAgentsPage />
-              </ProtectedRoute>
+              </AdminRoute>
             )}
           />
         </Routes>

@@ -63,6 +63,21 @@ export function isAgentAuthenticated() {
   return Boolean(getAgentToken());
 }
 
+export function getAgentRole() {
+  const token = getAgentToken();
+  if (!token) return "";
+  const payload = decodeJwtPayload(token);
+  return String(payload?.role || "").toLowerCase();
+}
+
+export function isAdminAuthenticated() {
+  return getAgentRole() === "admin";
+}
+
+export function isSupportAgentAuthenticated() {
+  return getAgentRole() === "agent";
+}
+
 export function getAgentFromToken() {
   const token = getAgentToken();
   if (!token) return null;

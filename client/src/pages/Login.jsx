@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { agentLogin, agentMicrosoftLogin } from "../api";
+import { adminLogin, agentLogin, agentMicrosoftLogin } from "../api";
 import { getMicrosoftAuthState, signInWithMicrosoft } from "../auth/microsoftAuth";
-import { isAgentAuthenticated, setAgentToken } from "../utils/auth";
+import { getAgentRole, isAgentAuthenticated, setAgentToken } from "../utils/auth";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState("agent");
   const [email, setEmail] = useState("agent@sona.com");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -17,7 +18,8 @@ export default function Login() {
 
   useEffect(() => {
     if (isAgentAuthenticated()) {
-      navigate("/dashboard", { replace: true });
+      const role = getAgentRole();
+      navigate(role === "admin" ? "/admin" : "/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -35,10 +37,12 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const data = await agentLogin(trimmedEmail, trimmedPassword);
+      const data = mode === "admin"
+        ? await adminLogin(trimmedEmail, trimmedPassword)
+        : await agentLogin(trimmedEmail, trimmedPassword);
       setAgentToken(data.token, { remember });
       setSuccessMessage("Login successful. Redirecting...");
-      navigate("/dashboard", { replace: true });
+      navigate(mode === "admin" ? "/admin" : "/dashboard", { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || "Invalid credentials");
     } finally {
@@ -89,30 +93,61 @@ export default function Login() {
             <img src="/sonalogo.png" alt="Sona logo" className="agent-auth-logo" />
             <div>
               <p className="eyebrow">Support Access</p>
-              <h2>Agent Sign In</h2>
+              <h2>{mode === "admin" ? "Admin Sign In" : "Agent Sign In"}</h2>
             </div>
           </div>
 
-          <button
-            type="button"
-            className="ms-login-btn"
-            onClick={onMicrosoftLogin}
-            disabled={microsoftLoading || !microsoftAuth.configured}
-            title={!microsoftAuth.configured ? "Microsoft login not configured" : "Continue with Microsoft"}
-          >
-            <span className="ms-icon" aria-hidden="true">
-              <span className="ms-square ms-red" />
-              <span className="ms-square ms-green" />
-              <span className="ms-square ms-blue" />
-              <span className="ms-square ms-yellow" />
-            </span>
-            <span>{microsoftLoading ? "Signing in..." : "Continue with Microsoft"}</span>
-          </button>
-          {!microsoftAuth.configured ? (
-            <p className="auth-footnote">Microsoft login not configured</p>
-          ) : null}
+          <div className="student-auth-tabs">
+            <button
+              type="button"
+              className={mode === "agent" ? "active" : ""}
+              onClick={() => {
+                setMode("agent");
+                setEmail("agent@sona.com");
+                setError("");
+                setSuccessMessage("");
+              }}
+            >
+              Agent
+            </button>
+            <button
+              type="button"
+              className={mode === "admin" ? "active" : ""}
+              onClick={() => {
+                setMode("admin");
+                setEmail("admin@sona.com");
+                setError("");
+                setSuccessMessage("");
+              }}
+            >
+              Admin
+            </button>
+          </div>
 
-          <p className="agent-auth-divider">or continue with email and password</p>
+          {mode === "agent" && (
+            <>
+              <button
+                type="button"
+                className="ms-login-btn"
+                onClick={onMicrosoftLogin}
+                disabled={microsoftLoading || !microsoftAuth.configured}
+                title={!microsoftAuth.configured ? "Microsoft login not configured" : "Continue with Microsoft"}
+              >
+                <span className="ms-icon" aria-hidden="true">
+                  <span className="ms-square ms-red" />
+                  <span className="ms-square ms-green" />
+                  <span className="ms-square ms-blue" />
+                  <span className="ms-square ms-yellow" />
+                </span>
+                <span>{microsoftLoading ? "Signing in..." : "Continue with Microsoft"}</span>
+              </button>
+              {!microsoftAuth.configured ? (
+                <p className="auth-footnote">Microsoft login not configured</p>
+              ) : null}
+
+              <p className="agent-auth-divider">or continue with email and password</p>
+            </>
+          )}
 
           <form onSubmit={onSubmit} className="agent-auth-form">
             <input

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Router } from "express";
-import { requireAgentAuth } from "../middleware/agentAuth.js";
+import { requireAdminAuth, signAgentToken } from "../middleware/agentAuth.js";
 import { getDatabaseHealth } from "../config/db.js";
 import { env } from "../config/env.js";
 import { ragService } from "../services/rag/ragService.js";
@@ -12,7 +12,38 @@ import { AgentActivity } from "../models/AgentActivity.js";
 
 const router = Router();
 
-router.use(requireAgentAuth);
+router.post("/login", (req, res) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "").trim();
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: "Email and password are required" });
+  }
+
+  if (email !== env.adminEmail || password !== env.adminPassword) {
+    return res.status(401).json({ success: false, message: "Invalid admin credentials" });
+  }
+
+  const adminId = email.split("@")[0] || "admin";
+  const token = signAgentToken({
+    role: "admin",
+    agentId: adminId,
+    email,
+  });
+
+  return res.json({
+    success: true,
+    data: {
+      token,
+      agentId: adminId,
+      email,
+      role: "admin",
+      expiresIn: env.agentJwtExpiry,
+    },
+  });
+});
+
+router.use(requireAdminAuth);
 
 function getRangeStart(range) {
   const now = Date.now();

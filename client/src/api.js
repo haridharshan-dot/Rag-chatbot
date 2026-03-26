@@ -88,6 +88,11 @@ export async function agentMicrosoftLogin(accessToken) {
   return response.data.data;
 }
 
+export async function adminLogin(email, password) {
+  const response = await api.post("/admin/login", { email, password });
+  return response.data.data;
+}
+
 export async function fetchAgentMe() {
   const response = await api.get("/agent/me", agentAuthConfig());
   return response.data.data;
