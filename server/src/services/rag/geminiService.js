@@ -41,6 +41,13 @@ function pickRelevantLines(text, intent) {
   return lines.slice(0, 3);
 }
 
+function cleanFallbackLine(line) {
+  return String(line || "")
+    .replace(/\s+/g, " ")
+    .replace(/(^|[\s,])([a-z_]+):/gi, (_, prefix, key) => `${prefix}${key.replace(/_/g, " ")}: `)
+    .trim();
+}
+
 export class GeminiService {
   constructor({ apiKey, model, timeoutMs = 9000 }) {
     this.model = model;
@@ -56,16 +63,15 @@ export class GeminiService {
 
     this.prompt = PromptTemplate.fromTemplate(
       [
-        "You are a precise college admissions assistant.",
-        "Use only the supplied context.",
-        "The dataset can include cutoffs, seats, department codes, categories, years, fees, eligibility, deadlines, and policies.",
-        "Answer any of these topics when available in context, not just cutoff questions.",
-        "Answer only what the user asked. Do not add unrelated details.",
-        "If user asks hostel fee, return only hostel fee. If user asks documents, return only required documents.",
-        "If context is insufficient, clearly say so and suggest connecting to a live agent.",
-        "For cutoff questions, answer in a compact category-wise format with year and department first.",
-        "If category data is unavailable, explicitly write 'not available in dataset' for that category.",
-        "Keep answers factual, short, and non-promotional.",
+        "You are a college assistant AI.",
+        "Use ONLY the supplied CONTEXT to answer.",
+        "Do NOT use your own knowledge.",
+        "Do NOT guess or assume.",
+        "If the answer is not in CONTEXT, reply exactly:",
+        "The live agent option is on top. Please activate it and talk to a live agent.",
+        "Answer ONLY what the user asked.",
+        "Do NOT include extra or unrelated information.",
+        "Response must be: clear, short, relevant, direct.",
         "",
         "Question:",
         "{question}",
@@ -87,12 +93,14 @@ export class GeminiService {
       const focusedLines = contextChunks
         .slice(0, 3)
         .flatMap((chunk) => pickRelevantLines(chunk.text, intent))
+        .map(cleanFallbackLine)
         .slice(0, 5);
-      const condensedContext = focusedLines.join("\n").slice(0, 600);
+      const condensedContext = focusedLines.join("\n").slice(0, 700);
       return {
-        content: condensedContext
-          ? `Based on college dataset:\n${condensedContext}`
-          : "I could not find exact information for your question in the dataset.",
+        content:
+          focusedLines.length > 0
+            ? `Here is what I found:\n- ${focusedLines.join("\n- ")}`
+            : "The live agent option is on top. Please activate it and talk to a live agent.",
       };
     };
 

@@ -11,6 +11,11 @@ import { getRuntimeSettings } from "../adminSettingsService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const OFFICIAL_WEBSITE_URL = "https://www.sonatech.ac.in/";
+const GOOGLE_SEARCH_URL = "https://www.google.com/search?q=Sona+College+of+Technology";
+const GOOGLE_MAPS_URL = "https://www.google.com/maps/search/?api=1&query=Sona+College+of+Technology";
+const SONA_PRINCIPAL_NAME = "Dr.SRR Senthil Kumar";
+const SONA_CHAIRMAN_NAME = "Thiru M. S. Chockalingam";
 
 function normalizeScore(rawScore) {
   if (!Number.isFinite(rawScore)) return 0;
@@ -29,6 +34,35 @@ function isGreetingOnly(text) {
     .replace(/\s+/g, " ")
     .trim();
   return /^(hi|hii|hello|hey|yo|good morning|good afternoon|good evening)$/.test(normalized);
+}
+
+function isGreetingOrSmallTalk(text) {
+  const normalized = String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return false;
+  if (isGreetingOnly(normalized)) return true;
+
+  return /^(hi|hii|hello|hey)\b.*\b(how are you|how r you|how are u|wassup|what s up|whatsup)\b/.test(normalized);
+}
+
+function isGeneralCollegeOverviewQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  const hasOverviewIntent =
+    /\b(about|overview|details|information|info|something)\b/.test(q) ||
+    /\b(know|say|tell|explain|describe)\b/.test(q);
+  const mentionsCollege = /\b(college|sona|sona college|sona college of technology)\b/.test(q);
+
+  return (
+    (/\b(about this college|about the college|about college|know about this college|know about the college|know about college|tell me about this college|tell me about college|college information|college details|all details about college|full details about college|about sona|sona college)\b/.test(
+      q
+    ) ||
+      (hasOverviewIntent && mentionsCollege)) &&
+    !isCutoffQuestion(q)
+  );
 }
 
 function getCandidateDataDirs() {
@@ -51,9 +85,160 @@ function isRestrictedFeeQuestion(question) {
   );
 }
 
+function isCollegeRelatedQuestion(question) {
+  return /\b(college|sona|admission|cutoff|courses?|department|eligibility|scholarship|fees?|hostel|placement|deadline|counselling|documents?|marksheet|certificate|id proof)\b/i.test(
+    String(question || "")
+  );
+}
+
+function classifyFaqIntent(question) {
+  const q = String(question || "").toLowerCase();
+  if (/\beligibility|criteria\b/.test(q)) return "eligibility";
+  if (/\bdocuments?|marksheet|certificate|id proof|passport|transfer certificate\b/.test(q))
+    return "documents";
+  if (/\bdeadline|last date|counselling|counseling|admission date|important date\b/.test(q))
+    return "deadline";
+  if (/\bhostel\b/.test(q)) return "hostel_fee";
+  if (/\btuition\b/.test(q)) return "tuition_fee";
+  if (/\blab\b|\bexam fee\b/.test(q)) return "lab_exam_fee";
+  if (/\bfees?\b|\bfee structure\b/.test(q)) return "fees";
+  if (/\bcourses?|programs?|department\b/.test(q)) return "courses";
+  return null;
+}
+
+function isCollegeProfileQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  if (!q) return false;
+  if (isCutoffQuestion(q)) return false;
+
+  return /\b(college|sona|ranking|rankings|facility|facilities|library|hostel|apple lab|industry|tie up|tie-up|rd|r&d|research|campus|admission)\b/.test(
+    q
+  );
+}
+
+function isPrincipalQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  return /\bprincipal\b/.test(q) && /\b(sona|college)\b/.test(q);
+}
+
+function buildPrincipalResponse() {
+  return `Principal: ${SONA_PRINCIPAL_NAME}`;
+}
+
+function isChairmanQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  return /\bchairman\b/.test(q) && /\b(sona|college)\b/.test(q);
+}
+
+function buildChairmanResponse() {
+  return `The chairman of Sona College of Technology is ${SONA_CHAIRMAN_NAME}.`;
+}
+
+const KNOWN_DEPARTMENT_PATTERN =
+  /\b(cse|it|ece|eee|mech|mechanical|civil|ft|fashion technology|ads|aids|aml|aiml|ai ml|ai and ml|ai ds|ai and ds)\b/i;
+
+const LOW_INFORMATION_TOKENS = new Set([
+  "this",
+  "that",
+  "it",
+  "ok",
+  "okay",
+  "hmm",
+  "hmmm",
+  "huh",
+  "yo",
+  "yes",
+  "no",
+  "fine",
+  "cool",
+  "random",
+  "anything",
+  "whatever",
+]);
+
+const INVALID_QUERY_FALLBACK =
+  "The live agent option is on top. Please activate it and talk to a live agent.";
+
+function validateUserQuery(question) {
+  const normalized = String(question || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) {
+    return { valid: false, message: INVALID_QUERY_FALLBACK };
+  }
+
+  const tokens = normalized.split(" ").filter(Boolean);
+  const cutoffIntent = isCutoffQuestion(normalized);
+  const faqIntent = classifyFaqIntent(normalized);
+  const collegeIntent = isCollegeProfileQuestion(normalized) || isGeneralCollegeOverviewQuestion(normalized);
+  const hasIntent = Boolean(cutoffIntent || faqIntent || collegeIntent);
+  const hasDepartmentEntity = KNOWN_DEPARTMENT_PATTERN.test(normalized);
+  const hasCollegeEntity = /\b(sona|college)\b/.test(normalized);
+  const isLowInfoSingleToken = tokens.length === 1 && LOW_INFORMATION_TOKENS.has(tokens[0]);
+
+  if (isLowInfoSingleToken) {
+    return { valid: false, message: INVALID_QUERY_FALLBACK };
+  }
+
+  if (cutoffIntent && !hasDepartmentEntity) {
+    return {
+      valid: false,
+      message: "Please specify department and category (e.g., CSE OC cutoff).",
+    };
+  }
+
+  // One-word prompts are usually ambiguous in this domain and must be clarified.
+  if (tokens.length < 2 && !hasDepartmentEntity) {
+    return { valid: false, message: INVALID_QUERY_FALLBACK };
+  }
+
+  if (!hasIntent) {
+    return { valid: false, message: INVALID_QUERY_FALLBACK };
+  }
+
+  // Require at least one meaningful entity context for non-cutoff intents.
+  if (!hasDepartmentEntity && !hasCollegeEntity && !faqIntent) {
+    return { valid: false, message: INVALID_QUERY_FALLBACK };
+  }
+
+  return { valid: true };
+}
+
 function extractRequestedYear(question) {
   const match = String(question || "").match(/\b(20\d{2})\b/);
   return match ? Number(match[1]) : null;
+}
+
+const CUTOFF_CATEGORY_ORDER = ["OC", "BCM", "BC", "MBC", "SCA", "SC", "ST"];
+const CUTOFF_CATEGORY_SET = new Set(CUTOFF_CATEGORY_ORDER);
+
+function extractRequestedCategory(question) {
+  const normalized = String(question || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
+  if (!normalized) return null;
+
+  if (/\bOPEN CATEGORY\b|\bGENERAL CATEGORY\b/.test(normalized)) return "OC";
+  if (/\bBACKWARD CLASS MUSLIM\b/.test(normalized)) return "BCM";
+
+  const tokens = normalized.split(/\s+/);
+  for (const category of CUTOFF_CATEGORY_ORDER) {
+    if (tokens.includes(category)) return category;
+  }
+  return null;
+}
+
+function extractRequestedMetric(question) {
+  const normalized = String(question || "").toLowerCase();
+  const asksMax = /\b(max|maximum|highest|top)\b/.test(normalized);
+  const asksMin = /\b(min|minimum|lowest|least)\b/.test(normalized);
+  if (asksMax && !asksMin) return "max";
+  if (asksMin && !asksMax) return "min";
+  return null;
 }
 
 function normalizeDepartmentName(value) {
@@ -112,66 +297,121 @@ function findRequestedDepartment(question, departments) {
   return null;
 }
 
-function formatCategoryLine(category, values) {
-  if (!values || typeof values !== "object") {
-    return `- ${category}: not published for this year`;
-  }
-  const max = values.max ?? "NA";
-  const min = values.min ?? "NA";
-  return `- ${category}: max ${max}, min ${min}`;
+function parseCutoffQueryIntent(question, departments) {
+  const department = findRequestedDepartment(question, departments);
+  const requestedCategory = extractRequestedCategory(question);
+  const requestedYear = extractRequestedYear(question);
+  const requestedMetric = extractRequestedMetric(question);
+  const isCategorySpecified = requestedCategory !== null;
+
+  return {
+    department,
+    requestedCategory: isCategorySpecified ? requestedCategory : "ALL",
+    requestedMetric,
+    isCategorySpecified,
+    requestedYear,
+  };
 }
 
-function buildDepartmentCutoffAnswer({ year, department, yearEntry }) {
+function formatCutoffValue(value) {
+  return value === null || value === undefined ? "Not available" : String(value);
+}
+
+function withOfficialWebsiteNote(answer, question) {
+  const content = String(answer || "").trim();
+  return content;
+}
+
+function buildDepartmentCutoffAnswer({
+  year,
+  department,
+  yearEntry,
+  requestedCategory,
+  requestedMetric,
+  isCategorySpecified,
+}) {
   const cutoff = yearEntry?.cutoff && typeof yearEntry.cutoff === "object" ? yearEntry.cutoff : {};
-  const categories = Object.keys(cutoff);
-  const unpublishedCount = categories.filter((category) => {
+  const availableCategories = CUTOFF_CATEGORY_ORDER.filter((category) => category in cutoff);
+  if (!availableCategories.length) {
+    return `${year} Cutoff information for ${department.department} is not available right now.`;
+  }
+
+  if (isCategorySpecified) {
+    if (!CUTOFF_CATEGORY_SET.has(requestedCategory)) {
+      return "Please specify a valid category (OC, BC, BCM, MBC, SCA, SC, ST).";
+    }
+
+    const values = cutoff[requestedCategory];
+    if (!values || typeof values !== "object") {
+      if (requestedMetric === "max") {
+        return `${year} Cutoff - ${department.department} (${requestedCategory})\n\nMax: Not available`;
+      }
+      if (requestedMetric === "min") {
+        return `${year} Cutoff - ${department.department} (${requestedCategory})\n\nMin: Not available`;
+      }
+      return `${year} Cutoff - ${department.department} (${requestedCategory})\n\nMax: Not available\nMin: Not available`;
+    }
+
+    if (requestedMetric === "max") {
+      return `${year} Cutoff - ${department.department} (${requestedCategory})\n\nMax: ${formatCutoffValue(values.max)}`;
+    }
+    if (requestedMetric === "min") {
+      return `${year} Cutoff - ${department.department} (${requestedCategory})\n\nMin: ${formatCutoffValue(values.min)}`;
+    }
+
+    return [
+      `${year} Cutoff - ${department.department} (${requestedCategory})`,
+      "",
+      `Max: ${formatCutoffValue(values.max)}`,
+      `Min: ${formatCutoffValue(values.min)}`,
+    ].join("\n");
+  }
+
+  if (requestedMetric) {
+    const numericCandidates = availableCategories
+      .map((category) => {
+        const values = cutoff[category];
+        if (!values || typeof values !== "object") return null;
+        const metricValue = values[requestedMetric];
+        if (metricValue === null || metricValue === undefined) return null;
+        if (!Number.isFinite(Number(metricValue))) return null;
+        return {
+          category,
+          value: Number(metricValue),
+        };
+      })
+      .filter(Boolean);
+
+    if (!numericCandidates.length) {
+      const metricLabel = requestedMetric === "max" ? "Max" : "Min";
+      return `${year} Cutoff - ${department.department}\n\n${metricLabel}: Not available`;
+    }
+
+    const chosen =
+      requestedMetric === "max"
+        ? numericCandidates.reduce((best, current) => (current.value > best.value ? current : best))
+        : numericCandidates.reduce((best, current) => (current.value < best.value ? current : best));
+
+    const metricLabel = requestedMetric === "max" ? "Max" : "Min";
+    return [
+      `${year} Cutoff - ${department.department}`,
+      "",
+      `${metricLabel}: ${chosen.value}`,
+      `Category: ${chosen.category}`,
+    ].join("\n");
+  }
+
+  const lines = [`${year} Cutoff - ${department.department}`];
+  for (const category of availableCategories) {
     const values = cutoff[category];
-    return !values || typeof values !== "object";
-  }).length;
-  const lines = [
-    `## ${year} Cutoffs`,
-    `**Department:** ${department.department} (${department.code})`,
-  ];
-
-  if (yearEntry?.available_seats !== null && yearEntry?.available_seats !== undefined) {
-    lines.push(`**Available seats:** ${yearEntry.available_seats}`);
+    if (!values || typeof values !== "object") {
+      lines.push(`${category}: Max Not available, Min Not available`);
+      continue;
+    }
+    lines.push(`${category}: Max ${formatCutoffValue(values.max)}, Min ${formatCutoffValue(values.min)}`);
   }
-
-  if (!categories.length) {
-    lines.push("Cutoff details are not available in the dataset.");
-    return lines.join("\n\n");
-  }
-
-  lines.push(categories.map((category) => formatCategoryLine(category, cutoff[category])).join("\n"));
-  if (unpublishedCount > 0) {
-    lines.push("*Some community/category cutoffs were not published in the official counselling data.*");
-  }
-  return lines.join("\n\n");
-}
-
-function buildYearSummaryAnswer({ year, departments }) {
-  const lines = [
-    `## ${year} Cutoff Summary`,
-    "| Department | Code | Seats | OC cutoff |",
-    "| --- | --- | ---: | --- |",
-  ];
-
-  for (const department of departments) {
-    const yearEntry = (Array.isArray(department?.years) ? department.years : []).find(
-      (item) => Number(item?.year) === Number(year)
-    );
-    if (!yearEntry) continue;
-    const oc = yearEntry?.cutoff?.OC;
-    const ocLabel = oc && typeof oc === "object" ? `${oc.max ?? "NA"} / ${oc.min ?? "NA"}` : "NA";
-    const seats = yearEntry?.available_seats ?? "NA";
-    lines.push(`| ${department.department} | ${department.code || "NA"} | ${seats} | ${ocLabel} |`);
-  }
-
-  lines.push("");
-  lines.push("Ask for a specific department like `CSE 2025 cutoff` to get full category-wise values.");
   return lines.join("\n");
 }
-
 async function readStructuredCutoffDataset(dataDirs) {
   for (const dataDir of dataDirs) {
     try {
@@ -196,6 +436,240 @@ async function readStructuredCutoffDataset(dataDirs) {
   return null;
 }
 
+async function readFaqTextDataset(dataDirs) {
+  for (const dataDir of dataDirs) {
+    try {
+      const entries = await fs.readdir(dataDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isFile()) continue;
+        const ext = path.extname(entry.name).toLowerCase();
+        if (![".txt", ".md"].includes(ext)) continue;
+
+        const fullPath = path.join(dataDir, entry.name);
+        const content = await fs.readFile(fullPath, "utf8");
+        if (!/admissions faq|eligibility|required documents|fee structure|courses/i.test(content)) {
+          continue;
+        }
+        return {
+          source: path.relative(process.cwd(), fullPath),
+          content,
+        };
+      }
+    } catch {
+      // Try next data directory candidate.
+    }
+  }
+  return null;
+}
+
+async function readCollegeProfileDataset(dataDirs) {
+  for (const dataDir of dataDirs) {
+    try {
+      const entries = await fs.readdir(dataDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isFile()) continue;
+        const ext = path.extname(entry.name).toLowerCase();
+        if (![".txt", ".md"].includes(ext)) continue;
+
+        const fullPath = path.join(dataDir, entry.name);
+        const content = await fs.readFile(fullPath, "utf8");
+        const isProfileFile =
+          /sona[_\s-]*college[_\s-]*profile/i.test(entry.name) ||
+          /sona college of technology \(autonomous\)/i.test(content);
+        if (!isProfileFile) continue;
+
+        return {
+          source: path.relative(process.cwd(), fullPath),
+          content,
+        };
+      }
+    } catch {
+      // Try next directory candidate.
+    }
+  }
+  return null;
+}
+
+function parseMarkdownSections(markdown) {
+  const lines = String(markdown || "").replace(/\r/g, "").split("\n");
+  const sections = [];
+  let current = { title: "Overview", lines: [] };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    const headingMatch = line.match(/^##\s+(.+)$/);
+    if (headingMatch) {
+      if (current.lines.length) sections.push(current);
+      current = { title: headingMatch[1].trim(), lines: [] };
+      continue;
+    }
+    if (!line) continue;
+    current.lines.push(line);
+  }
+
+  if (current.lines.length) sections.push(current);
+  return sections;
+}
+
+function pickProfileSections(question, sections) {
+  const q = String(question || "").toLowerCase();
+  if (!q) return sections.slice(0, 3);
+
+  const keywordMap = [
+    { section: "Admission", regex: /\badmission|eligibility|apply|entrance|tancet|gate|mat\b/ },
+    { section: "Rankings", regex: /\branking|nirf|rank\b/ },
+    { section: "Facilities", regex: /\bfacilit|campus|library|hostel|apple lab\b/ },
+    { section: "Industry Tie-ups", regex: /\bindustry|tie[-\s]?up|oracle|ibm|infosys|wipro|cisco\b/ },
+    { section: "R&D Centers", regex: /\br&d|rd|research|centre|center of excellence\b/ },
+  ];
+
+  const requested = keywordMap.filter((item) => item.regex.test(q)).map((item) => item.section);
+  if (!requested.length) {
+    return sections.filter((s) => ["Overview", "Admission", "Rankings", "Facilities"].includes(s.title)).slice(0, 4);
+  }
+
+  return sections.filter((section) => requested.some((name) => section.title.startsWith(name)));
+}
+
+async function buildCollegeProfileResponse(question, dataDirs) {
+  if (!isCollegeProfileQuestion(question)) return null;
+
+  const profile = await readCollegeProfileDataset(dataDirs);
+  if (!profile?.content) return null;
+
+  const sections = parseMarkdownSections(profile.content);
+  if (!sections.length) {
+    return {
+      answer: profile.content.trim(),
+      source: profile.source,
+    };
+  }
+
+  const selectedSections = pickProfileSections(question, sections);
+  const limitedSections = selectedSections.length ? selectedSections : sections.slice(0, 4);
+  const blocks = limitedSections
+    .map((section) => `## ${section.title}\n${section.lines.join("\n")}`)
+    .join("\n\n");
+
+  return {
+    answer: blocks,
+    source: profile.source,
+  };
+}
+
+function extractFaqBullet(content, sectionTitle, matcher) {
+  const text = String(content || "");
+  const sectionPattern = new RegExp(`${sectionTitle}\\s*\\n([\\s\\S]*?)(?:\\n\\s*\\n|$)`, "i");
+  const sectionMatch = text.match(sectionPattern);
+  const sectionBody = sectionMatch ? sectionMatch[1] : text;
+  const lines = sectionBody
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return lines.find((line) => matcher.test(line)) || null;
+}
+
+async function buildFaqIntentResponse(question, dataDirs) {
+  const intent = classifyFaqIntent(question);
+  if (!intent) return null;
+
+  const faq = await readFaqTextDataset(dataDirs);
+  if (!faq?.content) return null;
+
+  const feeTuition = extractFaqBullet(faq.content, "Fee Structure", /tuition fee/i);
+  const feeHostel = extractFaqBullet(faq.content, "Fee Structure", /hostel fee/i);
+  const feeLabExam = extractFaqBullet(faq.content, "Fee Structure", /lab|exam fee/i);
+  const eligibility = extractFaqBullet(faq.content, "Admissions FAQ", /eligibility/i);
+  const documents = extractFaqBullet(faq.content, "Admissions FAQ", /required documents/i);
+  const deadline = extractFaqBullet(faq.content, "Admissions FAQ", /counseling|counselling|june|august|last date|starts|closes/i);
+
+  const courseLines = String(faq.content)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^-\s*[A-Za-z].*:\s*/.test(line) && /(years?|includes)/i.test(line))
+    .map((line) => line.replace(/^-+\s*/, ""));
+
+  const normalizeLine = (line) => String(line || "").replace(/^-+\s*/, "").trim();
+
+  if (intent === "eligibility") {
+    return {
+      answer: eligibility
+        ? `## Admission Eligibility\n- ${normalizeLine(eligibility)}`
+        : "Eligibility details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "documents") {
+    return {
+      answer: documents
+        ? `## Required Documents\n- ${normalizeLine(documents)}`
+        : "Required documents details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "deadline") {
+    return {
+      answer: deadline
+        ? `## Admission Timeline\n- ${normalizeLine(deadline)}`
+        : "Admission timeline details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "hostel_fee") {
+    return {
+      answer: feeHostel
+        ? `## Hostel Fee\n- ${normalizeLine(feeHostel)}`
+        : "Hostel fee details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "tuition_fee") {
+    return {
+      answer: feeTuition
+        ? `## Tuition Fee\n- ${normalizeLine(feeTuition)}`
+        : "Tuition fee details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "lab_exam_fee") {
+    return {
+      answer: feeLabExam
+        ? `## Lab and Exam Fee\n- ${normalizeLine(feeLabExam)}`
+        : "Lab and exam fee details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "fees") {
+    const lines = [];
+    if (feeTuition) lines.push(`- ${normalizeLine(feeTuition)}`);
+    if (feeHostel) lines.push(`- ${normalizeLine(feeHostel)}`);
+    if (feeLabExam) lines.push(`- ${normalizeLine(feeLabExam)}`);
+    return {
+      answer: lines.length
+        ? `## Fee Structure\n${lines.join("\n")}`
+        : "Fee details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "courses") {
+    return {
+      answer: courseLines.length
+        ? `## Courses\n${courseLines.map((line) => `- ${line}`).join("\n")}`
+        : "Course details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  return null;
+}
+
 async function buildStructuredCutoffResponse(question, dataDirs) {
   if (!isCutoffQuestion(question)) return null;
 
@@ -205,8 +679,9 @@ async function buildStructuredCutoffResponse(question, dataDirs) {
   const departments = Array.isArray(dataset.parsed.cutoff_data) ? dataset.parsed.cutoff_data : [];
   if (!departments.length) return null;
 
+  const intent = parseCutoffQueryIntent(question, departments);
   const requestedYear =
-    extractRequestedYear(question) ||
+    intent.requestedYear ||
     Math.max(
       ...departments.flatMap((department) =>
         (Array.isArray(department?.years) ? department.years : [])
@@ -217,48 +692,101 @@ async function buildStructuredCutoffResponse(question, dataDirs) {
 
   if (!Number.isFinite(requestedYear)) return null;
 
-  const department = findRequestedDepartment(question, departments);
-
-  if (department) {
-    const yearEntry = (Array.isArray(department.years) ? department.years : []).find(
-      (item) => Number(item?.year) === Number(requestedYear)
-    );
-
-    if (!yearEntry) {
-      return {
-        answer: `The dataset does not contain cutoff data for ${department.department} in ${requestedYear}.`,
-        source: dataset.source,
-      };
-    }
-
+  if (!intent.department) {
     return {
-      answer: buildDepartmentCutoffAnswer({
-        year: requestedYear,
-        department,
-        yearEntry,
-      }),
+      answer: "Please specify department and category (e.g., IT OC, CSE BC).",
       source: dataset.source,
     };
   }
 
-  const matchingDepartments = departments.filter((entry) =>
-    (Array.isArray(entry?.years) ? entry.years : []).some(
-      (item) => Number(item?.year) === Number(requestedYear)
-    )
+  const yearEntry = (Array.isArray(intent.department.years) ? intent.department.years : []).find(
+    (item) => Number(item?.year) === Number(requestedYear)
   );
-
-  if (!matchingDepartments.length) {
+  if (!yearEntry) {
     return {
-      answer: `The dataset does not contain cutoff information for ${requestedYear}.`,
+      answer: `Cutoff details for ${intent.department.department} in ${requestedYear} are not available right now.`,
       source: dataset.source,
     };
   }
 
   return {
-    answer: buildYearSummaryAnswer({
+    answer: buildDepartmentCutoffAnswer({
       year: requestedYear,
-      departments: matchingDepartments,
+      department: intent.department,
+      yearEntry,
+      requestedCategory: intent.requestedCategory,
+      requestedMetric: intent.requestedMetric,
+      isCategorySpecified: intent.isCategorySpecified,
     }),
+    source: dataset.source,
+  };
+}
+
+async function buildGeneralCollegeOverviewResponse(question, dataDirs) {
+  if (!isGeneralCollegeOverviewQuestion(question)) return null;
+
+  const dataset = await readStructuredCutoffDataset(dataDirs);
+  if (!dataset?.parsed) return null;
+
+  const collegeName = String(dataset.parsed.college || "Sona College of Technology").trim();
+  const departments = Array.isArray(dataset.parsed.cutoff_data) ? dataset.parsed.cutoff_data : [];
+  if (!departments.length) return null;
+
+  const latestYear = Math.max(
+    ...departments.flatMap((department) =>
+      (Array.isArray(department?.years) ? department.years : [])
+        .map((entry) => Number(entry?.year))
+        .filter(Number.isFinite)
+    )
+  );
+
+  const overviewRows = departments
+    .map((department) => {
+      const years = Array.isArray(department?.years) ? department.years : [];
+      const latestEntry = years
+        .filter((entry) => Number.isFinite(Number(entry?.year)))
+        .sort((a, b) => Number(b.year) - Number(a.year))[0];
+
+      const seats = latestEntry?.available_seats ?? "NA";
+      const oc = latestEntry?.cutoff?.OC;
+      const ocRange =
+        oc && typeof oc === "object"
+          ? `${formatCutoffValue(oc.max)} / ${formatCutoffValue(oc.min)}`
+          : "Not available";
+
+      return {
+        department: String(department.department || "NA"),
+        code: String(department.code || "NA"),
+        seats,
+        ocRange,
+      };
+    })
+    .sort((a, b) => a.code.localeCompare(b.code));
+
+  const profileLines = [
+    `## ${collegeName} - College Overview`,
+    `- Programs listed in current knowledge base: **${overviewRows.length}**`,
+    Number.isFinite(latestYear)
+      ? `- Latest available academic snapshot year: **${latestYear}**`
+      : "- Latest academic snapshot year: **Not available**",
+    "- You can ask department-specific questions on cutoffs, admissions, eligibility, and courses.",
+    "",
+    "### Programs Snapshot",
+    "| Department | Code | Latest Seats | Latest OC Cutoff (Max / Min) |",
+    "| --- | --- | ---: | --- |",
+  ];
+
+  for (const row of overviewRows) {
+    profileLines.push(`| ${row.department} | ${row.code} | ${row.seats} | ${row.ocRange} |`);
+  }
+
+  profileLines.push("");
+  profileLines.push(
+    'Ask a specific query for precise help, for example: "IT OC cutoff", "CSE admission eligibility", or "ECE cutoff 2025".'
+  );
+
+  return {
+    answer: profileLines.join("\n"),
     source: dataset.source,
   };
 }
@@ -390,10 +918,9 @@ class RAGService {
     const supplementalContext = String(options?.supplementalContext || "").trim();
     const uniqueDataDirs = [...new Set(getCandidateDataDirs())];
 
-    if (isGreetingOnly(question)) {
+    if (isGreetingOrSmallTalk(question)) {
       return {
-        answer:
-          "Hi! I can help with admissions, cutoffs, courses, scholarships, documents, and deadlines. Ask your specific college question.",
+        answer: "Hi! How can I assist you today?",
         confidence: 1,
         sources: [],
         escalationSuggested: false,
@@ -401,11 +928,31 @@ class RAGService {
       };
     }
 
-    if (isRestrictedFeeQuestion(question)) {
+    if (isPrincipalQuestion(question)) {
       return {
-        answer:
-          "Fee details are not shared in this public chatbot. Please contact the admissions office or use the live agent for fee-related help.",
+        answer: withOfficialWebsiteNote(buildPrincipalResponse(), question),
         confidence: 1,
+        sources: ["configured-college-profile"],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    if (isChairmanQuestion(question)) {
+      return {
+        answer: buildChairmanResponse(),
+        confidence: 1,
+        sources: ["configured-college-profile"],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    const validation = validateUserQuery(question);
+    if (!validation.valid) {
+      return {
+        answer: validation.message,
+        confidence: 0,
         sources: [],
         escalationSuggested: false,
         outOfScope: false,
@@ -415,9 +962,55 @@ class RAGService {
     const structuredCutoffResponse = await buildStructuredCutoffResponse(question, uniqueDataDirs);
     if (structuredCutoffResponse) {
       return {
-        answer: structuredCutoffResponse.answer,
+        answer: withOfficialWebsiteNote(structuredCutoffResponse.answer, question),
         confidence: 1,
         sources: [structuredCutoffResponse.source],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    const faqIntentResponse = await buildFaqIntentResponse(question, uniqueDataDirs);
+    if (faqIntentResponse) {
+      return {
+        answer: withOfficialWebsiteNote(faqIntentResponse.answer, question),
+        confidence: 1,
+        sources: [faqIntentResponse.source],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    if (isRestrictedFeeQuestion(question)) {
+      return {
+        answer: withOfficialWebsiteNote(
+          "Fee details are not available in this chatbot right now. Please use the official website or connect to a live agent for fee-related help.",
+          question
+        ),
+        confidence: 1,
+        sources: [],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    const collegeProfileResponse = await buildCollegeProfileResponse(question, uniqueDataDirs);
+    if (collegeProfileResponse) {
+      return {
+        answer: withOfficialWebsiteNote(collegeProfileResponse.answer, question),
+        confidence: 1,
+        sources: [collegeProfileResponse.source],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    const generalCollegeOverview = await buildGeneralCollegeOverviewResponse(question, uniqueDataDirs);
+    if (generalCollegeOverview) {
+      return {
+        answer: withOfficialWebsiteNote(generalCollegeOverview.answer, question),
+        confidence: 1,
+        sources: [generalCollegeOverview.source],
         escalationSuggested: false,
         outOfScope: false,
       };
@@ -452,8 +1045,7 @@ class RAGService {
 
     if (!contextChunks.length) {
       return {
-        answer:
-          "I could not find relevant college information. Please connect to a live agent for help.",
+        answer: "The live agent option is on top. Please activate it and talk to a live agent.",
         confidence: 0,
         sources: [],
         escalationSuggested: true,
@@ -465,8 +1057,18 @@ class RAGService {
       ? await this.gemini.answer({ question, contextChunks })
       : await this.claude.answer({ question, contextChunks });
 
+    if (confidence < settings.ragOutOfScopeThreshold) {
+      return {
+        answer: INVALID_QUERY_FALLBACK,
+        confidence,
+        sources: contextChunks.map((chunk) => chunk.source),
+        escalationSuggested: true,
+        outOfScope: true,
+      };
+    }
+
     return {
-      answer: modelAnswer.content,
+      answer: withOfficialWebsiteNote(modelAnswer.content, question),
       confidence,
       sources: contextChunks.map((chunk) => chunk.source),
       escalationSuggested:
@@ -478,3 +1080,5 @@ class RAGService {
 }
 
 export const ragService = new RAGService();
+
+
