@@ -28,6 +28,9 @@ export default function ChatWindow({
   isMobile,
   onBackToQueue,
 }) {
+  const statusLabel = activeQueueSession?.status || "bot";
+  const waitMinutes = getWaitMinutes(activeQueueSession?.escalationRequestedAt);
+
   return (
     <section className="ad-chat">
       <header className="ad-chat-head">
@@ -39,16 +42,14 @@ export default function ChatWindow({
             <h3>{activeSessionId ? getStudentLabel(activeQueueSession) : "Select a conversation"}</h3>
             <p>
               {activeQueueSession
-                ? `Assigned to ${resolvedDisplayName} • ${activeQueueSession.status || "bot"} • ${getWaitMinutes(
-                    activeQueueSession.escalationRequestedAt
-                  )}m wait`
+                ? `Assigned to ${resolvedDisplayName} • ${statusLabel} • ${waitMinutes}m wait`
                 : "Choose a user from the queue to start chatting."}
             </p>
             {studentTyping ? <p className="ad-typing">Student is typing...</p> : null}
           </div>
         </div>
         <div className="ad-chat-head-actions">
-          <span>{authEmail}</span>
+          <span className="ad-agent-email">{authEmail}</span>
           <button type="button" onClick={onResolve} disabled={!activeSessionId}>Mark Resolved</button>
         </div>
       </header>

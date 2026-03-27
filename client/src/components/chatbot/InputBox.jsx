@@ -7,6 +7,7 @@ export default function InputBox({
   onChange,
   onSend,
   onTyping,
+  onAnalyzeDocument,
   placeholder,
 }) {
   const inputRef = useRef(null);
@@ -18,7 +19,9 @@ export default function InputBox({
   const disabledRef = useRef(disabled);
   const loadingRef = useRef(loading);
   const [isListening, setIsListening] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const fileInputRef = useRef(null);
   const canSend = useMemo(() => value.trim().length > 0 && !loading && !disabled, [value, loading, disabled]);
 
   useEffect(() => {
@@ -129,9 +132,51 @@ export default function InputBox({
     }
   };
 
+  const onPickDocument = async (file) => {
+    if (!file || !onAnalyzeDocument || disabled || loading || uploading) return;
+    setUploading(true);
+    try {
+      const extractedText = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("file-read-failed"));
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.readAsText(file);
+      });
+      await onAnalyzeDocument({
+        fileName: file.name,
+        extractedText: extractedText.slice(0, 20000),
+      });
+    } catch {
+      await onAnalyzeDocument?.({
+        fileName: file.name,
+        extractedText: "",
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="cc-input-zone">
       <div className="cc-input-wrap">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.md,.json,.csv,.pdf"
+          hidden
+          onChange={(event) => onPickDocument(event.target.files?.[0])}
+        />
+        <button
+          type="button"
+          className="cc-upload"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || loading || uploading}
+          aria-label="Upload document for analysis"
+          title="Upload document for AI analysis"
+        >
+          {uploading ? "..." : "+"}
+        </button>
         <textarea
           ref={inputRef}
           value={value}

@@ -4,6 +4,7 @@ import TypingIndicator from "./TypingIndicator";
 
 export default function MessageList({
   messages,
+  seenMeta,
   listRef,
   aiStageLabel,
   isSending,
@@ -16,6 +17,13 @@ export default function MessageList({
   onResume,
   onDismissResume,
 }) {
+  const latestStudentIndex = (() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (String(messages[i]?.sender || "") === "student") return i;
+    }
+    return -1;
+  })();
+
   return (
     <section
       className="cc-message-list"
@@ -50,6 +58,13 @@ export default function MessageList({
           key={`${message.createdAt || index}-${message.sender}-${String(message.content || "").slice(0, 32)}`}
           message={message}
           index={index}
+          readReceipt={
+            index === latestStudentIndex
+              ? {
+                  seenAt: String(seenMeta?.seenAt || ""),
+                }
+              : null
+          }
           onRichAction={onRichAction}
         />
       ))}

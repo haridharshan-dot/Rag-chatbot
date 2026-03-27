@@ -44,6 +44,7 @@ export default function Sidebar({
         <div>
           <p className="eyebrow">Live support</p>
           <h2>Agent Console</h2>
+          <p className="ad-side-subtitle">Manage live conversations with real-time updates.</p>
         </div>
         <div className="ad-side-actions">
           <button type="button" className="pill-btn" onClick={onOpenAdmin}>Admin</button>

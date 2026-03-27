@@ -158,6 +158,29 @@ async function loadKnowledgeStats() {
   };
 }
 
+function computeIntentAnalytics(sessions) {
+  const intentCounts = new Map();
+  let totalStudentMessages = 0;
+  for (const session of sessions) {
+    for (const message of session.messages || []) {
+      if (String(message?.sender || "") !== "student") continue;
+      totalStudentMessages += 1;
+      const intent = String(message?.meta?.intent || "general").trim() || "general";
+      intentCounts.set(intent, (intentCounts.get(intent) || 0) + 1);
+    }
+  }
+
+  const mostAskedIntents = [...intentCounts.entries()]
+    .map(([intent, count]) => ({ intent, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  return {
+    totalStudentMessages,
+    mostAskedIntents,
+  };
+}
+
 router.get("/overview", async (req, res, next) => {
   try {
     const [settings, knowledge] = await Promise.all([
@@ -173,6 +196,12 @@ router.get("/overview", async (req, res, next) => {
 
     const db = getDatabaseHealth();
     const rag = ragService.getStatus();
+
+    const recentSessions = await ChatSession.find({ updatedAt: { $gte: getRangeStart("week") } })
+      .select("messages updatedAt")
+      .limit(1200)
+      .lean();
+    const analytics = computeIntentAnalytics(recentSessions);
 
     return res.json({
       success: true,
@@ -194,6 +223,7 @@ router.get("/overview", async (req, res, next) => {
         },
         settings,
         knowledge,
+        analytics,
       },
     });
   } catch (error) {
@@ -324,6 +354,8 @@ router.get("/reports", async (req, res, next) => {
       messageCount: Array.isArray(session.messages) ? session.messages.length : 0,
     }));
 
+    const analytics = computeIntentAnalytics(sessions);
+
     return res.json({
       success: true,
       data: {
@@ -339,6 +371,7 @@ router.get("/reports", async (req, res, next) => {
           escalatedSessions: statusCounts.escalated,
           avgResolutionMinutes,
         },
+        analytics,
         items,
       },
     });

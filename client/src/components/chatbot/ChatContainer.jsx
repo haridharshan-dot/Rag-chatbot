@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { clearStudentChat, escalateToAgent, fetchHistory, sendStudentMessage } from "../../api";
+import {
+  analyzeStudentDocument,
+  clearStudentChat,
+  escalateToAgent,
+  fetchChatNotifications,
+  fetchHistory,
+  sendStudentMessage,
+} from "../../api";
 import { socket } from "../../socket";
 import { trackChatFunnelEvent } from "../../utils/chatAnalytics";
 import ChatHeader from "./ChatHeader";
@@ -54,11 +61,32 @@ function isAgentWithinWorkingHours() {
 
 function normalizeMessage(message) {
   return {
+    sessionId: message?.sessionId || "",
     sender: message?.sender || "bot",
     content: String(message?.content || ""),
     createdAt: message?.createdAt || new Date().toISOString(),
     meta: message?.meta || null,
   };
+}
+
+function deriveLatestSeenMeta(history) {
+  if (!Array.isArray(history) || history.length === 0) return { seenAt: "", agentId: "" };
+  let latest = null;
+  for (const message of history) {
+    if (String(message?.sender || "") !== "student") continue;
+    const seenAt = String(message?.meta?.seenByAgentAt || "").trim();
+    if (!seenAt) continue;
+    const seenDate = new Date(seenAt);
+    if (Number.isNaN(seenDate.getTime())) continue;
+    if (!latest || seenDate.getTime() > latest.seenDate.getTime()) {
+      latest = {
+        seenDate,
+        seenAt,
+        agentId: String(message?.meta?.seenByAgentId || "").trim(),
+      };
+    }
+  }
+  return latest ? { seenAt: latest.seenAt, agentId: latest.agentId } : { seenAt: "", agentId: "" };
 }
 
 function isAgentJoinMessage(message) {
@@ -77,6 +105,22 @@ function messageSuggestsAgent(content) {
     text.includes("human agent") ||
     text.includes("live agent support")
   );
+}
+
+function isLiveAgentRequestIntent(content) {
+  const text = String(content || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return false;
+
+  const liveAgentTerms = /\b(live agent|agent|human|representative|counselor|counsellor|admission office|admission team|staff|someone)\b/;
+  const requestTerms = /\b(talk|speak|connect|chat|transfer|contact|need|want|assist|help)\b/;
+  const directPatterns =
+    /\b(i want to talk|i need to talk|connect me|transfer me|can i talk|talk to someone|talk to agent|speak to agent|speak with|contact admission)\b/;
+
+  return directPatterns.test(text) || (liveAgentTerms.test(text) && requestTerms.test(text));
 }
 
 function shouldTriggerEscalationFromMessage(message) {
@@ -167,6 +211,7 @@ export default function ChatContainer({
   const [isAgentAvailable, setIsAgentAvailable] = useState(() => isAgentWithinWorkingHours());
   const [resumeBannerVisible, setResumeBannerVisible] = useState(false);
   const [clearBusy, setClearBusy] = useState(false);
+  const [seenMeta, setSeenMeta] = useState({ seenAt: "", agentId: "" });
 
   const stageIntervalRef = useRef(null);
   const agentTypingTimeoutRef = useRef(null);
@@ -218,6 +263,7 @@ export default function ChatContainer({
               .filter((message) => !isAgentJoinMessage(message))
           : [];
         setMessages(history);
+        setSeenMeta(deriveLatestSeenMeta(history));
         setHandoffPending(data.status === "queued");
         setAgentConnected(false);
       })
@@ -244,8 +290,19 @@ export default function ChatContainer({
             item.content === normalized.content &&
             item.createdAt === normalized.createdAt
         );
-        return duplicate ? prev : [...prev, normalized];
+        if (duplicate) return prev;
+        return [...prev, normalized];
       });
+
+      if (String(normalized?.sender || "") === "student") {
+        const seenAt = String(normalized?.meta?.seenByAgentAt || "").trim();
+        if (seenAt) {
+          setSeenMeta({
+            seenAt,
+            agentId: String(normalized?.meta?.seenByAgentId || "").trim(),
+          });
+        }
+      }
     };
 
     const onAgentJoined = () => {
@@ -269,6 +326,28 @@ export default function ChatContainer({
       }, 1800);
     };
 
+    const onSeen = ({ sessionId: seenSessionId, seenAt, agentId }) => {
+      if (!seenAt) return;
+      if (String(seenSessionId || "") !== String(sessionId || "")) return;
+      setSeenMeta({
+        seenAt: String(seenAt),
+        agentId: String(agentId || "").trim(),
+      });
+      setMessages((prev) =>
+        prev.map((message) => {
+          if (String(message?.sender || "") !== "student") return message;
+          return {
+            ...message,
+            meta: {
+              ...(message?.meta || {}),
+              seenByAgentAt: String(seenAt),
+              seenByAgentId: String(agentId || "").trim(),
+            },
+          };
+        })
+      );
+    };
+
     const onCleared = () => {
       fetchHistory(sessionId)
         .then((data) => {
@@ -278,6 +357,7 @@ export default function ChatContainer({
                 .filter((message) => !isAgentJoinMessage(message))
             : [];
           setMessages(history);
+          setSeenMeta(deriveLatestSeenMeta(history));
           setHandoffPending(false);
           setAgentConnected(false);
         })
@@ -294,6 +374,7 @@ export default function ChatContainer({
     socket.on("chat:message", pushMessage);
     socket.on("agent:joined", onAgentJoined);
     socket.on("agent:typing", onTyping);
+    socket.on("chat:seen", onSeen);
     socket.on("chat:cleared", onCleared);
 
     return () => {
@@ -303,6 +384,7 @@ export default function ChatContainer({
       socket.off("chat:message", pushMessage);
       socket.off("agent:joined", onAgentJoined);
       socket.off("agent:typing", onTyping);
+      socket.off("chat:seen", onSeen);
       socket.off("chat:cleared", onCleared);
     };
   }, [sessionId, studentId]);
@@ -360,6 +442,39 @@ export default function ChatContainer({
   const sendMessage = async (forcedMessage = "") => {
     const content = String(forcedMessage || input).trim();
     if (!content || !sessionId || isSending) return;
+
+    if (isLiveAgentRequestIntent(content)) {
+      setInput("");
+      if (agentConnected) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "system",
+            content: "Yes sir, you are in the right place. You are in live agent only. How can I help you?",
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      } else if (handoffPending) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "system",
+            content: "Your live agent request is active. Please wait, an agent will assist you shortly.",
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "system",
+            content: "The live agent option is on top. Please activate it and talk to a live agent.",
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      }
+      return;
+    }
 
     setInput("");
     setIsSending(true);
@@ -465,6 +580,61 @@ export default function ChatContainer({
     }
   };
 
+  const onShowAlerts = async () => {
+    if (!sessionId) return;
+    try {
+      const data = await fetchChatNotifications(sessionId);
+      const alerts = Array.isArray(data?.alerts) ? data.alerts : [];
+      if (!alerts.length) return;
+      const formatted = alerts.map((item) => `- ${item.title}: ${item.detail}`).join("\n");
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          content: `Admission Alerts\n${formatted}\nOfficial website: ${data.officialWebsite || ""}`.trim(),
+          createdAt: new Date().toISOString(),
+          meta: {
+            suggestions: ["Admission process", "Required documents", "Talk to agent"],
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error("Unable to load alerts", error);
+    }
+  };
+
+  const onAnalyzeDocument = async ({ fileName, extractedText }) => {
+    if (!sessionId) return;
+    try {
+      const result = await analyzeStudentDocument(sessionId, { fileName, extractedText });
+      const message = result?.detectedCutoff
+        ? `Document analyzed. Detected marks/cutoff: ${result.detectedCutoff}.`
+        : "Document analyzed. Could not detect marks clearly, please type your cutoff manually.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          content: message,
+          createdAt: new Date().toISOString(),
+          meta: {
+            suggestions: ["Recommend best courses", "Check eligibility", "Talk to agent"],
+          },
+        },
+      ]);
+    } catch (error) {
+      const serverMessage = String(error?.response?.data?.message || "").trim();
+      const uiMessage = serverMessage || "Document analysis failed. Please try again.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          content: uiMessage,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    }
+  };
+
   const onTyping = () => {
     socket.emit("chat:typing", { sessionId, role: "student" });
   };
@@ -484,6 +654,7 @@ export default function ChatContainer({
             .filter((message) => !isAgentJoinMessage(message))
         : [];
       setMessages(history);
+      setSeenMeta(deriveLatestSeenMeta(history));
       setHandoffPending(false);
       setAgentConnected(false);
     } catch (error) {
@@ -519,6 +690,7 @@ export default function ChatContainer({
         onClearChat={onClearChat}
         clearBusy={clearBusy}
         onStudentLogout={onStudentLogout}
+        onShowAlerts={onShowAlerts}
         onClose={onClose}
       />
 
@@ -526,6 +698,7 @@ export default function ChatContainer({
         <div className="cc-chat-column">
           <MessageList
             messages={messages}
+            seenMeta={seenMeta}
             listRef={listRef}
             aiStageLabel={stageLabel}
             isSending={isSending}
@@ -559,6 +732,7 @@ export default function ChatContainer({
           onChange={setInput}
           onSend={sendMessage}
           onTyping={onTyping}
+          onAnalyzeDocument={onAnalyzeDocument}
           placeholder={text.placeholder}
         />
       </div>

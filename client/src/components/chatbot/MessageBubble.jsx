@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { BRANDING } from "../../config/branding";
 import RichCards from "./RichCards";
 import ChatMarkdown from "./ChatMarkdown";
+import SuggestionChips from "./SuggestionChips";
+import StructuredCards from "./StructuredCards";
 
 function formatTime(dateLike) {
   const date = new Date(dateLike || Date.now());
@@ -16,7 +18,7 @@ function getVariant(sender) {
   return "bot";
 }
 
-export default function MessageBubble({ message, onRichAction, index = 0 }) {
+export default function MessageBubble({ message, onRichAction, index = 0, readReceipt = null }) {
   const variant = getVariant(message.sender);
   const isStudent = variant === "student";
   const showAvatar = !isStudent;
@@ -28,6 +30,18 @@ export default function MessageBubble({ message, onRichAction, index = 0 }) {
     [message.createdAt, message.sender, text]
   );
   const [visibleText, setVisibleText] = useState(variant === "bot" ? "" : text);
+  const seenAt = String(readReceipt?.seenAt || "");
+  const seenDate = seenAt ? new Date(seenAt) : null;
+  const messageDate = new Date(message.createdAt || Date.now());
+  const showSeen =
+    isStudent &&
+    seenDate &&
+    !Number.isNaN(seenDate.getTime()) &&
+    !Number.isNaN(messageDate.getTime()) &&
+    seenDate.getTime() >= messageDate.getTime();
+  const seenLabel = showSeen ? "Seen" : "";
+  const suggestions = Array.isArray(message?.meta?.suggestions) ? message.meta.suggestions : [];
+  const structuredCards = Array.isArray(message?.meta?.cards) ? message.meta.cards : [];
 
   useEffect(() => {
     if (variant !== "bot") {
@@ -71,6 +85,9 @@ export default function MessageBubble({ message, onRichAction, index = 0 }) {
           <p className="cc-bubble-text">{visibleText}</p>
         )}
         <small className="cc-bubble-time">{timestamp}</small>
+        {showSeen ? <small className="cc-read-receipt">{seenLabel}</small> : null}
+        {variant === "bot" ? <StructuredCards cards={structuredCards} /> : null}
+        {variant === "bot" ? <SuggestionChips suggestions={suggestions} onPick={onRichAction} /> : null}
         {variant === "bot" && visibleText.length === text.length ? <RichCards message={text} onAction={onRichAction} /> : null}
       </article>
     </motion.div>

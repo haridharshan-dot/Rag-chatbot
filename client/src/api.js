@@ -137,6 +137,16 @@ export async function clearStudentChat(sessionId) {
   return response.data.data;
 }
 
+export async function fetchChatNotifications(sessionId) {
+  const response = await api.get(`/chat/${sessionId}/notifications`, studentAuthConfig());
+  return response.data.data;
+}
+
+export async function analyzeStudentDocument(sessionId, payload) {
+  const response = await api.post(`/chat/${sessionId}/document/analyze`, payload, studentAuthConfig());
+  return response.data.data;
+}
+
 export async function studentRegister(payload) {
   const response = await api.post("/auth/register", payload);
   return response.data.data;

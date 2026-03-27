@@ -1252,6 +1252,169 @@ body.chatbot-embed-mode #root {
   cursor: not-allowed;
 }
 
+/* Agent Portal Premium Refresh */
+.ad-shell {
+  height: calc(100vh - 86px);
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: minmax(320px, 31%) minmax(0, 69%);
+  gap: 1rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.08) 0, transparent 28%),
+    radial-gradient(circle at 0% 100%, rgba(13, 148, 136, 0.08) 0, transparent 26%),
+    linear-gradient(180deg, #f3f7fb 0%, #edf3f9 100%);
+}
+
+.ad-sidebar,
+.ad-chat {
+  border-radius: 24px;
+  border: 1px solid #d3dfed;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+}
+
+.ad-sidebar {
+  padding: 1rem;
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr;
+  gap: 0.75rem;
+  min-height: 0;
+  height: 100%;
+}
+
+.ad-side-top h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: 0.01em;
+  color: #0f2f4b;
+}
+
+.ad-side-subtitle {
+  margin: 0.28rem 0 0;
+  color: #607a94;
+  font-size: 0.8rem;
+  max-width: 260px;
+}
+
+.ad-kpis article {
+  border-radius: 16px;
+  border: 1px solid #d5e3f1;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f5f9fe 100%);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
+}
+
+.ad-kpis strong {
+  font-size: 1.08rem;
+}
+
+.ad-search-wrap input,
+.ad-report-select,
+.ad-composer input {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.ad-search-wrap input:focus,
+.ad-report-select:focus,
+.ad-composer input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.ad-queue-card {
+  border-radius: 18px;
+}
+
+.ad-queue-head strong {
+  text-transform: capitalize;
+}
+
+.ad-chat {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+
+.ad-chat-head {
+  padding: 1rem 1rem 0.95rem;
+  border-bottom: 1px solid #d7e4f2;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.18) 0, transparent 30%),
+    linear-gradient(120deg, #eff8ff 0%, #eefcf9 100%);
+}
+
+.ad-chat-head h3 {
+  font-size: 1.32rem;
+  line-height: 1.22;
+}
+
+.ad-chat-head p {
+  font-size: 0.82rem;
+}
+
+.ad-agent-email {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0.2rem 0.56rem;
+  border-radius: 10px;
+  border: 1px solid #ccdaea;
+  background: #ffffff;
+  color: #4c6780;
+  font-size: 0.76rem;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ad-chat-log {
+  padding: 1.05rem;
+  gap: 0.72rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(30, 64, 175, 0.12) 0, transparent 20%),
+    radial-gradient(circle at 0% 100%, rgba(20, 184, 166, 0.12) 0, transparent 22%),
+    #f5f9fe;
+}
+
+.ad-msg-bubble {
+  border-radius: 18px;
+  max-width: min(74%, 680px);
+}
+
+.ad-msg-bubble p {
+  font-size: 0.95rem;
+}
+
+.ad-msg-bubble.student {
+  border-bottom-left-radius: 8px;
+}
+
+.ad-msg-bubble.agent {
+  border-bottom-right-radius: 8px;
+}
+
+.ad-composer {
+  padding: 0.78rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+}
+
+.ad-composer button {
+  min-width: 96px;
+  border-radius: 13px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 16px rgba(29, 78, 216, 0.22);
+}
+
+.ad-back-btn {
+  border-radius: 12px;
+  font-weight: 700;
+}
+
 .queue-panel,
 .agent-chat-panel {
   background: var(--panel);
@@ -2532,6 +2695,100 @@ body.chatbot-embed-mode #root {
   }
 }
 
+@media (max-width: 1200px) {
+  .ad-shell {
+    grid-template-columns: minmax(280px, 38%) minmax(0, 62%);
+    padding: 0.8rem;
+    gap: 0.75rem;
+  }
+
+  .ad-side-subtitle {
+    max-width: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .ad-shell {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 86px);
+  }
+
+  .ad-mobile-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .ad-sidebar,
+  .ad-chat {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .ad-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .ad-shell {
+    padding: 0.55rem;
+    gap: 0.55rem;
+  }
+
+  .ad-sidebar,
+  .ad-chat {
+    border-radius: 18px;
+  }
+
+  .ad-side-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ad-side-actions {
+    width: 100%;
+  }
+
+  .ad-side-actions .pill-btn,
+  .ad-side-actions .ghost-btn {
+    flex: 1;
+  }
+
+  .ad-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .ad-chat-head {
+    padding: 0.75rem;
+    gap: 0.62rem;
+  }
+
+  .ad-chat-head-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.42rem;
+  }
+
+  .ad-agent-email {
+    max-width: 56vw;
+  }
+
+  .ad-msg-bubble {
+    max-width: 90%;
+  }
+
+  .ad-composer {
+    padding: 0.62rem;
+    gap: 0.45rem;
+  }
+
+  .ad-composer input,
+  .ad-composer button {
+    min-height: 42px;
+  }
+}
+
 @keyframes rise {
   from {
     transform: translateY(12px);
@@ -2542,4 +2799,3 @@ body.chatbot-embed-mode #root {
     opacity: 1;
   }
 }
-

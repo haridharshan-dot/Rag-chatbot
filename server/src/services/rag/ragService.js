@@ -17,6 +17,13 @@ const GOOGLE_MAPS_URL = "https://www.google.com/maps/search/?api=1&query=Sona+Co
 const SONA_PRINCIPAL_NAME = "Dr.SRR Senthil Kumar";
 const SONA_CHAIRMAN_NAME = "Thiru M. S. Chockalingam";
 
+function buildLiveAgentAndWebsiteMessage() {
+  return [
+    "The live agent option is on top. Please activate it and talk to a live agent.",
+    `For more information, please visit the official website: ${OFFICIAL_WEBSITE_URL}`,
+  ].join("\n");
+}
+
 function normalizeScore(rawScore) {
   if (!Number.isFinite(rawScore)) return 0;
 
@@ -134,30 +141,16 @@ function buildChairmanResponse() {
   return `The chairman of Sona College of Technology is ${SONA_CHAIRMAN_NAME}.`;
 }
 
+function isWebsiteQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  if (!q) return false;
+  return /\b(website|site|web\s*site|official site|official website|link|url)\b/.test(q);
+}
+
 const KNOWN_DEPARTMENT_PATTERN =
   /\b(cse|it|ece|eee|mech|mechanical|civil|ft|fashion technology|ads|aids|aml|aiml|ai ml|ai and ml|ai ds|ai and ds)\b/i;
 
-const LOW_INFORMATION_TOKENS = new Set([
-  "this",
-  "that",
-  "it",
-  "ok",
-  "okay",
-  "hmm",
-  "hmmm",
-  "huh",
-  "yo",
-  "yes",
-  "no",
-  "fine",
-  "cool",
-  "random",
-  "anything",
-  "whatever",
-]);
-
-const INVALID_QUERY_FALLBACK =
-  "The live agent option is on top. Please activate it and talk to a live agent.";
+const INVALID_QUERY_FALLBACK = "Please ask a question so I can help you.";
 
 function validateUserQuery(question) {
   const normalized = String(question || "")
@@ -170,38 +163,11 @@ function validateUserQuery(question) {
     return { valid: false, message: INVALID_QUERY_FALLBACK };
   }
 
-  const tokens = normalized.split(" ").filter(Boolean);
-  const cutoffIntent = isCutoffQuestion(normalized);
-  const faqIntent = classifyFaqIntent(normalized);
-  const collegeIntent = isCollegeProfileQuestion(normalized) || isGeneralCollegeOverviewQuestion(normalized);
-  const hasIntent = Boolean(cutoffIntent || faqIntent || collegeIntent);
-  const hasDepartmentEntity = KNOWN_DEPARTMENT_PATTERN.test(normalized);
-  const hasCollegeEntity = /\b(sona|college)\b/.test(normalized);
-  const isLowInfoSingleToken = tokens.length === 1 && LOW_INFORMATION_TOKENS.has(tokens[0]);
-
-  if (isLowInfoSingleToken) {
-    return { valid: false, message: INVALID_QUERY_FALLBACK };
-  }
-
-  if (cutoffIntent && !hasDepartmentEntity) {
+  if (isCutoffQuestion(normalized) && !KNOWN_DEPARTMENT_PATTERN.test(normalized)) {
     return {
       valid: false,
       message: "Please specify department and category (e.g., CSE OC cutoff).",
     };
-  }
-
-  // One-word prompts are usually ambiguous in this domain and must be clarified.
-  if (tokens.length < 2 && !hasDepartmentEntity) {
-    return { valid: false, message: INVALID_QUERY_FALLBACK };
-  }
-
-  if (!hasIntent) {
-    return { valid: false, message: INVALID_QUERY_FALLBACK };
-  }
-
-  // Require at least one meaningful entity context for non-cutoff intents.
-  if (!hasDepartmentEntity && !hasCollegeEntity && !faqIntent) {
-    return { valid: false, message: INVALID_QUERY_FALLBACK };
   }
 
   return { valid: true };
@@ -319,7 +285,26 @@ function formatCutoffValue(value) {
 
 function withOfficialWebsiteNote(answer, question) {
   const content = String(answer || "").trim();
-  return content;
+  return sanitizeAssistantIdentity(content);
+}
+
+function sanitizeAssistantIdentity(text) {
+  const content = String(text || "").trim();
+  if (!content) return content;
+
+  const normalized = content.toLowerCase();
+  if (
+    normalized.includes("provided data lists available seats") ||
+    normalized.includes("does not contain information about") ||
+    normalized.includes("not available in the provided data") ||
+    normalized.includes("i couldn't find relevant information")
+  ) {
+    return buildLiveAgentAndWebsiteMessage();
+  }
+
+  return content
+    .replace(/i am a large language model,\s*trained by google\.?/gi, "AIML Team")
+    .replace(/i am a large language model trained by google\.?/gi, "AIML Team");
 }
 
 function buildDepartmentCutoffAnswer({
@@ -916,7 +901,15 @@ class RAGService {
     await this.init();
     const settings = await getRuntimeSettings();
     const supplementalContext = String(options?.supplementalContext || "").trim();
+    const sessionId = options.sessionId;
+    const previousMessages = options.previousMessages || []; // Array of {sender, content}
     const uniqueDataDirs = [...new Set(getCandidateDataDirs())];
+
+    // Chat history context for memory
+    const historyContext = previousMessages.slice(-6).map(msg => `${msg.sender}: ${msg.content}`).join('\\n');
+    if (historyContext) {
+      console.log(`Chat memory (${previousMessages.length} msgs):`, historyContext.substring(0, 200) + '...');
+    }
 
     if (isGreetingOrSmallTalk(question)) {
       return {
@@ -941,6 +934,16 @@ class RAGService {
     if (isChairmanQuestion(question)) {
       return {
         answer: buildChairmanResponse(),
+        confidence: 1,
+        sources: ["configured-college-profile"],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    if (isWebsiteQuestion(question)) {
+      return {
+        answer: `Official website: ${OFFICIAL_WEBSITE_URL}`,
         confidence: 1,
         sources: ["configured-college-profile"],
         escalationSuggested: false,
@@ -1043,42 +1046,45 @@ class RAGService {
       }
     }
 
-    if (!contextChunks.length) {
+    const modelAnswer = await this.gemini.answer({ 
+      question, 
+      contextChunks,
+      allowGeneral: true,
+    });
+
+    console.log('Gemini raw response:', {content: modelAnswer.content.substring(0,100), confidence: modelAnswer.confidence, needsAgent: modelAnswer.needsAgent});
+
+    if (modelAnswer.needsAgent) {
       return {
-        answer: "The live agent option is on top. Please activate it and talk to a live agent.",
+        answer: sanitizeAssistantIdentity(modelAnswer.content),
         confidence: 0,
         sources: [],
-        escalationSuggested: true,
-        outOfScope: true,
+        escalationSuggested: false,
+        outOfScope: false,
+        needsAgent: true
       };
     }
 
-    const modelAnswer = env.googleApiKey
-      ? await this.gemini.answer({ question, contextChunks })
-      : await this.claude.answer({ question, contextChunks });
-
-    if (confidence < settings.ragOutOfScopeThreshold) {
+    const relevanceScore = modelAnswer.confidence;
+    if (relevanceScore < settings.ragConfidenceThreshold) {
       return {
-        answer: INVALID_QUERY_FALLBACK,
-        confidence,
-        sources: contextChunks.map((chunk) => chunk.source),
+        answer: buildLiveAgentAndWebsiteMessage(),
+        confidence: relevanceScore,
+        sources: contextChunks.slice(0, 3).map((chunk) => chunk.source),
         escalationSuggested: true,
-        outOfScope: true,
+        outOfScope: relevanceScore < settings.ragOutOfScopeThreshold,
+        needsAgent: true,
       };
     }
 
     return {
-      answer: withOfficialWebsiteNote(modelAnswer.content, question),
-      confidence,
-      sources: contextChunks.map((chunk) => chunk.source),
-      escalationSuggested:
-        confidence < settings.ragConfidenceThreshold &&
-        bestScore < settings.ragOutOfScopeThreshold * 0.9,
-      outOfScope: bestScore < settings.ragOutOfScopeThreshold * 0.9,
+      answer: sanitizeAssistantIdentity(modelAnswer.content),
+      confidence: relevanceScore,
+      sources: contextChunks.slice(0, 3).map((chunk) => chunk.source),
+      escalationSuggested: false,
+      outOfScope: relevanceScore < settings.ragOutOfScopeThreshold,
     };
   }
 }
 
 export const ragService = new RAGService();
-
-

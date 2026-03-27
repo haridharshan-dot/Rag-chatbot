@@ -48,6 +48,7 @@ function decodeJwtPayload(token) {
 export default function AgentDashboard() {
   const navigate = useNavigate();
   const listRef = useRef(null);
+  const activeSessionIdRef = useRef("");
 
   const [authToken, setAuthToken] = useState(() => getAgentToken());
   const [agentId] = useState("agent");
@@ -69,6 +70,18 @@ export default function AgentDashboard() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 1024);
   const [reportRange, setReportRange] = useState("week");
   const [reportLoading, setReportLoading] = useState(false);
+
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
+
+  function emitSeenReceipt(sessionId) {
+    if (!sessionId) return;
+    socket.emit("agent:seen", {
+      sessionId,
+      seenAt: new Date().toISOString(),
+    });
+  }
 
   useEffect(() => {
     const onResize = () => {
@@ -102,7 +115,37 @@ export default function AgentDashboard() {
     };
 
     const onMessage = (message) => {
+      const messageSessionId = String(message?.sessionId || "");
+      const currentSessionId = String(activeSessionIdRef.current || "");
+      if (messageSessionId && currentSessionId && messageSessionId !== currentSessionId) {
+        return;
+      }
+
       setMessages((prev) => [...prev, message]);
+
+      if (String(message?.sender || "") === "student" && currentSessionId) {
+        emitSeenReceipt(currentSessionId);
+      }
+    };
+
+    const onSeen = ({ sessionId, seenAt, agentId: seenByAgentId }) => {
+      const currentSessionId = String(activeSessionIdRef.current || "");
+      if (!currentSessionId || String(sessionId || "") !== currentSessionId) return;
+      if (!seenAt) return;
+      setMessages((prev) =>
+        prev.map((message) => {
+          if (String(message?.sender || "") !== "student") return message;
+          const meta = message?.meta || {};
+          return {
+            ...message,
+            meta: {
+              ...meta,
+              seenByAgentAt: seenAt,
+              seenByAgentId: seenByAgentId || meta.seenByAgentId || "",
+            },
+          };
+        })
+      );
     };
 
     const onConnect = () => setSocketConnected(true);
@@ -116,6 +159,7 @@ export default function AgentDashboard() {
 
     socket.on("queue:updated", refreshQueue);
     socket.on("chat:message", onMessage);
+    socket.on("chat:seen", onSeen);
     socket.on("chat:typing", onStudentTyping);
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
@@ -127,6 +171,7 @@ export default function AgentDashboard() {
     return () => {
       socket.off("queue:updated", refreshQueue);
       socket.off("chat:message", onMessage);
+      socket.off("chat:seen", onSeen);
       socket.off("chat:typing", onStudentTyping);
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
@@ -170,6 +215,7 @@ export default function AgentDashboard() {
 
     const session = await fetchHistory(sessionId);
     setMessages(session.messages || []);
+    emitSeenReceipt(sessionId);
 
     const updatedQueue = await fetchAgentQueue();
     setQueue(updatedQueue);

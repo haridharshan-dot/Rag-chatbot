@@ -14,6 +14,7 @@ export default function ChatHeader({
   onClearChat,
   clearBusy = false,
   onStudentLogout,
+  onShowAlerts,
   onClose,
 }) {
   const statusTone = connectionStatus === "online" ? "online" : "offline";
@@ -31,7 +32,7 @@ export default function ChatHeader({
         <div className="cc-brand-wrap">
           <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
           <div className="cc-brand-copy">
-            <h3>SONA AI CONCIERGE</h3>
+            <h3>AI ASSISTANT SONA COLLEGE</h3>
             <p>Admissions, cutoffs, scholarships, courses</p>
           </div>
         </div>
@@ -47,9 +48,18 @@ export default function ChatHeader({
               {clearBusy ? "Clearing..." : "Clear"}
             </button>
           ) : null}
-          {onStudentLogout ? (
-            <button className="cc-action-btn cc-action-muted" onClick={onStudentLogout} aria-label="Switch account">
-              Switch
+          {onShowAlerts ? (
+            <button
+              className="cc-action-btn"
+              onClick={onShowAlerts}
+              aria-label="Show admission alerts"
+            >
+              Alerts
+            </button>
+          ) : null}
+{onStudentLogout ? (
+            <button className="cc-action-btn cc-action-muted" onClick={onStudentLogout} aria-label="Logout / Switch account" title="Logout and switch account">
+              Logout
             </button>
           ) : null}
           <button className="cc-action-btn cc-action-close" onClick={onClose} aria-label="Close chatbot">

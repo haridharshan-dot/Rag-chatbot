@@ -2,110 +2,70 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
-function classifyIntent(question) {
-  const q = String(question || "").toLowerCase();
-  if (/\bdocuments?|marksheet|certificate|id proof|passport|required docs?\b/.test(q)) return "documents";
-  if (/\bhostel\b/.test(q)) return "hostel_fee";
-  if (/\btuition\b/.test(q)) return "tuition_fee";
-  if (/\blab\b|\bexam fee\b/.test(q)) return "lab_fee";
-  if (/\bfees?\b|\bfee structure\b/.test(q)) return "fees";
-  if (/\bcutoff|cut off\b/.test(q)) return "cutoff";
-  if (/\bdeadline|last date|counselling\b/.test(q)) return "deadline";
-  if (/\beligibility|criteria\b/.test(q)) return "eligibility";
-  if (/\bcourses?|programs?|department\b/.test(q)) return "courses";
-  return "general";
-}
-
-function pickRelevantLines(text, intent) {
-  const lines = String(text || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  const matchers = {
-    documents: /(document|required|marksheet|certificate|id proof|passport|transfer|photo)/i,
-    hostel_fee: /(hostel|accommodation|mess|boarding)/i,
-    tuition_fee: /(tuition|semester fee|college fee)/i,
-    lab_fee: /(lab|exam fee)/i,
-    fees: /(fee|tuition|hostel|lab|exam)/i,
-    cutoff: /(cutoff|category|oc|min|max|rank)/i,
-    deadline: /(deadline|last date|counselling|june|july|august|september)/i,
-    eligibility: /(eligibility|criteria|10\+2|required marks|pcm)/i,
-    courses: /(course|program|cse|ece|mechanical|civil|it|ai\/ml)/i,
-    general: /./,
-  };
-
-  const regex = matchers[intent] || matchers.general;
-  const selected = lines.filter((line) => regex.test(line)).slice(0, 4);
-  if (selected.length) return selected;
-  return lines.slice(0, 3);
-}
-
-function cleanFallbackLine(line) {
-  return String(line || "")
-    .replace(/\s+/g, " ")
-    .replace(/(^|[\s,])([a-z_]+):/gi, (_, prefix, key) => `${prefix}${key.replace(/_/g, " ")}: `)
-    .trim();
+function hasMeaningfulQuery(query) {
+  const normalized = String(query || "").trim();
+  if (!normalized) return false;
+  if (/^[\s.,!?-]+$/.test(normalized)) return false;
+  return true;
 }
 
 export class GeminiService {
   constructor({ apiKey, model, timeoutMs = 9000 }) {
     this.model = model;
     this.timeoutMs = Math.max(3000, Number(timeoutMs) || 9000);
-    this.client = apiKey
+    this.apiKey = process.env.GOOGLE_API_KEY || apiKey || "";
+    this.client = this.apiKey
       ? new ChatGoogleGenerativeAI({
-          apiKey,
+          apiKey: this.apiKey,
           model,
-          temperature: 0.1,
-          maxOutputTokens: 260,
+          temperature: 0.2,
+          maxOutputTokens: 700,
         })
       : null;
 
     this.prompt = PromptTemplate.fromTemplate(
       [
-        "You are a college assistant AI.",
-        "Use ONLY the supplied CONTEXT to answer.",
-        "Do NOT use your own knowledge.",
-        "Do NOT guess or assume.",
-        "If the answer is not in CONTEXT, reply exactly:",
-        "The live agent option is on top. Please activate it and talk to a live agent.",
-        "Answer ONLY what the user asked.",
-        "Do NOT include extra or unrelated information.",
-        "Response must be: clear, short, relevant, direct.",
+        "You are a helpful AI assistant.",
+        "If asked about identity/creator, answer: AIML Team.",
+        "Never say: I am a large language model, trained by Google.",
+        "If CONTEXT is relevant, prioritize it.",
+        "If CONTEXT is empty or not relevant, still answer the question directly.",
+        "Keep the response concise, correct, and clear.",
         "",
-        "Question:",
+        "QUESTION:",
         "{question}",
         "",
-        "Context:",
+        "CONTEXT:",
         "{context}",
       ].join("\n")
     );
     this.parser = new StringOutputParser();
   }
 
-  async answer({ question, contextChunks }) {
-    const contextBlock = contextChunks
-      .map((chunk, index) => `[Source ${index + 1}: ${chunk.source}]\n${chunk.text}`)
-      .join("\n\n");
-
-    const buildRetrievalAnswer = () => {
-      const intent = classifyIntent(question);
-      const focusedLines = contextChunks
-        .slice(0, 3)
-        .flatMap((chunk) => pickRelevantLines(chunk.text, intent))
-        .map(cleanFallbackLine)
-        .slice(0, 5);
-      const condensedContext = focusedLines.join("\n").slice(0, 700);
+  async answer({ question, contextChunks = [], allowGeneral = false }) {
+    if (!hasMeaningfulQuery(question)) {
       return {
-        content:
-          focusedLines.length > 0
-            ? `Here is what I found:\n- ${focusedLines.join("\n- ")}`
-            : "The live agent option is on top. Please activate it and talk to a live agent.",
+        content: "Please ask a question so I can help you.",
+        confidence: 0,
+        needsAgent: false,
       };
-    };
+    }
+
+    const topChunks = Array.isArray(contextChunks) ? contextChunks.slice(0, 4) : [];
+    const contextBlock = topChunks.length
+      ? topChunks
+          .map((chunk, index) => `[Source ${index + 1}: ${chunk.source}]\n${String(chunk.text || "")}`)
+          .join("\n\n---\n\n")
+      : "No supporting context provided.";
 
     if (!this.client) {
-      return buildRetrievalAnswer();
+      return {
+        content: allowGeneral
+          ? "I’m unable to generate a full answer right now. Please try again in a moment."
+          : "Sorry, I couldn't find exact information. Please connect to a live agent for further assistance.",
+        confidence: 0,
+        needsAgent: !allowGeneral,
+      };
     }
 
     try {
@@ -116,14 +76,37 @@ export class GeminiService {
       });
 
       const content = await Promise.race([
-        chain.invoke({ question, context: contextBlock }),
+        chain.invoke({
+          question: String(question || "").trim(),
+          context: contextBlock,
+        }),
         timeoutPromise,
       ]);
 
-      return { content: content || "I could not generate an answer." };
+      const trimmed = String(content || "").trim();
+      if (!trimmed) {
+        return {
+          content: "I don’t have enough details to answer that clearly. Please rephrase your question.",
+          confidence: 0.2,
+          needsAgent: false,
+        };
+      }
+
+      const confidence = topChunks.length ? 0.85 : 0.6;
+      return {
+        content: trimmed.slice(0, 1600),
+        confidence,
+        needsAgent: false,
+      };
     } catch (error) {
-      console.warn("Gemini invocation failed, using retrieval-only response:", error?.message || error);
-      return buildRetrievalAnswer();
+      console.error("Gemini error:", error?.message || error);
+      return {
+        content: allowGeneral
+          ? "I’m unable to generate a full answer right now. Please try again in a moment."
+          : "Sorry, I couldn't find exact information. Please connect to a live agent for further assistance.",
+        confidence: 0,
+        needsAgent: !allowGeneral,
+      };
     }
   }
 }

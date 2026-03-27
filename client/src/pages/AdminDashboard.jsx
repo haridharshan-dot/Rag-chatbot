@@ -81,6 +81,7 @@ export default function AdminDashboard() {
   const [authToken] = useState(() => getAgentToken());
   const [readiness, setReadiness] = useState(null);
   const [knowledge, setKnowledge] = useState(null);
+  const [overviewAnalytics, setOverviewAnalytics] = useState(null);
   const [settings, setSettings] = useState(null);
   const [statusLogs, setStatusLogs] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -145,6 +146,7 @@ export default function AdminDashboard() {
         ]);
         setReadiness(overview.readiness);
         setKnowledge(overview.knowledge);
+        setOverviewAnalytics(overview.analytics || null);
         setSettings(runtime);
         setStatusLogs(logs);
         setSessions(queueData);
@@ -180,6 +182,7 @@ export default function AdminDashboard() {
     ]);
     setReadiness(overview.readiness);
     setKnowledge(overview.knowledge);
+    setOverviewAnalytics(overview.analytics || null);
     setSettings(runtime);
     setStatusLogs(logs);
     setSessions(queueData);
@@ -837,6 +840,21 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <p className="admin-note">Export polished PDF reports with KPI cards, session analytics, and time-filtered data.</p>
+            </section>
+
+            <section className="admin-live-queue admin-compact-card">
+              <div className="admin-main-head">
+                <h3>Intent Analytics</h3>
+                <span>{overviewAnalytics?.totalStudentMessages || 0} student messages (7d)</span>
+              </div>
+              <div className="runtime-grid">
+                {(overviewAnalytics?.mostAskedIntents || []).slice(0, 8).map((item) => (
+                  <p key={item.intent}>
+                    {String(item.intent || "general").toUpperCase()}: <strong>{item.count}</strong>
+                  </p>
+                ))}
+                {!(overviewAnalytics?.mostAskedIntents || []).length ? <p>No intent analytics yet.</p> : null}
+              </div>
             </section>
 
             <div className="admin-manage-grid admin-manage-grid-compact">

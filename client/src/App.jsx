@@ -30,7 +30,7 @@ function App() {
   const isEmbedRoute = location.pathname === "/chatbot";
   const topNavTitle = location.pathname.startsWith("/admin")
     ? "ADMIN DASHBOARD"
-    : "College Concierge";
+    : "AI ASSISTANT SONA COLLEGE";
 
   return (
     <div className="app-shell">

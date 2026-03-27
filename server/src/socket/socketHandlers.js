@@ -1,4 +1,5 @@
 import { verifyAgentToken } from "../middleware/agentAuth.js";
+import { markStudentMessagesSeenByAgent } from "../services/chat/readReceiptService.js";
 
 export function registerSocketHandlers(io) {
   io.on("connection", (socket) => {
@@ -20,6 +21,7 @@ export function registerSocketHandlers(io) {
         try {
           const decoded = verifyAgentToken(token || "");
           if (decoded.role !== "agent") return;
+          socket.data.agentId = decoded.agentId;
         } catch {
           return;
         }
@@ -27,6 +29,26 @@ export function registerSocketHandlers(io) {
 
       socket.join(`session:${sessionId}`);
       socket.data.role = role || "student";
+    });
+
+    socket.on("agent:seen", async ({ sessionId, seenAt }) => {
+      if (!sessionId) return;
+      if (socket.data.role !== "agent") return;
+      const agentId = String(socket.data.agentId || "").trim();
+      if (!agentId) return;
+
+      try {
+        const result = await markStudentMessagesSeenByAgent(sessionId, agentId, seenAt);
+        if (!result.seenAt) return;
+
+        io.to(`session:${sessionId}`).emit("chat:seen", {
+          sessionId: String(sessionId),
+          seenAt: result.seenAt,
+          agentId,
+        });
+      } catch {
+        // Ignore transient persistence errors for read receipts.
+      }
     });
 
     socket.on("agent:typing", ({ sessionId }) => {

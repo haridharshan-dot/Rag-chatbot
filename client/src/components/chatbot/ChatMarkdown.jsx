@@ -1,7 +1,7 @@
 function renderInline(text, keyPrefix) {
   const content = String(text || "");
   const tokens = [];
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
+  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s)]+(?:\([^\s)]+\))?)/g;
   let lastIndex = 0;
   let match;
 
@@ -30,6 +30,12 @@ function renderInline(text, keyPrefix) {
       } else {
         tokens.push(token);
       }
+    } else if (/^https?:\/\//i.test(token)) {
+      tokens.push(
+        <a key={key} href={token} target="_blank" rel="noreferrer">
+          {token}
+        </a>
+      );
     } else {
       tokens.push(token);
     }

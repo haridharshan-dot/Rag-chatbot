@@ -1,6 +1,7 @@
 import { ChatSession } from "../models/ChatSession.js";
 import { ragService } from "./rag/ragService.js";
 import { getRuntimeSettings } from "./adminSettingsService.js";
+import { buildFallbackSuggestions, runConversationFlow } from "./assistant/conversationFlowService.js";
 
 export async function createSession(
   studentId,
@@ -45,7 +46,56 @@ export async function handleStudentMessage(sessionId, content) {
     throw error;
   }
 
-  session.messages.push({ sender: "student", content });
+  // Block bot responses if agent active
+  if (session.status === "active" || session.assignedAgentId) {
+    return {
+      session,
+      ragResponse: { answer: "", confidence: 1, sources: [], escalationSuggested: false, outOfScope: false },
+      autoEscalated: false,
+    };
+  }
+
+  const flowResult = runConversationFlow(session, content);
+  session.messages.push({
+    sender: "student",
+    content,
+    meta: {
+      intent: flowResult.intent || "general",
+    },
+  });
+
+  if (flowResult.handled) {
+    const botMeta = {
+      confidence: flowResult.confidence ?? 1,
+      sources: [],
+      escalationSuggested: false,
+      outOfScope: false,
+      intent: flowResult.intent || "guided",
+      suggestions: flowResult.suggestions || [],
+      cards: flowResult.cards || [],
+      guidedFlow: true,
+    };
+
+    session.messages.push({
+      sender: "bot",
+      content: flowResult.answer,
+      meta: botMeta,
+    });
+    await session.save();
+    return {
+      session,
+      ragResponse: {
+        answer: flowResult.answer,
+        confidence: botMeta.confidence,
+        sources: [],
+        escalationSuggested: false,
+        outOfScope: false,
+        suggestions: botMeta.suggestions,
+        cards: botMeta.cards,
+      },
+      autoEscalated: false,
+    };
+  }
 
   const supplementalContext = session.siteContext
     ? [
@@ -65,12 +115,16 @@ export async function handleStudentMessage(sessionId, content) {
 
   let ragResponse;
   try {
-    ragResponse = await ragService.ask(content, { supplementalContext });
+    ragResponse = await ragService.ask(content, { 
+      supplementalContext,
+      previousMessages: session.messages.slice(-10), // Last 10 for memory
+      sessionId: session._id
+    });
   } catch (error) {
     console.error("RAG message handling failed:", error?.message || error);
     ragResponse = {
       answer:
-        "I’m unable to retrieve knowledge right now. Please try again in a moment or connect to a live agent.",
+        "I'm unable to retrieve knowledge right now. Please try again in a moment or connect to a live agent.",
       confidence: 0,
       sources: [],
       escalationSuggested: true,
@@ -78,8 +132,12 @@ export async function handleStudentMessage(sessionId, content) {
     };
   }
   const settings = await getRuntimeSettings();
+  const suggestions =
+    Array.isArray(ragResponse?.suggestions) && ragResponse.suggestions.length
+      ? ragResponse.suggestions
+      : buildFallbackSuggestions(flowResult.intent);
   const shouldAutoEscalate = Boolean(
-    settings.autoEscalationEnabled && ragResponse.outOfScope && session.status === "bot"
+    settings.autoEscalationEnabled && (ragResponse.outOfScope || ragResponse.needsAgent) && session.status === "bot"
   );
 
   session.messages.push({
@@ -88,8 +146,12 @@ export async function handleStudentMessage(sessionId, content) {
     meta: {
       confidence: ragResponse.confidence,
       sources: ragResponse.sources,
-      escalationSuggested: ragResponse.escalationSuggested,
-      outOfScope: ragResponse.outOfScope,
+      escalationSuggested: ragResponse.escalationSuggested || false,
+      outOfScope: ragResponse.outOfScope || false,
+      needsAgent: ragResponse.needsAgent || false,
+      suggestions,
+      cards: Array.isArray(ragResponse.cards) ? ragResponse.cards : [],
+      intent: flowResult.intent || "general",
     },
   });
 
@@ -109,7 +171,7 @@ export async function handleStudentMessage(sessionId, content) {
 
   return {
     session,
-    ragResponse,
-    autoEscalated: shouldAutoEscalate,
+      ragResponse,
+      autoEscalated: shouldAutoEscalate,
   };
 }

@@ -4,6 +4,7 @@ import { AgentActivity } from "../models/AgentActivity.js";
 import { env } from "../config/env.js";
 import { requireAgentAuth, signAgentToken } from "../middleware/agentAuth.js";
 import { getRuntimeSettings } from "../services/adminSettingsService.js";
+import { markStudentMessagesSeenByAgent } from "../services/chat/readReceiptService.js";
 
 const router = Router();
 
@@ -275,6 +276,14 @@ router.post("/:sessionId/join", async (req, res, next) => {
       sessionId: session.id,
       agentId,
     });
+    const seenResult = await markStudentMessagesSeenByAgent(session.id, agentId);
+    if (seenResult.seenAt) {
+      req.app.locals.io.to(`session:${session.id}`).emit("chat:seen", {
+        sessionId: session.id,
+        seenAt: seenResult.seenAt,
+        agentId,
+      });
+    }
     req.app.locals.io.emit("queue:updated");
 
     return res.json({ success: true, data: session });
@@ -306,7 +315,18 @@ router.post("/:sessionId/message", async (req, res, next) => {
     session.messages.push(message);
     await session.save();
 
-    req.app.locals.io.to(`session:${session.id}`).emit("chat:message", message);
+    req.app.locals.io.to(`session:${session.id}`).emit("chat:message", {
+      ...message,
+      sessionId: session.id,
+    });
+    const seenResult = await markStudentMessagesSeenByAgent(session.id, agentId);
+    if (seenResult.seenAt) {
+      req.app.locals.io.to(`session:${session.id}`).emit("chat:seen", {
+        sessionId: session.id,
+        seenAt: seenResult.seenAt,
+        agentId,
+      });
+    }
 
     return res.json({ success: true, data: session });
   } catch (error) {
