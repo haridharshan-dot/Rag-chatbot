@@ -1,7 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { BRANDING } from "../config/branding";
 import ChatContainer from "./chatbot/ChatContainer";
 import { trackChatFunnelEvent } from "../utils/chatAnalytics";
+
+function BotIcon() {
+  return (
+    <svg className="chat-fab-bot-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="7" width="16" height="12" rx="4" fill="currentColor" opacity="0.14" />
+      <rect x="6" y="9" width="12" height="9" rx="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="10" cy="13" r="1.1" fill="currentColor" />
+      <circle cx="14" cy="13" r="1.1" fill="currentColor" />
+      <path d="M9 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 6V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default function ChatWidget({
   sessionId,
@@ -93,7 +105,9 @@ export default function ChatWidget({
         <button className="chat-fab chat-fab-logo cc-launcher" onClick={() => setOpen(true)} aria-label="Open Sona chatbot">
           <span className="chat-fab-label">Ask AI</span>
           <span className="chat-fab-logo-card">
-            <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="chat-fab-logo-image" />
+            <span className="chat-fab-bot-icon-wrap" aria-hidden="true">
+              <BotIcon />
+            </span>
           </span>
         </button>
       )}

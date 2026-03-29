@@ -1,5 +1,17 @@
 import { motion } from "framer-motion";
-import { BRANDING } from "../../config/branding";
+
+function BotIcon() {
+  return (
+    <svg className="cc-avatar-bot-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="7" width="16" height="12" rx="4" fill="currentColor" opacity="0.14" />
+      <rect x="6" y="9" width="12" height="9" rx="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="10" cy="13" r="1.1" fill="currentColor" />
+      <circle cx="14" cy="13" r="1.1" fill="currentColor" />
+      <path d="M9 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 6V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default function ChatHeader({
   connectionStatus,
@@ -35,7 +47,9 @@ export default function ChatHeader({
     >
       <div className="cc-header-main">
         <div className="cc-brand-wrap">
-          <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} className="cc-avatar" />
+          <span className="cc-avatar cc-avatar-bot" aria-hidden="true">
+            <BotIcon />
+          </span>
           <div className="cc-brand-copy">
             <h3>AI ASSISTANT SONA COLLEGE</h3>
             <p>Admissions, cutoffs, scholarships, courses</p>

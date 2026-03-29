@@ -140,6 +140,18 @@
   background: #fff;
 }
 
+.cc-avatar-bot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f2a44;
+}
+
+.cc-avatar-bot-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .cc-brand-copy h3 {
   margin: 0;
   font-family: "Space Grotesk", "Source Sans 3", sans-serif;

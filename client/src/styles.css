@@ -349,6 +349,20 @@ body.chatbot-embed-mode #root {
   transform: scale(1.08);
 }
 
+.chat-fab-bot-icon-wrap {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #0f2a44;
+  background: linear-gradient(135deg, #f5f8fb, #e8f0f8);
+}
+
+.chat-fab-bot-icon {
+  width: 34px;
+  height: 34px;
+}
+
 .chat-widget {
   position: fixed;
   right: 1rem;
