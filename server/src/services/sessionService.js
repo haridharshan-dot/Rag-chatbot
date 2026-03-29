@@ -3,6 +3,21 @@ import { ragService } from "./rag/ragService.js";
 import { getRuntimeSettings } from "./adminSettingsService.js";
 import { buildFallbackSuggestions, runConversationFlow } from "./assistant/conversationFlowService.js";
 
+const DEFAULT_SESSION_START_MESSAGE =
+  "Session started. Ask your question about admissions, courses, cutoffs, scholarships, or deadlines.";
+
+function toDisplayName(name) {
+  const value = String(name || "").trim().replace(/\s+/g, " ");
+  if (!value) return "";
+  return value.split(" ")[0];
+}
+
+function buildSessionStartMessage(studentName = "") {
+  const displayName = toDisplayName(studentName);
+  if (!displayName) return DEFAULT_SESSION_START_MESSAGE;
+  return `Hi ${displayName}, welcome to Sona College AI assistant. Ask your question about admissions, courses, cutoffs, scholarships, or deadlines.`;
+}
+
 export async function createSession(
   studentId,
   { clientIp = null, userAgent = null, siteContext = null, studentEmail = null, studentName = null } = {}
@@ -16,6 +31,14 @@ export async function createSession(
     if (studentEmail && !existing.studentEmail) existing.studentEmail = studentEmail;
     if (studentName && !existing.studentName) existing.studentName = studentName;
     if (siteContext) existing.siteContext = siteContext;
+    if (Array.isArray(existing.messages) && existing.messages.length === 1) {
+      const firstMessage = existing.messages[0];
+      const currentContent = String(firstMessage?.content || "").trim();
+      if (currentContent === DEFAULT_SESSION_START_MESSAGE || currentContent.startsWith("Hi ")) {
+        firstMessage.sender = "bot";
+        firstMessage.content = buildSessionStartMessage(existing.studentName || studentName);
+      }
+    }
     await existing.save();
     return existing;
   }
@@ -29,8 +52,8 @@ export async function createSession(
     siteContext,
     messages: [
       {
-        sender: "system",
-        content: "Session started. Ask your question about admissions, courses, cutoffs, scholarships, or deadlines.",
+        sender: "bot",
+        content: buildSessionStartMessage(studentName),
       },
     ],
   });
@@ -48,9 +71,26 @@ export async function handleStudentMessage(sessionId, content) {
 
   // Block bot responses if agent active
   if (session.status === "active" || session.assignedAgentId) {
+    session.messages.push({
+      sender: "student",
+      content,
+      meta: {
+        intent: "live_agent",
+      },
+    });
+    await session.save();
     return {
       session,
-      ragResponse: { answer: "", confidence: 1, sources: [], escalationSuggested: false, outOfScope: false },
+      ragResponse: {
+        answer: "",
+        confidence: 1,
+        sources: [],
+        escalationSuggested: false,
+        outOfScope: false,
+        suggestions: [],
+        cards: [],
+        blockedByAgent: true,
+      },
       autoEscalated: false,
     };
   }

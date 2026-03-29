@@ -8,6 +8,18 @@ router.use(attachOptionalStudentAuth);
 const SESSION_START_MESSAGE = "Session started. Ask your question about admissions, courses, cutoffs, scholarships, or deadlines.";
 const OFFICIAL_WEBSITE_URL = "https://www.sonatech.ac.in/";
 
+function toDisplayName(name) {
+  const value = String(name || "").trim().replace(/\s+/g, " ");
+  if (!value) return "";
+  return value.split(" ")[0];
+}
+
+function buildSessionStartMessage(studentName = "") {
+  const displayName = toDisplayName(studentName);
+  if (!displayName) return SESSION_START_MESSAGE;
+  return `Hi ${displayName}, welcome to Sona College AI assistant. Ask your question about admissions, courses, cutoffs, scholarships, or deadlines.`;
+}
+
 function sanitizeSiteContext(raw) {
   if (!raw || typeof raw !== "object") return null;
 
@@ -99,13 +111,18 @@ router.post("/:sessionId/message", async (req, res, next) => {
       createdAt: new Date().toISOString(),
     });
 
-    const botMessage = autoEscalated
-      ? session.messages[session.messages.length - 2]
-      : session.messages[session.messages.length - 1];
-    req.app.locals.io.to(`session:${session.id}`).emit("chat:message", {
-      ...(botMessage?.toObject ? botMessage.toObject() : botMessage),
-      sessionId: session.id,
-    });
+    const blockedByAgent = Boolean(ragResponse?.blockedByAgent);
+    let botMessage = null;
+
+    if (!blockedByAgent) {
+      botMessage = autoEscalated
+        ? session.messages[session.messages.length - 2]
+        : session.messages[session.messages.length - 1];
+      req.app.locals.io.to(`session:${session.id}`).emit("chat:message", {
+        ...(botMessage?.toObject ? botMessage.toObject() : botMessage),
+        sessionId: session.id,
+      });
+    }
     // Keep agent dashboard queue/live feed fresh for all student activity.
     req.app.locals.io.emit("queue:updated");
     req.app.locals.io.to("agents").emit("agent:sessionActivity", {
@@ -140,6 +157,7 @@ router.post("/:sessionId/message", async (req, res, next) => {
         suggestions: Array.isArray(ragResponse.suggestions) ? ragResponse.suggestions : [],
         cards: Array.isArray(ragResponse.cards) ? ragResponse.cards : [],
         autoEscalated,
+        blockedByAgent,
       },
     });
   } catch (error) {
@@ -285,8 +303,8 @@ router.post("/:sessionId/clear", async (req, res, next) => {
     session.resolvedAt = null;
     session.messages = [
       {
-        sender: "system",
-        content: SESSION_START_MESSAGE,
+        sender: "bot",
+        content: buildSessionStartMessage(session.studentName),
       },
     ];
 

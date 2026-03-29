@@ -513,7 +513,7 @@ export default function EmbeddedStudentChatbot({
       error={error}
       preChatContent={preChatContent}
       chatContainerProps={{
-        studentDisplayName: requiresPopupAuth ? student?.name || "Student" : "",
+        studentDisplayName: student?.name || "Student",
         historyCount: requiresPopupAuth ? historyCount : 0,
         onSessionSnapshot:
           requiresPopupAuth && student?.id

@@ -5,6 +5,8 @@ export default function ChatHeader({
   connectionStatus,
   handoffPending,
   agentConnected,
+  activeChannel,
+  onChannelChange,
   onEscalate,
   isAgentAvailable,
   agentButtonLabel,
@@ -73,6 +75,30 @@ export default function ChatHeader({
           <span className={`cc-dot cc-dot-${statusTone}`} />
           <span>{statusLabel}</span>
         </div>
+        {agentConnected ? (
+          <div className="cc-channel-tabs" role="tablist" aria-label="Conversation channel">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeChannel === "ai"}
+              className={`cc-channel-tab cc-channel-tab-ai ${activeChannel === "ai" ? "active" : ""}`}
+              onClick={() => onChannelChange?.("ai")}
+              title="AI responses are paused while live agent is connected"
+            >
+              AI Paused
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeChannel === "agent"}
+              className={`cc-channel-tab cc-channel-tab-agent ${activeChannel === "agent" ? "active" : ""}`}
+              onClick={() => onChannelChange?.("agent")}
+              title="Live agent conversation"
+            >
+              Agent Live
+            </button>
+          </div>
+        ) : null}
         {studentDisplayName ? (
           <div className="cc-student-pill" title={`Recent sessions: ${historyCount || 0}`}>
             <span>{studentDisplayName}</span>

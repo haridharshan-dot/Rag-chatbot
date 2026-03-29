@@ -203,6 +203,7 @@ export default function ChatContainer({
   const [isSending, setIsSending] = useState(false);
   const [handoffPending, setHandoffPending] = useState(false);
   const [agentConnected, setAgentConnected] = useState(false);
+  const [activeChannel, setActiveChannel] = useState("ai");
   const [lastEscalateShownAt, setLastEscalateShownAt] = useState(0);
   const [aiStageIndex, setAiStageIndex] = useState(0);
   const [agentTyping, setAgentTyping] = useState(false);
@@ -218,6 +219,8 @@ export default function ChatContainer({
   const listRef = useRef(null);
 
   const text = COPY[language] || COPY.en;
+  const studentName = String(studentDisplayName || "").trim();
+  const firstName = studentName ? studentName.split(/\s+/)[0] : "";
 
   const stageLabel = useMemo(() => PROCESSING_STAGES[aiStageIndex] || PROCESSING_STAGES[0], [aiStageIndex]);
   const cooldownActive = useMemo(
@@ -225,6 +228,19 @@ export default function ChatContainer({
     [lastEscalateShownAt]
   );
   const starterPrompts = useMemo(() => deriveConversationStarters(siteContext, language), [siteContext, language]);
+  const visibleMessages = useMemo(() => {
+    if (!agentConnected) return messages;
+    if (activeChannel === "agent") {
+      return messages.filter((message) => String(message?.sender || "") !== "bot");
+    }
+    return messages.filter((message) => String(message?.sender || "") !== "agent");
+  }, [messages, agentConnected, activeChannel]);
+  const aiPausedByAgent = agentConnected && activeChannel === "ai";
+  const inputPlaceholder = aiPausedByAgent
+    ? "AI is paused while live agent is connected. Switch to Agent tab to continue."
+    : activeChannel === "agent" && agentConnected
+      ? `${firstName ? `${firstName}, ` : ""}type your message for the live agent...`
+      : text.placeholder;
 
   useEffect(() => {
     localStorage.setItem("chat-lang", language);
@@ -265,7 +281,11 @@ export default function ChatContainer({
         setMessages(history);
         setSeenMeta(deriveLatestSeenMeta(history));
         setHandoffPending(data.status === "queued");
-        setAgentConnected(false);
+        const connectedToAgent = data.status === "active" || Boolean(data.assignedAgentId);
+        setAgentConnected(connectedToAgent);
+        if (connectedToAgent) {
+          setActiveChannel("agent");
+        }
       })
       .catch((error) => {
         console.error("Unable to load history", error);
@@ -307,12 +327,13 @@ export default function ChatContainer({
 
     const onAgentJoined = () => {
       setAgentConnected(true);
+      setActiveChannel("agent");
       setHandoffPending(false);
       setMessages((prev) => [
         ...prev,
         {
           sender: "system",
-          content: "You are now connected to a live agent.",
+          content: `${firstName ? `Hi ${firstName}, ` : ""}you are now connected to a live agent. AI replies are paused until the conversation is resolved.`,
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -360,6 +381,7 @@ export default function ChatContainer({
           setSeenMeta(deriveLatestSeenMeta(history));
           setHandoffPending(false);
           setAgentConnected(false);
+          setActiveChannel("ai");
         })
         .catch((error) => {
           console.error("Unable to refresh chat after clear", error);
@@ -387,7 +409,13 @@ export default function ChatContainer({
       socket.off("chat:seen", onSeen);
       socket.off("chat:cleared", onCleared);
     };
-  }, [sessionId, studentId]);
+  }, [sessionId, studentId, firstName]);
+
+  useEffect(() => {
+    if (!agentConnected && activeChannel !== "ai") {
+      setActiveChannel("ai");
+    }
+  }, [agentConnected, activeChannel]);
 
   useEffect(() => {
     if (!studentDisplayName || !historyCount) {
@@ -442,6 +470,18 @@ export default function ChatContainer({
   const sendMessage = async (forcedMessage = "") => {
     const content = String(forcedMessage || input).trim();
     if (!content || !sessionId || isSending) return;
+
+    if (agentConnected && activeChannel === "ai") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          content: "AI is currently paused because a live agent is connected. Please switch to the Agent tab.",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      return;
+    }
 
     if (isLiveAgentRequestIntent(content)) {
       setInput("");
@@ -521,6 +561,9 @@ export default function ChatContainer({
       setHandoffPending(status === "queued" || Boolean(response.autoEscalated));
       if (status !== "active") {
         setAgentConnected(false);
+      } else {
+        setAgentConnected(true);
+        setActiveChannel("agent");
       }
     } catch (error) {
       console.error("Failed to send message", error);
@@ -681,6 +724,8 @@ export default function ChatContainer({
         connectionStatus={connectionStatus}
         handoffPending={handoffPending}
         agentConnected={agentConnected}
+        activeChannel={activeChannel}
+        onChannelChange={setActiveChannel}
         onEscalate={onEscalate}
         isAgentAvailable={isAgentAvailable}
         agentButtonLabel={text.escalateButton}
@@ -697,14 +742,14 @@ export default function ChatContainer({
       <div className="cc-body">
         <div className="cc-chat-column">
           <MessageList
-            messages={messages}
+            messages={visibleMessages}
             seenMeta={seenMeta}
             listRef={listRef}
             aiStageLabel={stageLabel}
-            isSending={isSending}
-            agentTyping={agentTyping}
+            isSending={isSending && activeChannel === "ai" && !agentConnected}
+            agentTyping={agentTyping && activeChannel === "agent"}
             onRichAction={sendMessage}
-            starterPrompts={messages.length === 0 ? starterPrompts : []}
+            starterPrompts={messages.length === 0 && activeChannel === "ai" ? starterPrompts : []}
             onStarterClick={sendMessage}
             resumeBannerVisible={resumeBannerVisible}
             historyCount={historyCount}
@@ -728,12 +773,12 @@ export default function ChatContainer({
         <InputBox
           value={input}
           loading={isSending}
-          disabled={!sessionId}
+          disabled={!sessionId || aiPausedByAgent}
           onChange={setInput}
           onSend={sendMessage}
           onTyping={onTyping}
           onAnalyzeDocument={onAnalyzeDocument}
-          placeholder={text.placeholder}
+          placeholder={inputPlaceholder}
         />
       </div>
     </motion.section>
