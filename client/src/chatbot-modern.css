@@ -1909,6 +1909,7 @@
   font-size: 0.95rem;
   line-height: 1.4;
   color: #0f172a;
+  caret-color: #0f2a44;
   min-height: 22px;
   max-height: 110px;
   padding: 0.46rem 0.14rem 0.42rem;
@@ -1916,7 +1917,8 @@
 }
 
 .cc-input::placeholder {
-  color: #64748b;
+  color: #475569;
+  opacity: 1;
 }
 
 .cc-upload,
