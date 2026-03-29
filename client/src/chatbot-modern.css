@@ -415,6 +415,33 @@
   border-bottom-left-radius: 7px;
 }
 
+.cc-resolved-card {
+  display: grid;
+  gap: 0.26rem;
+  padding: 0.08rem 0;
+}
+
+.cc-resolved-title {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 0.14rem 0.48rem;
+  border-radius: 999px;
+  background: #d9ece8;
+  color: #115d5b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.cc-resolved-text {
+  margin: 0;
+  color: #274054;
+  font-size: 0.9rem;
+  line-height: 1.46;
+}
+
 .cc-typing {
   width: fit-content;
   max-width: 86%;
