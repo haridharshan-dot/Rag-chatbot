@@ -344,6 +344,12 @@
   object-fit: cover;
 }
 
+.cc-mini-bot-icon {
+  width: 16px;
+  height: 16px;
+  color: #0f2a44;
+}
+
 .cc-mini-agent {
   background: linear-gradient(140deg, #0f766e, #1b5dd8);
   color: #fff;

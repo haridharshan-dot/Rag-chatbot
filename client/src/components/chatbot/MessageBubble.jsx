@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { BRANDING } from "../../config/branding";
 import RichCards from "./RichCards";
 import ChatMarkdown from "./ChatMarkdown";
 import SuggestionChips from "./SuggestionChips";
 import StructuredCards from "./StructuredCards";
+
+function BotIcon() {
+  return (
+    <svg className="cc-mini-bot-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="7" width="16" height="12" rx="4" fill="currentColor" opacity="0.14" />
+      <rect x="6" y="9" width="12" height="9" rx="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="10" cy="13" r="1.1" fill="currentColor" />
+      <circle cx="14" cy="13" r="1.1" fill="currentColor" />
+      <path d="M9 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 6V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function formatTime(dateLike) {
   const date = new Date(dateLike || Date.now());
@@ -77,7 +89,7 @@ export default function MessageBubble({ message, onRichAction, index = 0, readRe
     >
       {showAvatar && (
         <div className={`cc-mini-avatar cc-mini-${variant}`} aria-hidden="true">
-          {variant === "agent" ? "A" : <img src={BRANDING.chatbotLogoUrl} alt={BRANDING.chatbotLogoAlt} />}
+          {variant === "agent" ? "A" : <BotIcon />}
         </div>
       )}
 
