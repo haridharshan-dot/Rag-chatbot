@@ -1881,13 +1881,18 @@
 }
 
 .cc-input-zone {
-  padding: 0.26rem 0.94rem 0.78rem;
+  padding: 0.2rem 0.9rem 0.64rem;
 }
 
 .cc-input-wrap {
   border: 1px solid rgba(100, 116, 139, 0.46);
-  border-radius: 24px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.96);
+  min-height: 48px;
+  padding: 0.18rem 0.26rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.32rem;
   box-shadow:
     0 10px 24px rgba(15, 23, 42, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
@@ -1901,19 +1906,39 @@
 }
 
 .cc-input {
-  font-size: 1rem;
-  line-height: 1.48;
+  font-size: 0.95rem;
+  line-height: 1.4;
   color: #0f172a;
+  min-height: 22px;
+  max-height: 110px;
+  padding: 0.46rem 0.14rem 0.42rem;
+  overflow-y: auto;
 }
 
 .cc-input::placeholder {
   color: #64748b;
 }
 
+.cc-upload,
+.cc-mic,
+.cc-send {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border-radius: 999px;
+}
+
+.cc-mic-icon {
+  width: 15px;
+  height: 15px;
+}
+
 .cc-send {
   background: linear-gradient(145deg, #1e293b, #1d4ed8);
   border-color: rgba(30, 64, 175, 0.38);
   box-shadow: 0 8px 16px rgba(30, 64, 175, 0.26);
+  font-size: 0.95rem;
 }
 
 .cc-send:hover:not(:disabled) {
@@ -1958,7 +1983,15 @@
   }
 
   .cc-input-zone {
-    padding: 0.18rem 0.66rem 0.62rem;
+    padding: 0.16rem 0.62rem 0.54rem;
+  }
+
+  .cc-input-wrap {
+    min-height: 46px;
+  }
+
+  .cc-input {
+    font-size: 0.92rem;
   }
 }
 
