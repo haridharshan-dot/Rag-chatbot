@@ -2812,3 +2812,122 @@ body.chatbot-embed-mode #root {
     opacity: 1;
   }
 }
+
+/* Sona palette alignment for Agent Console */
+:root {
+  --sona-navy: #0f2a44;
+  --sona-teal: #1e6f84;
+  --sona-teal-soft: #d9ece8;
+  --sona-ivory: #f8f4e6;
+  --sona-mint: #eef6f2;
+}
+
+.ad-shell {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(15, 42, 68, 0.09) 0, transparent 30%),
+    radial-gradient(circle at 0% 100%, rgba(30, 111, 132, 0.08) 0, transparent 30%),
+    linear-gradient(180deg, var(--sona-ivory) 0%, var(--sona-mint) 100%);
+}
+
+.ad-sidebar,
+.ad-chat {
+  border: 1px solid rgba(15, 42, 68, 0.15);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf9 100%);
+  box-shadow: 0 24px 48px rgba(15, 42, 68, 0.12);
+}
+
+.ad-side-top h2,
+.ad-queue-head strong,
+.ad-chat-head h3 {
+  color: var(--sona-navy);
+}
+
+.ad-kpis article,
+.ad-report-box,
+.ad-queue-card {
+  border-color: rgba(15, 42, 68, 0.14);
+  background: #ffffff;
+}
+
+.ad-queue-card.active {
+  border-color: var(--sona-teal);
+  background: #eef8f6;
+  box-shadow: inset 0 0 0 1px rgba(30, 111, 132, 0.45), 0 12px 24px rgba(30, 111, 132, 0.12);
+}
+
+.pill-btn,
+.ad-report-download,
+.ad-chat-head-actions button,
+.ad-composer button {
+  background: linear-gradient(120deg, var(--sona-navy), var(--sona-teal));
+  border-color: rgba(15, 42, 68, 0.24);
+  color: #ffffff;
+}
+
+.pill-btn:hover,
+.ad-report-download:hover,
+.ad-chat-head-actions button:hover,
+.ad-composer button:hover {
+  filter: brightness(1.05);
+}
+
+.ghost-btn,
+.ad-back-btn {
+  border-color: rgba(15, 42, 68, 0.26);
+  color: var(--sona-navy);
+  background: #ffffff;
+}
+
+.ad-chat-head {
+  border-bottom: 1px solid rgba(15, 42, 68, 0.14);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(30, 111, 132, 0.15) 0, transparent 34%),
+    linear-gradient(120deg, #f1f8f5 0%, #eef6f2 100%);
+}
+
+.ad-chat-log {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(15, 42, 68, 0.08) 0, transparent 22%),
+    radial-gradient(circle at 0% 100%, rgba(30, 111, 132, 0.1) 0, transparent 26%),
+    linear-gradient(180deg, #f7fbf9 0%, #f1f7f4 100%);
+}
+
+.ad-msg-avatar.bot,
+.ad-msg-badge {
+  background: var(--sona-teal-soft);
+  color: #115d5b;
+}
+
+.ad-msg-bubble.agent {
+  background: linear-gradient(120deg, var(--sona-navy), var(--sona-teal));
+}
+
+.ad-msg-bubble.bot {
+  background: #f2f6f5;
+  border-color: #d7e4df;
+}
+
+.ad-msg-bubble.system {
+  background: #fff3d8;
+  border-color: #efd79a;
+}
+
+.ad-composer {
+  border-top: 1px solid rgba(15, 42, 68, 0.14);
+  background: linear-gradient(180deg, #ffffff 0%, #f6faf8 100%);
+}
+
+.ad-composer input,
+.ad-search-wrap input,
+.ad-report-select {
+  border-color: rgba(15, 42, 68, 0.2);
+  background: #ffffff;
+  color: #18344f;
+}
+
+.ad-composer input:focus,
+.ad-search-wrap input:focus,
+.ad-report-select:focus {
+  border-color: var(--sona-teal);
+  box-shadow: 0 0 0 3px rgba(30, 111, 132, 0.2);
+}
