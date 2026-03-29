@@ -4,6 +4,7 @@ export default function ChatInput({
   onSend,
   disabled,
   sessionId,
+  isResolved,
   onTyping,
 }) {
   return (
@@ -14,7 +15,13 @@ export default function ChatInput({
           onChange(event.target.value);
           if (sessionId) onTyping?.();
         }}
-        placeholder={sessionId ? "Reply to student..." : "Select a conversation to reply"}
+        placeholder={
+          isResolved
+            ? "Session resolved. Messaging is disabled."
+            : sessionId
+              ? "Reply to student..."
+              : "Select a conversation to reply"
+        }
         disabled={disabled}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) {

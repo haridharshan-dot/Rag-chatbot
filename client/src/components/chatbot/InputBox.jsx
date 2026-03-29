@@ -22,7 +22,8 @@ export default function InputBox({
   const [uploading, setUploading] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const fileInputRef = useRef(null);
-  const canSend = useMemo(() => value.trim().length > 0 && !loading && !disabled, [value, loading, disabled]);
+  const hasText = useMemo(() => value.trim().length > 0, [value]);
+  const canSend = useMemo(() => hasText && !loading && !disabled, [hasText, loading, disabled]);
 
   useEffect(() => {
     if (!inputRef.current) return;
@@ -197,31 +198,34 @@ export default function InputBox({
             }
           }}
         />
-        <button
-          type="button"
-          className={`cc-mic ${isListening ? "cc-mic-active" : ""}`}
-          onClick={onMicClick}
-          disabled={!speechSupported || disabled || loading}
-          aria-label={isListening ? "Stop voice input" : "Start voice input"}
-          title={speechSupported ? "Use voice input" : "Voice input not supported in this browser"}
-        >
-          <svg className="cc-mic-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 1 0 10 0Z"
-              fill="currentColor"
-            />
-          </svg>
-          {isListening && <span className="cc-mic-dot" aria-hidden="true" />}
-        </button>
-        <button
-          type="button"
-          className="cc-send"
-          onClick={() => onSend()}
-          disabled={!canSend}
-          aria-label="Send message"
-        >
-          {"\u2191"}
-        </button>
+        {hasText ? (
+          <button
+            type="button"
+            className="cc-send"
+            onClick={() => onSend()}
+            disabled={!canSend}
+            aria-label="Send message"
+          >
+            {"\u2191"}
+          </button>
+        ) : speechSupported ? (
+          <button
+            type="button"
+            className={`cc-mic ${isListening ? "cc-mic-active" : ""}`}
+            onClick={onMicClick}
+            disabled={disabled || loading}
+            aria-label={isListening ? "Stop voice input" : "Start voice input"}
+            title="Use voice input"
+          >
+            <svg className="cc-mic-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 1 0 10 0Z"
+                fill="currentColor"
+              />
+            </svg>
+            {isListening && <span className="cc-mic-dot" aria-hidden="true" />}
+          </button>
+        ) : null}
       </div>
     </div>
   );

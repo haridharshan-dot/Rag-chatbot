@@ -60,6 +60,7 @@ export default function AgentDashboard() {
   const [queueError, setQueueError] = useState("");
   const [lastSyncAt, setLastSyncAt] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
+  const [activeSessionStatus, setActiveSessionStatus] = useState("bot");
   const [showTimestamps] = useState(true);
   const [signatureEnabled] = useState(false);
   const [displayName] = useState("Agent");
@@ -123,6 +124,14 @@ export default function AgentDashboard() {
 
       setMessages((prev) => [...prev, message]);
 
+      if (
+        String(message?.sender || "") === "system" &&
+        String(message?.content || "").toLowerCase().includes("conversation resolved by")
+      ) {
+        setActiveSessionStatus("resolved");
+        setDraft("");
+      }
+
       if (String(message?.sender || "") === "student" && currentSessionId) {
         emitSeenReceipt(currentSessionId);
       }
@@ -150,6 +159,12 @@ export default function AgentDashboard() {
 
     const onConnect = () => setSocketConnected(true);
     const onDisconnect = () => setSocketConnected(false);
+    const onResolved = ({ sessionId }) => {
+      const currentSessionId = String(activeSessionIdRef.current || "");
+      if (!currentSessionId || String(sessionId || "") !== currentSessionId) return;
+      setActiveSessionStatus("resolved");
+      setDraft("");
+    };
     let typingTimer = null;
     const onStudentTyping = () => {
       setStudentTyping(true);
@@ -161,6 +176,7 @@ export default function AgentDashboard() {
     socket.on("chat:message", onMessage);
     socket.on("chat:seen", onSeen);
     socket.on("chat:typing", onStudentTyping);
+    socket.on("chat:resolved", onResolved);
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
 
@@ -173,6 +189,7 @@ export default function AgentDashboard() {
       socket.off("chat:message", onMessage);
       socket.off("chat:seen", onSeen);
       socket.off("chat:typing", onStudentTyping);
+      socket.off("chat:resolved", onResolved);
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       if (typingTimer) clearTimeout(typingTimer);
@@ -215,6 +232,7 @@ export default function AgentDashboard() {
 
     const session = await fetchHistory(sessionId);
     setMessages(session.messages || []);
+    setActiveSessionStatus(String(session.status || "bot"));
     emitSeenReceipt(sessionId);
 
     const updatedQueue = await fetchAgentQueue();
@@ -222,20 +240,30 @@ export default function AgentDashboard() {
   }
 
   async function sendMessage() {
-    if (!activeSessionId || !draft.trim()) return;
+    if (!activeSessionId || !draft.trim() || activeSessionStatus === "resolved") return;
     const base = draft.trim();
     const content = signatureEnabled && signature.trim()
       ? `${base}\n\n- ${signature.trim()}`
       : base;
     setDraft("");
-    await sendAgentMessage(activeSessionId, content, agentId);
+    try {
+      await sendAgentMessage(activeSessionId, content, agentId);
+    } catch (error) {
+      const status = Number(error?.response?.status || 0);
+      if (status === 409) {
+        setActiveSessionStatus("resolved");
+        setQueueError("This session is already resolved. Sending new messages is disabled.");
+        return;
+      }
+      throw error;
+    }
   }
 
   async function markResolved() {
     if (!activeSessionId) return;
     await resolveSession(activeSessionId, agentId);
-    setActiveSessionId("");
-    setMessages([]);
+    setActiveSessionStatus("resolved");
+    setDraft("");
     const updatedQueue = await fetchAgentQueue();
     setQueue(updatedQueue);
   }
@@ -301,6 +329,7 @@ export default function AgentDashboard() {
   }, [queue, search]);
 
   const activeQueueSession = queue.find((session) => normalizeSessionId(session) === activeSessionId);
+  const canReply = Boolean(activeSessionId) && activeSessionStatus !== "resolved";
 
   if (!authToken) return null;
 
@@ -350,6 +379,8 @@ export default function AgentDashboard() {
           onSend={sendMessage}
           onTyping={() => socket.emit("agent:typing", { sessionId: activeSessionId })}
           onResolve={markResolved}
+          canReply={canReply}
+          isResolved={activeSessionStatus === "resolved"}
           listRef={listRef}
           isMobile={isMobile}
           onBackToQueue={() => setShowMobileQueue(true)}

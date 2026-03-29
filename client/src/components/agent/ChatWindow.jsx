@@ -24,6 +24,8 @@ export default function ChatWindow({
   onSend,
   onTyping,
   onResolve,
+  canReply,
+  isResolved,
   listRef,
   isMobile,
   onBackToQueue,
@@ -45,12 +47,13 @@ export default function ChatWindow({
                 ? `Assigned to ${resolvedDisplayName} • ${statusLabel} • ${waitMinutes}m wait`
                 : "Choose a user from the queue to start chatting."}
             </p>
+            {isResolved ? <p className="ad-typing">This session is resolved. Messages are read-only.</p> : null}
             {studentTyping ? <p className="ad-typing">Student is typing...</p> : null}
           </div>
         </div>
         <div className="ad-chat-head-actions">
           <span className="ad-agent-email">{authEmail}</span>
-          <button type="button" onClick={onResolve} disabled={!activeSessionId}>Mark Resolved</button>
+          <button type="button" onClick={onResolve} disabled={!activeSessionId || isResolved}>Mark Resolved</button>
         </div>
       </header>
 
@@ -68,8 +71,9 @@ export default function ChatWindow({
         value={draft}
         onChange={onDraftChange}
         onSend={onSend}
-        disabled={!activeSessionId}
+        disabled={!canReply}
         sessionId={activeSessionId}
+        isResolved={isResolved}
         onTyping={onTyping}
       />
     </section>

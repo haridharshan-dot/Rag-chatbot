@@ -306,6 +306,13 @@ router.post("/:sessionId/message", async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Session not found" });
     }
 
+    if (session.status === "resolved") {
+      return res.status(409).json({
+        success: false,
+        message: "This session is resolved. Sending new messages is disabled.",
+      });
+    }
+
     const message = {
       sender: "agent",
       content,
