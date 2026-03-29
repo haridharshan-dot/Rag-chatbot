@@ -2141,6 +2141,28 @@
   color: #ffffff;
 }
 
+/* Force circular icon-only launcher in all modes */
+.cc-launcher.chat-fab-logo {
+  width: 62px !important;
+  height: 62px !important;
+  border-radius: 999px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+.cc-launcher .chat-fab-label {
+  display: none !important;
+}
+
+.cc-launcher .chat-fab-logo-card {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 999px !important;
+  overflow: hidden;
+}
+
 @media (max-width: 640px) {
   .cc-channel-tabs {
     width: 100%;
