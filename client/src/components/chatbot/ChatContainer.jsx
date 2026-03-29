@@ -230,10 +230,37 @@ export default function ChatContainer({
   const starterPrompts = useMemo(() => deriveConversationStarters(siteContext, language), [siteContext, language]);
   const visibleMessages = useMemo(() => {
     if (!agentConnected) return messages;
+
+    const handoffNoticeIndex = messages.findIndex((message) => {
+      const sender = String(message?.sender || "");
+      const content = String(message?.content || "").toLowerCase();
+      return sender === "system" && content.includes("connected to a live agent");
+    });
+    const firstAgentMessageIndex = messages.findIndex(
+      (message) => String(message?.sender || "") === "agent"
+    );
+    const agentPhaseStartIndex =
+      handoffNoticeIndex >= 0
+        ? handoffNoticeIndex + 1
+        : firstAgentMessageIndex >= 0
+          ? firstAgentMessageIndex
+          : -1;
+
     if (activeChannel === "agent") {
-      return messages.filter((message) => String(message?.sender || "") !== "bot");
+      return messages.filter((message, index) => {
+        const sender = String(message?.sender || "");
+        if (sender !== "student" && sender !== "agent") return false;
+        if (agentPhaseStartIndex < 0) return true;
+        return index >= agentPhaseStartIndex;
+      });
     }
-    return messages.filter((message) => String(message?.sender || "") !== "agent");
+
+    return messages.filter((message, index) => {
+      const sender = String(message?.sender || "");
+      if (sender !== "student" && sender !== "bot") return false;
+      if (agentPhaseStartIndex < 0) return true;
+      return index < agentPhaseStartIndex;
+    });
   }, [messages, agentConnected, activeChannel]);
   const aiPausedByAgent = agentConnected && activeChannel === "ai";
   const inputPlaceholder = aiPausedByAgent
