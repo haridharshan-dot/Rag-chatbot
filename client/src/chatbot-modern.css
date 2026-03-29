@@ -525,7 +525,7 @@
   padding: 0.24rem 0.3rem;
   display: flex;
   gap: 0.34rem;
-  align-items: center;
+  align-items: flex-end;
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
@@ -1911,7 +1911,7 @@
   color: #0f172a;
   caret-color: #0f2a44;
   min-height: 22px;
-  max-height: 110px;
+  max-height: 160px;
   padding: 0.46rem 0.14rem 0.42rem;
   overflow-y: auto;
 }
@@ -2005,6 +2005,7 @@
 
   .cc-input {
     font-size: 0.92rem;
+    max-height: 140px;
   }
 }
 
