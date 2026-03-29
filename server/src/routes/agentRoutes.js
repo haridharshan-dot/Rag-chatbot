@@ -162,7 +162,7 @@ router.get("/me", (req, res) => {
 
 router.get("/queue", async (req, res, next) => {
   try {
-    const queued = await ChatSession.find({ status: { $in: ["bot", "queued", "active"] } })
+    const queued = await ChatSession.find({ status: { $in: ["queued", "active"] } })
       .sort({ updatedAt: -1, escalationRequestedAt: 1 })
       .limit(100)
       .lean();

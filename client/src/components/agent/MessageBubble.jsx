@@ -29,6 +29,7 @@ export default function MessageBubble({ message, showTimestamps = true }) {
     <div className={`ad-msg-row ${sideClass}`}>
       {sideClass === "other" ? <span className={`ad-msg-avatar ${toneClass}`}>{initialsFromSender(sender)}</span> : null}
       <article className={`ad-msg-bubble ${toneClass}`}>
+        {sender === "bot" ? <span className="ad-msg-badge">AI Reply</span> : null}
         <p>{content}</p>
         {showTimestamps ? <small>{time}</small> : null}
       </article>
