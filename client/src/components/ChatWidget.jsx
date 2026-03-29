@@ -103,7 +103,6 @@ export default function ChatWidget({
     <>
       {!hideFab && !open && (
         <button className="chat-fab chat-fab-logo cc-launcher" onClick={() => setOpen(true)} aria-label="Open Sona chatbot">
-          <span className="chat-fab-label">Ask AI</span>
           <span className="chat-fab-logo-card">
             <span className="chat-fab-bot-icon-wrap" aria-hidden="true">
               <BotIcon />
