@@ -350,6 +350,7 @@ router.post("/:sessionId/resolve", async (req, res, next) => {
     }
 
     session.status = "resolved";
+    session.assignedAgentId = null;
     session.resolvedAt = new Date();
     session.messages.push({
       sender: "system",
@@ -357,6 +358,12 @@ router.post("/:sessionId/resolve", async (req, res, next) => {
       meta: { agentId },
     });
     await session.save();
+
+    const latest = session.messages[session.messages.length - 1];
+    req.app.locals.io.to(`session:${session.id}`).emit("chat:message", {
+      ...(latest?.toObject ? latest.toObject() : latest),
+      sessionId: session.id,
+    });
 
     req.app.locals.io.to(`session:${session.id}`).emit("chat:resolved", {
       sessionId: session.id,

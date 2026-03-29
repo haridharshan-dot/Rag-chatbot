@@ -203,6 +203,7 @@ export default function ChatContainer({
   const [isSending, setIsSending] = useState(false);
   const [handoffPending, setHandoffPending] = useState(false);
   const [agentConnected, setAgentConnected] = useState(false);
+  const [agentSessionEnded, setAgentSessionEnded] = useState(false);
   const [activeChannel, setActiveChannel] = useState("ai");
   const [lastEscalateShownAt, setLastEscalateShownAt] = useState(0);
   const [aiStageIndex, setAiStageIndex] = useState(0);
@@ -229,7 +230,7 @@ export default function ChatContainer({
   );
   const starterPrompts = useMemo(() => deriveConversationStarters(siteContext, language), [siteContext, language]);
   const visibleMessages = useMemo(() => {
-    if (!agentConnected) return messages;
+    if (!agentConnected && !agentSessionEnded) return messages;
 
     const handoffNoticeIndex = messages.findIndex((message) => {
       const sender = String(message?.sender || "");
@@ -249,7 +250,10 @@ export default function ChatContainer({
     if (activeChannel === "agent") {
       return messages.filter((message, index) => {
         const sender = String(message?.sender || "");
-        if (sender !== "student" && sender !== "agent") return false;
+        const content = String(message?.content || "").toLowerCase();
+        const isResolvedNotice = sender === "system" && content.includes("resolved");
+        if (sender !== "student" && sender !== "agent" && !isResolvedNotice) return false;
+        if (isResolvedNotice) return true;
         if (agentPhaseStartIndex < 0) return true;
         return index >= agentPhaseStartIndex;
       });
@@ -261,9 +265,12 @@ export default function ChatContainer({
       if (agentPhaseStartIndex < 0) return true;
       return index < agentPhaseStartIndex;
     });
-  }, [messages, agentConnected, activeChannel]);
+  }, [messages, agentConnected, agentSessionEnded, activeChannel]);
   const aiPausedByAgent = agentConnected && activeChannel === "ai";
-  const inputPlaceholder = aiPausedByAgent
+  const endedAgentTabActive = agentSessionEnded && activeChannel === "agent";
+  const inputPlaceholder = endedAgentTabActive
+    ? "Agent session ended. Switch to AI Chat to continue."
+    : aiPausedByAgent
     ? "AI is paused while live agent is connected. Switch to Agent tab to continue."
     : activeChannel === "agent" && agentConnected
       ? `${firstName ? `${firstName}, ` : ""}type your message for the live agent...`
@@ -308,10 +315,15 @@ export default function ChatContainer({
         setMessages(history);
         setSeenMeta(deriveLatestSeenMeta(history));
         setHandoffPending(data.status === "queued");
-        const connectedToAgent = data.status === "active" || Boolean(data.assignedAgentId);
+        const connectedToAgent = data.status === "active";
         setAgentConnected(connectedToAgent);
+        setAgentSessionEnded(data.status === "resolved");
         if (connectedToAgent) {
           setActiveChannel("agent");
+        } else if (data.status === "resolved") {
+          setActiveChannel("agent");
+        } else {
+          setActiveChannel("ai");
         }
       })
       .catch((error) => {
@@ -354,6 +366,7 @@ export default function ChatContainer({
 
     const onAgentJoined = () => {
       setAgentConnected(true);
+      setAgentSessionEnded(false);
       setActiveChannel("agent");
       setHandoffPending(false);
       setMessages((prev) => [
@@ -408,11 +421,37 @@ export default function ChatContainer({
           setSeenMeta(deriveLatestSeenMeta(history));
           setHandoffPending(false);
           setAgentConnected(false);
+          setAgentSessionEnded(false);
           setActiveChannel("ai");
         })
         .catch((error) => {
           console.error("Unable to refresh chat after clear", error);
         });
+    };
+
+    const onResolved = ({ sessionId: resolvedSessionId }) => {
+      if (String(resolvedSessionId || "") !== String(sessionId || "")) return;
+      setAgentConnected(false);
+      setAgentSessionEnded(true);
+      setHandoffPending(false);
+      setAgentTyping(false);
+      setActiveChannel("agent");
+      setMessages((prev) => {
+        const alreadyHasNotice = prev.some((message) => {
+          const sender = String(message?.sender || "");
+          const content = String(message?.content || "").toLowerCase();
+          return sender === "system" && content.includes("resolved");
+        });
+        if (alreadyHasNotice) return prev;
+        return [
+          ...prev,
+          {
+            sender: "system",
+            content: "Live agent session ended. You can continue with AI now.",
+            createdAt: new Date().toISOString(),
+          },
+        ];
+      });
     };
 
     socket.connect();
@@ -425,6 +464,7 @@ export default function ChatContainer({
     socket.on("agent:typing", onTyping);
     socket.on("chat:seen", onSeen);
     socket.on("chat:cleared", onCleared);
+    socket.on("chat:resolved", onResolved);
 
     return () => {
       clearTimeout(agentTypingTimeoutRef.current);
@@ -435,14 +475,15 @@ export default function ChatContainer({
       socket.off("agent:typing", onTyping);
       socket.off("chat:seen", onSeen);
       socket.off("chat:cleared", onCleared);
+      socket.off("chat:resolved", onResolved);
     };
   }, [sessionId, studentId, firstName]);
 
   useEffect(() => {
-    if (!agentConnected && activeChannel !== "ai") {
+    if (!agentConnected && !agentSessionEnded && activeChannel !== "ai") {
       setActiveChannel("ai");
     }
-  }, [agentConnected, activeChannel]);
+  }, [agentConnected, agentSessionEnded, activeChannel]);
 
   useEffect(() => {
     if (!studentDisplayName || !historyCount) {
@@ -588,8 +629,12 @@ export default function ChatContainer({
       setHandoffPending(status === "queued" || Boolean(response.autoEscalated));
       if (status !== "active") {
         setAgentConnected(false);
+        if (status !== "resolved") {
+          setAgentSessionEnded(false);
+        }
       } else {
         setAgentConnected(true);
+        setAgentSessionEnded(false);
         setActiveChannel("agent");
       }
     } catch (error) {
@@ -727,6 +772,7 @@ export default function ChatContainer({
       setSeenMeta(deriveLatestSeenMeta(history));
       setHandoffPending(false);
       setAgentConnected(false);
+      setAgentSessionEnded(false);
     } catch (error) {
       const serverMessage = String(error?.response?.data?.message || "").trim();
       const uiMessage = serverMessage || "Unable to clear chat right now. Please try again.";
@@ -751,6 +797,9 @@ export default function ChatContainer({
         connectionStatus={connectionStatus}
         handoffPending={handoffPending}
         agentConnected={agentConnected}
+        showChannelTabs={agentConnected || agentSessionEnded}
+        aiTabLabel={agentConnected ? "AI Paused" : "AI Chat"}
+        agentTabLabel={agentConnected ? "Agent Live" : agentSessionEnded ? "Agent Ended" : "Agent Live"}
         activeChannel={activeChannel}
         onChannelChange={setActiveChannel}
         onEscalate={onEscalate}
@@ -800,7 +849,7 @@ export default function ChatContainer({
         <InputBox
           value={input}
           loading={isSending}
-          disabled={!sessionId || aiPausedByAgent}
+          disabled={!sessionId || aiPausedByAgent || endedAgentTabActive}
           onChange={setInput}
           onSend={sendMessage}
           onTyping={onTyping}

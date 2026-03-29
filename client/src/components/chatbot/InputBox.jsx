@@ -28,7 +28,7 @@ export default function InputBox({
   useEffect(() => {
     if (!inputRef.current) return;
     inputRef.current.style.height = "auto";
-    inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 96)}px`;
+    inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
   }, [value]);
 
   useEffect(() => {

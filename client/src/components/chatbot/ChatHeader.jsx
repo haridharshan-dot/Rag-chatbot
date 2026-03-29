@@ -5,6 +5,9 @@ export default function ChatHeader({
   connectionStatus,
   handoffPending,
   agentConnected,
+  showChannelTabs = false,
+  aiTabLabel = "AI Paused",
+  agentTabLabel = "Agent Live",
   activeChannel,
   onChannelChange,
   onEscalate,
@@ -75,7 +78,7 @@ export default function ChatHeader({
           <span className={`cc-dot cc-dot-${statusTone}`} />
           <span>{statusLabel}</span>
         </div>
-        {agentConnected ? (
+        {showChannelTabs ? (
           <div className="cc-channel-tabs" role="tablist" aria-label="Conversation channel">
             <button
               type="button"
@@ -85,7 +88,7 @@ export default function ChatHeader({
               onClick={() => onChannelChange?.("ai")}
               title="AI responses are paused while live agent is connected"
             >
-              AI Paused
+              {aiTabLabel}
             </button>
             <button
               type="button"
@@ -95,7 +98,7 @@ export default function ChatHeader({
               onClick={() => onChannelChange?.("agent")}
               title="Live agent conversation"
             >
-              Agent Live
+              {agentTabLabel}
             </button>
           </div>
         ) : null}
