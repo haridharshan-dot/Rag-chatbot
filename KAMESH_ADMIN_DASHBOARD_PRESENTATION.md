@@ -182,7 +182,7 @@ Question:
 What scholarships are available for SC students?
 
 Say:
-The system answers from scholarship knowledge integrated from official Sona sources.
+For finance-sensitive questions, the chatbot follows a safe policy: it does not reveal scholarship money values and instead directs users to the official Sona website for latest verified details.
 
 ### Demo 3: First Graduate Clarification
 Question:
@@ -218,8 +218,8 @@ This is treated as a complex admission case, so the system escalates to live cou
 ## 6) Important Behavior Now (Exact Points)
 You can speak these lines directly:
 
-- What scholarships are available for SC students? -> answered from added scholarship knowledge.
-- Eligibility for first graduate scholarship? -> recognized as scholarship intent; if exact current criteria is unclear, bot directs to live admissions support.
+- What scholarships are available for SC students? -> treated as finance-sensitive; chatbot directs to https://www.sonatech.ac.in/ for latest verified scholarship details.
+- Eligibility for first graduate scholarship? -> treated as finance-sensitive; chatbot avoids money-related disclosure and directs to official admissions/live support.
 - Does college provide hostel? and Placement percentage? -> handled via general-info intents and official highlights.
 - I am from BC, cutoff 180, can I get CSE? -> handled as personalized recommendation flow.
 - I have gap years and sports quota, what to do? -> triggers live-agent escalation path.

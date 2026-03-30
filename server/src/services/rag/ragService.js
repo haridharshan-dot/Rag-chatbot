@@ -92,6 +92,12 @@ function isRestrictedFeeQuestion(question) {
   );
 }
 
+function isFinanceSensitiveQuestion(question) {
+  return /\b(scholarship|scholarships|stipend|fee waiver|tuition fee waiver|fees?|fee structure|tuition|payment|refund|installment|hostel fee|lab fee|exam fee|amount|rs\.?|inr|rupees?)\b/i.test(
+    String(question || "")
+  );
+}
+
 function isCollegeRelatedQuestion(question) {
   return /\b(college|sona|admission|cutoff|courses?|department|eligibility|scholarship|fees?|hostel|placement|deadline|counselling|documents?|marksheet|certificate|id proof)\b/i.test(
     String(question || "")
@@ -1017,6 +1023,17 @@ class RAGService {
         answer: validation.message,
         confidence: 0,
         sources: [],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    if (isFinanceSensitiveQuestion(question)) {
+      return {
+        answer:
+          `For scholarship and fee-related information, please visit the official website for the latest verified details: ${OFFICIAL_WEBSITE_URL}\nIf you need help understanding the page, please connect to a live admissions agent.`,
+        confidence: 1,
+        sources: ["configured-college-profile"],
         escalationSuggested: false,
         outOfScope: false,
       };
