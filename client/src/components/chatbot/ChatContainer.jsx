@@ -96,6 +96,24 @@ function isAgentJoinMessage(message) {
   return /^Agent\s+.+\s+joined the conversation\.?$/i.test(content.trim());
 }
 
+function getAgentPhaseStartIndex(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return -1;
+
+  const handoffNoticeIndex = messages.findIndex((message) => {
+    const sender = String(message?.sender || "");
+    const content = String(message?.content || "").toLowerCase();
+    return sender === "system" && content.includes("connected to a live agent");
+  });
+
+  const firstAgentMessageIndex = messages.findIndex(
+    (message) => String(message?.sender || "") === "agent"
+  );
+
+  if (handoffNoticeIndex >= 0) return handoffNoticeIndex + 1;
+  if (firstAgentMessageIndex >= 0) return firstAgentMessageIndex;
+  return -1;
+}
+
 function messageSuggestsAgent(content) {
   const text = String(content || "").toLowerCase();
   if (!text) return false;
@@ -229,41 +247,37 @@ export default function ChatContainer({
     [lastEscalateShownAt]
   );
   const starterPrompts = useMemo(() => deriveConversationStarters(siteContext, language), [siteContext, language]);
+  const agentPhaseStartIndex = useMemo(() => getAgentPhaseStartIndex(messages), [messages]);
+  const hasAgentPhase = agentPhaseStartIndex >= 0;
   const visibleMessages = useMemo(() => {
-    if (!agentConnected && !agentSessionEnded) return messages;
-
-    const handoffNoticeIndex = messages.findIndex((message) => {
-      const sender = String(message?.sender || "");
-      const content = String(message?.content || "").toLowerCase();
-      return sender === "system" && content.includes("connected to a live agent");
-    });
-    const firstAgentMessageIndex = messages.findIndex(
-      (message) => String(message?.sender || "") === "agent"
-    );
-    const agentPhaseStartIndex =
-      handoffNoticeIndex >= 0
-        ? handoffNoticeIndex + 1
-        : firstAgentMessageIndex >= 0
-          ? firstAgentMessageIndex
-          : -1;
-
     if (activeChannel === "agent") {
       return messages.filter((message, index) => {
         const sender = String(message?.sender || "");
         const content = String(message?.content || "").toLowerCase();
-        const isResolvedNotice = sender === "system" && content.includes("resolved");
-        if (sender !== "student" && sender !== "agent" && !isResolvedNotice) return false;
-        if (isResolvedNotice) return true;
-        if (agentPhaseStartIndex < 0) return true;
+        const isAgentNotice =
+          sender === "system" &&
+          (content.includes("connected to a live agent") ||
+            content.includes("live agent session ended") ||
+            content.includes("session ended") ||
+            content.includes("resolved"));
+
+        if (!hasAgentPhase) {
+          return sender === "system" && content.includes("live agent");
+        }
+
+        if (isAgentNotice) return true;
+        if (sender !== "student" && sender !== "agent") return false;
         return index >= agentPhaseStartIndex;
       });
     }
 
-    return messages.filter((message) => {
+    return messages.filter((message, index) => {
       const sender = String(message?.sender || "");
-      return sender === "student" || sender === "bot";
+      if (sender !== "student" && sender !== "bot") return false;
+      if (!hasAgentPhase) return true;
+      return index < agentPhaseStartIndex;
     });
-  }, [messages, agentConnected, agentSessionEnded, activeChannel]);
+  }, [messages, activeChannel, agentPhaseStartIndex, hasAgentPhase]);
   const endedAgentTabActive = agentSessionEnded && activeChannel === "agent";
   const inputPlaceholder = endedAgentTabActive
     ? "Agent session ended. Switch to AI Chat to continue."
@@ -368,7 +382,7 @@ export default function ChatContainer({
         ...prev,
         {
           sender: "system",
-          content: `${firstName ? `Hi ${firstName}, ` : ""}you are now connected to a live agent. AI replies are paused until the conversation is resolved.`,
+          content: `${firstName ? `Hi ${firstName}, ` : ""}you are now connected to a live agent. You can continue in AI Chat or Agent Chat anytime.`,
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -475,10 +489,10 @@ export default function ChatContainer({
   }, [sessionId, studentId, firstName]);
 
   useEffect(() => {
-    if (!agentConnected && !agentSessionEnded && activeChannel !== "ai") {
+    if (!hasAgentPhase && activeChannel !== "ai") {
       setActiveChannel("ai");
     }
-  }, [agentConnected, agentSessionEnded, activeChannel]);
+  }, [hasAgentPhase, activeChannel]);
 
   useEffect(() => {
     if (!studentDisplayName || !historyCount) {
@@ -780,7 +794,7 @@ export default function ChatContainer({
         connectionStatus={connectionStatus}
         handoffPending={handoffPending}
         agentConnected={agentConnected}
-        showChannelTabs={agentConnected || agentSessionEnded}
+        showChannelTabs={hasAgentPhase}
         aiTabLabel="AI Chat"
         agentTabLabel={agentConnected ? "Agent Live" : agentSessionEnded ? "Agent Ended" : "Agent Live"}
         activeChannel={activeChannel}
