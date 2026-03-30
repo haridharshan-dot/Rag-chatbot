@@ -3,11 +3,13 @@ import { GoogleLogin } from "@react-oauth/google";
 import ChatWidget from "./ChatWidget";
 import {
   createSession,
+  fetchStudentMe,
   fetchStudentHistory,
   requestStudentForgotPasswordOtp,
   studentRegister,
   studentGoogleLogin,
   studentLogin,
+  updateStudentMobile,
   verifyStudentForgotPasswordOtp,
 } from "../api";
 import { clearStudentToken, getStudentFromToken, setStudentToken } from "../utils/auth";
@@ -49,6 +51,9 @@ export default function EmbeddedStudentChatbot({
   const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
+  const [mobileRequired, setMobileRequired] = useState(false);
+  const [mobileDraft, setMobileDraft] = useState("");
+  const [profileReady, setProfileReady] = useState(() => !requiresPopupAuth || !initialStudent?.id);
   const googleEnabled = Boolean(String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim());
 
   useEffect(() => {
@@ -88,6 +93,13 @@ export default function EmbeddedStudentChatbot({
 
   useEffect(() => {
     if (!student?.id) {
+      setLoading(false);
+      setSessionId("");
+      setHistorySessions([]);
+      return;
+    }
+
+    if (requiresPopupAuth && (!profileReady || mobileRequired)) {
       setLoading(false);
       setSessionId("");
       setHistorySessions([]);
@@ -134,7 +146,47 @@ export default function EmbeddedStudentChatbot({
     return () => {
       mounted = false;
     };
-  }, [requiresPopupAuth, siteContext, student?.id]);
+  }, [mobileRequired, profileReady, requiresPopupAuth, siteContext, student?.id]);
+
+  useEffect(() => {
+    if (!requiresPopupAuth) {
+      setProfileReady(true);
+      setMobileRequired(false);
+      return;
+    }
+
+    if (!student?.id) {
+      setProfileReady(true);
+      setMobileRequired(false);
+      return;
+    }
+
+    let mounted = true;
+    setProfileReady(false);
+
+    fetchStudentMe()
+      .then((profile) => {
+        if (!mounted) return;
+        const requiresMobileNow = !String(profile?.mobile || "").trim();
+        setMobileRequired(requiresMobileNow);
+        if (requiresMobileNow) {
+          setAuthMessage("Please enter your mobile number to continue.");
+        }
+      })
+      .catch(() => {
+        if (!mounted) return;
+        clearStudentToken();
+        setStudent(null);
+        setAuthError("Your session expired. Please login again.");
+      })
+      .finally(() => {
+        if (mounted) setProfileReady(true);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [requiresPopupAuth, student?.id]);
 
   useEffect(() => {
     if (!requiresPopupAuth || student?.id) return;
@@ -146,9 +198,31 @@ export default function EmbeddedStudentChatbot({
     trackChatFunnelEvent("chat_started");
   }, [sessionId, student?.id]);
 
+  function applyStudentAuthResult(data, successMessage) {
+    if (!data?.token || !data?.user?.id) {
+      throw new Error("Invalid authentication response");
+    }
+
+    const hasMobile = Boolean(String(data?.user?.mobile || "").trim());
+
+    setStudentToken(data.token);
+    setStudent({
+      id: data.user.id,
+      name: data.user.name || "Student",
+      email: data.user.email || "",
+    });
+    setMobileDraft("");
+    setMobileRequired(!hasMobile);
+    trackChatFunnelEvent("auth_success");
+    setAuthMessage(hasMobile ? successMessage : "Please enter your mobile number to continue.");
+  }
+
   function handleSwitchAccount() {
     clearStudentToken();
     setStudent(null);
+    setMobileRequired(false);
+    setMobileDraft("");
+    setProfileReady(true);
     setHistoryCount(0);
     setHistorySessions([]);
     setSessionId("");
@@ -179,17 +253,7 @@ export default function EmbeddedStudentChatbot({
         password: signupPassword,
       });
       setShowForgotFlow(false);
-      if (!data?.token || !data?.user?.id) {
-        throw new Error("Invalid signup response");
-      }
-      setStudentToken(data.token);
-      setStudent({
-        id: data.user.id,
-        name: data.user.name || "Student",
-        email: data.user.email || "",
-      });
-      trackChatFunnelEvent("auth_success");
-      setAuthMessage("Signup successful. Starting your chat session...");
+      applyStudentAuthResult(data, "Signup successful. Starting your chat session...");
     } catch (signupError) {
       const message = signupError?.response?.data?.message || "Signup failed";
       setAuthError(message);
@@ -208,18 +272,7 @@ export default function EmbeddedStudentChatbot({
         email: loginEmail,
         password: loginPassword,
       });
-      if (!data?.token || !data?.user?.id) {
-        throw new Error("Invalid login response");
-      }
-
-      setStudentToken(data.token);
-      setStudent({
-        id: data.user.id,
-        name: data.user.name || "Student",
-        email: data.user.email || "",
-      });
-      trackChatFunnelEvent("auth_success");
-      setAuthMessage("Login successful. Starting your chat session...");
+      applyStudentAuthResult(data, "Login successful. Starting your chat session...");
       setLoginPassword("");
     } catch (loginError) {
       const message = loginError?.response?.data?.message || "Invalid credentials";
@@ -282,18 +335,7 @@ export default function EmbeddedStudentChatbot({
     setAuthMessage("");
     try {
       const data = await studentGoogleLogin(credential);
-      if (!data?.token || !data?.user?.id) {
-        throw new Error("Invalid Google login response");
-      }
-
-      setStudentToken(data.token);
-      setStudent({
-        id: data.user.id,
-        name: data.user.name || "Student",
-        email: data.user.email || "",
-      });
-      trackChatFunnelEvent("auth_success");
-      setAuthMessage("Google login successful. Starting your chat session...");
+      applyStudentAuthResult(data, "Google login successful. Starting your chat session...");
     } catch (googleError) {
       const message = googleError?.response?.data?.message || "Google login failed";
       setAuthError(message);
@@ -302,22 +344,62 @@ export default function EmbeddedStudentChatbot({
     }
   }
 
+  async function handleMobileSubmit(event) {
+    event.preventDefault();
+    setAuthBusy(true);
+    setAuthError("");
+    setAuthMessage("");
+
+    try {
+      await updateStudentMobile({ mobile: mobileDraft });
+      setMobileRequired(false);
+      setMobileDraft("");
+      setAuthMessage("Mobile saved successfully. Starting your chat session...");
+    } catch (mobileError) {
+      const message = mobileError?.response?.data?.message || "Unable to save mobile number";
+      setAuthError(message);
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
   const preChatContent =
-    requiresPopupAuth && !student?.id
+    requiresPopupAuth && (!student?.id || mobileRequired)
       ? ({ onClose }) => (
           <section className="cc-shell cc-auth-shell" aria-label="Student sign in">
             <div className="cc-auth-header">
               <div>
                 <p className="cc-auth-eyebrow">SONA COLLEGE</p>
                 <h3>AI ASSISTANT</h3>
-                <p>Sign up or login to continue your chat. OTP is only for password reset.</p>
+                <p>
+                  {mobileRequired
+                    ? "Please add your mobile number to continue."
+                    : "Sign up or login to continue your chat. OTP is only for password reset."}
+                </p>
               </div>
               <button className="cc-auth-close" onClick={onClose} aria-label="Close chatbot">
                 x
               </button>
             </div>
 
-            <div className="cc-auth-tabs" role="tablist" aria-label="Authentication mode">
+            {mobileRequired ? (
+              <form className="cc-auth-form" onSubmit={handleMobileSubmit}>
+                <input
+                  className="cc-auth-input"
+                  inputMode="numeric"
+                  placeholder="Enter your mobile number"
+                  value={mobileDraft}
+                  onChange={(event) => setMobileDraft(event.target.value)}
+                  required
+                />
+                <button className="cc-send cc-auth-cta" type="submit" disabled={authBusy}>
+                  {authBusy ? "Saving..." : "Save & Continue"}
+                </button>
+              </form>
+            ) : (
+              <>
+
+                <div className="cc-auth-tabs" role="tablist" aria-label="Authentication mode">
               <button
                 className={`cc-auth-tab ${authMode === "login" ? "active" : ""}`}
                 onClick={() => {
@@ -497,6 +579,8 @@ export default function EmbeddedStudentChatbot({
               </>
             ) : (
               null
+            )}
+              </>
             )}
 
             {authMessage ? <p className="cc-auth-message">{authMessage}</p> : null}

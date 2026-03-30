@@ -386,15 +386,67 @@ router.post("/login/google", async (req, res, next) => {
   }
 });
 
-router.get("/me", requireStudentAuth, (req, res) => {
-  return res.json({
-    success: true,
-    data: {
-      id: req.student.studentId,
-      name: req.student.name || "Student",
-      email: req.student.email || "",
-    },
-  });
+router.get("/me", requireStudentAuth, async (req, res, next) => {
+  try {
+    const user = await StudentUser.findById(req.student.studentId).lean();
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    const mobile = String(user.mobile || "").trim();
+
+    return res.json({
+      success: true,
+      data: {
+        id: String(user._id),
+        name: user.name || "Student",
+        email: user.email || "",
+        mobile,
+        requiresMobile: !mobile,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/mobile", requireStudentAuth, async (req, res, next) => {
+  try {
+    const mobile = normalizeMobile(req.body?.mobile);
+    if (!mobile || mobile.length < 10) {
+      return res.status(400).json({ success: false, message: "Please enter a valid mobile number" });
+    }
+
+    const exists = await StudentUser.findOne({
+      mobile,
+      _id: { $ne: req.student.studentId },
+    }).lean();
+
+    if (exists) {
+      return res.status(409).json({ success: false, message: "Mobile number already registered" });
+    }
+
+    const user = await StudentUser.findById(req.student.studentId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    user.mobile = mobile;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Mobile number updated successfully",
+      data: {
+        id: String(user._id),
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile || "",
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get("/history", requireStudentAuth, async (req, res, next) => {

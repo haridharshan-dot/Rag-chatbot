@@ -192,6 +192,11 @@ export async function fetchStudentMe() {
   return response.data.data;
 }
 
+export async function updateStudentMobile(payload) {
+  const response = await api.post("/auth/mobile", payload, studentAuthConfig());
+  return response.data.data;
+}
+
 export async function fetchStudentHistory() {
   const response = await api.get("/auth/history", studentAuthConfig());
   return response.data.data;
