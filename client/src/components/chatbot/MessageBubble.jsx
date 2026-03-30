@@ -37,9 +37,10 @@ export default function MessageBubble({ message, onRichAction, index = 0, readRe
   const timestamp = formatTime(message.createdAt);
   const senderLabel = variant === "student" ? "You" : variant === "bot" ? "Assistant" : variant;
   const text = String(message.content || "");
+  const isAgentConnectedNotice =
+    variant === "system" && /connected to a live agent/i.test(text);
   const isResolvedNotice =
-    variant === "system" &&
-    /(resolved|session ended|live agent session ended)/i.test(text);
+    variant === "system" && /(session ended|live agent session ended|conversation (has been )?resolved)/i.test(text);
   const messageId = useMemo(
     () => `${message.sender || "bot"}-${message.createdAt || ""}-${text.slice(0, 80)}`,
     [message.createdAt, message.sender, text]
@@ -96,6 +97,11 @@ export default function MessageBubble({ message, onRichAction, index = 0, readRe
       <article className={`cc-bubble cc-bubble-${variant}`} aria-label={`${senderLabel} at ${timestamp}`}>
         {variant === "bot" ? (
           <ChatMarkdown content={visibleText} />
+        ) : isAgentConnectedNotice ? (
+          <div className="cc-resolved-card" role="status" aria-live="polite">
+            <strong className="cc-resolved-title">Agent Session Started</strong>
+            <p className="cc-resolved-text">{visibleText}</p>
+          </div>
         ) : isResolvedNotice ? (
           <div className="cc-resolved-card" role="status" aria-live="polite">
             <strong className="cc-resolved-title">Agent Session Ended</strong>

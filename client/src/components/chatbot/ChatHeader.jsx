@@ -100,7 +100,7 @@ export default function ChatHeader({
               aria-selected={activeChannel === "ai"}
               className={`cc-channel-tab cc-channel-tab-ai ${activeChannel === "ai" ? "active" : ""}`}
               onClick={() => onChannelChange?.("ai")}
-              title="AI responses are paused while live agent is connected"
+              title="Continue AI conversation"
             >
               {aiTabLabel}
             </button>

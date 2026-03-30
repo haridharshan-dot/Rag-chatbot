@@ -259,19 +259,14 @@ export default function ChatContainer({
       });
     }
 
-    return messages.filter((message, index) => {
+    return messages.filter((message) => {
       const sender = String(message?.sender || "");
-      if (sender !== "student" && sender !== "bot") return false;
-      if (agentPhaseStartIndex < 0) return true;
-      return index < agentPhaseStartIndex;
+      return sender === "student" || sender === "bot";
     });
   }, [messages, agentConnected, agentSessionEnded, activeChannel]);
-  const aiPausedByAgent = agentConnected && activeChannel === "ai";
   const endedAgentTabActive = agentSessionEnded && activeChannel === "agent";
   const inputPlaceholder = endedAgentTabActive
     ? "Agent session ended. Switch to AI Chat to continue."
-    : aiPausedByAgent
-    ? "AI is paused while live agent is connected. Switch to Agent tab to continue."
     : activeChannel === "agent" && agentConnected
       ? `${firstName ? `${firstName}, ` : ""}type your message for the live agent...`
       : text.placeholder;
@@ -440,7 +435,7 @@ export default function ChatContainer({
         const alreadyHasNotice = prev.some((message) => {
           const sender = String(message?.sender || "");
           const content = String(message?.content || "").toLowerCase();
-          return sender === "system" && content.includes("resolved");
+          return sender === "system" && (content.includes("session ended") || content.includes("live agent session ended"));
         });
         if (alreadyHasNotice) return prev;
         return [
@@ -538,18 +533,6 @@ export default function ChatContainer({
   const sendMessage = async (forcedMessage = "") => {
     const content = String(forcedMessage || input).trim();
     if (!content || !sessionId || isSending) return;
-
-    if (agentConnected && activeChannel === "ai") {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "system",
-          content: "AI is currently paused because a live agent is connected. Please switch to the Agent tab.",
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-      return;
-    }
 
     if (isLiveAgentRequestIntent(content)) {
       setInput("");
@@ -798,7 +781,7 @@ export default function ChatContainer({
         handoffPending={handoffPending}
         agentConnected={agentConnected}
         showChannelTabs={agentConnected || agentSessionEnded}
-        aiTabLabel={agentConnected ? "AI Paused" : "AI Chat"}
+        aiTabLabel="AI Chat"
         agentTabLabel={agentConnected ? "Agent Live" : agentSessionEnded ? "Agent Ended" : "Agent Live"}
         activeChannel={activeChannel}
         onChannelChange={setActiveChannel}
@@ -822,7 +805,7 @@ export default function ChatContainer({
             seenMeta={seenMeta}
             listRef={listRef}
             aiStageLabel={stageLabel}
-            isSending={isSending && activeChannel === "ai" && !agentConnected}
+            isSending={isSending && activeChannel === "ai"}
             agentTyping={agentTyping && activeChannel === "agent"}
             onRichAction={sendMessage}
             starterPrompts={messages.length === 0 && activeChannel === "ai" ? starterPrompts : []}
@@ -849,7 +832,7 @@ export default function ChatContainer({
         <InputBox
           value={input}
           loading={isSending}
-          disabled={!sessionId || aiPausedByAgent || endedAgentTabActive}
+          disabled={!sessionId || endedAgentTabActive}
           onChange={setInput}
           onSend={sendMessage}
           onTyping={onTyping}

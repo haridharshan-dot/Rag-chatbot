@@ -69,32 +69,6 @@ export async function handleStudentMessage(sessionId, content) {
     throw error;
   }
 
-  // Block bot responses if agent active
-  if (session.status === "active") {
-    session.messages.push({
-      sender: "student",
-      content,
-      meta: {
-        intent: "live_agent",
-      },
-    });
-    await session.save();
-    return {
-      session,
-      ragResponse: {
-        answer: "",
-        confidence: 1,
-        sources: [],
-        escalationSuggested: false,
-        outOfScope: false,
-        suggestions: [],
-        cards: [],
-        blockedByAgent: true,
-      },
-      autoEscalated: false,
-    };
-  }
-
   const flowResult = runConversationFlow(session, content);
   session.messages.push({
     sender: "student",
