@@ -57,8 +57,14 @@ function parseStream(text) {
 function detectIntent(text) {
   const value = normalize(text);
   if (!value) return "unknown";
+  if (/\b(gap\s*year|gap\s*years|sports\s*quota|management\s*quota|special\s*quota|reservation\s*issue)\b/.test(value)) {
+    return "complex_admission_case";
+  }
   if (/\b(alert|notification|deadline|date|counselling|counseling)\b/.test(value)) return "notifications";
   if (/\b(eligibility|eligible|can i apply|am i eligible)\b/.test(value)) return "eligibility";
+  if (/\b(can i get|can i join|admission chance|my cutoff is|i got\s+\d{2,3}|from\s+(oc|bc|bcm|mbc|sc|sca|st))\b/.test(value)) {
+    return "recommendation";
+  }
   if (/\b(recommend|suggest|best course|best branch|admission chance|my options)\b/.test(value)) return "recommendation";
   if (/\b(admission process|application process|how to apply|required documents|document checklist)\b/.test(value)) return "application_guidance";
   if (/\b(live agent|talk to agent|speak to agent|admission office|talk to someone|human agent)\b/.test(value)) return "agent_request";
@@ -208,6 +214,7 @@ function standardResponse({
   suggestions = DEFAULT_SUGGESTIONS,
   cards = [],
   confidence = 0.9,
+  needsAgent = false,
   handled = true,
 }) {
   return {
@@ -217,6 +224,7 @@ function standardResponse({
     confidence,
     suggestions,
     cards,
+    needsAgent,
   };
 }
 
@@ -229,6 +237,29 @@ function handleRecommendationFlow(session, input) {
   mergeProfile(session, updates);
 
   const mergedProfile = session.studentProfile || {};
+  if (
+    Number.isFinite(Number(mergedProfile.cutoffMarks)) &&
+    mergedProfile.category &&
+    mergedProfile.preferredBranch
+  ) {
+    const cards = buildRecommendationCards(mergedProfile);
+    const preferredChance = cards[0]?.items?.[0]?.chance || "Medium";
+    setAssistantState(session, null, null, "recommendation_completed");
+    return standardResponse({
+      intent: "recommendation",
+      answer: [
+        "Personalized Recommendation",
+        `Cutoff: ${mergedProfile.cutoffMarks}`,
+        `Category: ${mergedProfile.category}`,
+        `Preferred branch: ${mergedProfile.preferredBranch}`,
+        `Admission chance for preferred branch: ${preferredChance}`,
+      ].join("\n"),
+      cards,
+      suggestions: ["Check cutoff", "View fees", "Talk to agent"],
+      confidence: 0.95,
+    });
+  }
+
   if (step === "cutoff") {
     if (!Number.isFinite(Number(mergedProfile.cutoffMarks))) {
       setAssistantState(session, flow, "cutoff", "recommendation");
@@ -353,6 +384,18 @@ function handleEligibilityFlow(session, input) {
 export function runConversationFlow(session, userInput) {
   const intent = detectIntent(userInput);
   const activeFlow = session.assistantState?.flow || null;
+
+  if (intent === "complex_admission_case") {
+    setAssistantState(session, null, null, intent);
+    return standardResponse({
+      intent,
+      answer:
+        "This case needs a live admission counselor for accurate guidance. Please click the live agent option on top (gap year/quota cases are handled there).",
+      suggestions: ["Talk to agent", "Admission process", "Official website"],
+      confidence: 1,
+      needsAgent: true,
+    });
+  }
 
   if (intent === "website") {
     setAssistantState(session, activeFlow, session.assistantState?.step || null, "website");

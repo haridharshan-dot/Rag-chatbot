@@ -105,7 +105,14 @@ function classifyFaqIntent(question) {
     return "documents";
   if (/\bdeadline|last date|counselling|counseling|admission date|important date\b/.test(q))
     return "deadline";
-  if (/\bhostel\b/.test(q)) return "hostel_fee";
+  if (/\b(hostel\s*fee|hostel charges?|hostel cost)\b/.test(q)) return "hostel_fee";
+  if (/\bhostel\b/.test(q)) return "hostel_info";
+  if (/\b(scholarship|first graduate|fee waiver|tuition fee waiver|sc\/st fee waiver|sc\s+students?|bc\s+students?)\b/.test(q)) {
+    return "scholarship";
+  }
+  if (/\b(placement|placed|recruiter|ctc|stipend|placement percentage|placement stats?)\b/.test(q)) {
+    return "placement";
+  }
   if (/\btuition\b/.test(q)) return "tuition_fee";
   if (/\blab\b|\bexam fee\b/.test(q)) return "lab_exam_fee";
   if (/\bfees?\b|\bfee structure\b/.test(q)) return "fees";
@@ -567,6 +574,21 @@ async function buildFaqIntentResponse(question, dataDirs) {
   const eligibility = extractFaqBullet(faq.content, "Admissions FAQ", /eligibility/i);
   const documents = extractFaqBullet(faq.content, "Admissions FAQ", /required documents/i);
   const deadline = extractFaqBullet(faq.content, "Admissions FAQ", /counseling|counselling|june|august|last date|starts|closes/i);
+  const hostelInfo = extractFaqBullet(faq.content, "General Info", /hostel|accommodation|boys|girls|attached/i);
+
+  const scholarshipLines = String(faq.content)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^-\s*/.test(line))
+    .filter((line) => /scholarship|fee waiver|sc\/st|bc\/mbc|first graduate|sports scholarship|meenakshi aachi/i.test(line))
+    .map((line) => line.replace(/^-+\s*/, ""));
+
+  const placementLines = String(faq.content)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^-\s*/.test(line))
+    .filter((line) => /placement|recruiters?|ctc|stipend|percentage/i.test(line))
+    .map((line) => line.replace(/^-+\s*/, ""));
 
   const courseLines = String(faq.content)
     .split(/\r?\n/)
@@ -608,6 +630,44 @@ async function buildFaqIntentResponse(question, dataDirs) {
       answer: feeHostel
         ? `## Hostel Fee\n- ${normalizeLine(feeHostel)}`
         : "Hostel fee details are not available right now. Please check the official website.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "hostel_info") {
+    return {
+      answer: hostelInfo
+        ? `## Hostel Facilities\n- ${normalizeLine(hostelInfo)}`
+        : "Hostel facilities are available. For room type and allotment details, please use the official website or connect to a live agent.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "scholarship") {
+    if (scholarshipLines.length) {
+      const topLines = scholarshipLines.slice(0, 6).map((line) => `- ${line}`);
+      return {
+        answer: `## Scholarship Support\n${topLines.join("\n")}`,
+        source: faq.source,
+      };
+    }
+    return {
+      answer:
+        "Scholarship details are available on the official scholarship page. If you need first-graduate or category-specific confirmation, please connect to a live agent.",
+      source: faq.source,
+    };
+  }
+
+  if (intent === "placement") {
+    if (placementLines.length) {
+      return {
+        answer: `## Placement Highlights\n${placementLines.slice(0, 5).map((line) => `- ${line}`).join("\n")}`,
+        source: faq.source,
+      };
+    }
+    return {
+      answer:
+        "Placement information is available on the official placement pages. For the latest batch-wise percentage, please use the official website.",
       source: faq.source,
     };
   }

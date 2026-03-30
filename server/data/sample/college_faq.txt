@@ -1,19 +1,36 @@
 Admissions FAQ
-- Eligibility: 10+2 with PCM for engineering streams.
-- Required documents: mark sheets, transfer certificate, ID proof, passport photo.
-- Typical counseling starts in June and closes in August.
+- Eligibility: 10+2 with PCM for BE/BTech admissions.
+- Selection for BE/BTech first year is based on cutoff mark out of 200 (Maths 100 + Physics/Chemistry 100).
+- Required documents: marksheets, transfer certificate, ID proof, passport-size photos.
+- Typical counselling/admission windows are announced officially on admissions pages.
 
 Fee Structure
-- Tuition fee per semester: INR 55,000.
-- Hostel fee per semester: INR 28,000.
-- Lab and exam fee per semester: INR 7,500.
+- Tuition fee details are published in official admission and fee pages.
+- Hostel fee details are published by the admissions/hostel office and may vary by room type.
+- Fee waiver references are available under official Tuition Fee Waiver and Scholarship pages.
 
-Courses
-- CSE: 4 years, includes AI/ML electives from 3rd year.
-- ECE: 4 years, includes embedded systems labs.
-- Mechanical: 4 years, includes CAD/CAM and manufacturing practice.
+Scholarships
+- Management Merit Scholarship (Tuition Fee Waiver): Rs 10,000 to Rs 40,000 per annum for eligible students.
+- Merit-cum-Means Scholarship: Rs 5,000 to Rs 10,000 per annum (income and performance conditions apply).
+- Sports Scholarship: Rs 10,000 to Rs 40,000 per annum based on sports performance.
+- Government Scholarship (BC/MBC): SWS category, parent annual income below Rs 1,00,000 (apply through college via edistrict).
+- Government Scholarship (SC/ST): SWS category, parent annual income below Rs 2,00,000 (apply through college via edistrict).
+- Government Scholarship (SC/ST Fee Waiver): 100% fee waiver for eligible SC/ST students.
+- Govt. Special Scholarship: SC/ST students in Sona hostel, parent annual income below Rs 1,00,000.
+- First graduate scholarship: specific eligibility is not explicitly listed in the scholarship table; students should verify current first-graduate criteria with admissions/live agent.
 
-Cutoffs (General, previous year)
-- CSE: 168+
-- ECE: 154+
-- Mechanical: 142+
+General Info
+- Hostel is available: separate hostel facilities for boys and girls are available.
+- Campus hostel facilities include dining hall, gym, and sports support.
+- Placement highlights published on official pages include 200+ recruiters, 37 LPA highest international CTC, 19.54 LPA highest domestic CTC, and 98k/month highest stipend.
+- Batch-wise placement details are published in official placement year pages.
+
+Special Cases
+- For complex admission cases like gap years, sports quota, or other quota clarifications, students should connect to live admissions support.
+
+Official Source Links
+- https://www.sonatech.ac.in/admission/
+- https://www.sonatech.ac.in/sona-facility/students-scholarship.php
+- https://www.sonatech.ac.in/admission/fee-waiver-sona-college.php
+- https://www.sonatech.ac.in/placement/sona-placement.php
+- https://www.sonatech.ac.in/

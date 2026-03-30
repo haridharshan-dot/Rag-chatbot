@@ -32,6 +32,17 @@ It is an institutional member of DELNET, IIM(B), TERI, and INSDAG.
 Separate hostel facilities are available for Indian and NRI boys and girls.  
 Facilities include a large dining hall, swimming pool, gym, indoor and outdoor sports facilities.
 
+## Scholarships
+
+Sona publishes scholarship schemes under management, government, and private-sector channels.  
+Examples include Merit Scholarship (tuition fee waiver), Merit-cum-Means Scholarship, Sports Scholarship, and category-based government scholarships for BC/MBC and SC/ST students.  
+For latest eligibility updates (including first-graduate clarifications), students should verify through official scholarship/admissions support.
+
+## Placement Highlights
+
+Official placement highlights published on Sona pages include 200+ recruiters, 37 LPA highest international CTC, 19.54 LPA highest domestic CTC, and 98k/month highest stipend.  
+Year-wise placement records are published separately on official placement pages.
+
 ### Apple Lab
 
 Sona College of Technology established an Apple lab on campus with 15 iMac 21.5-inch systems and 20 Mac mini systems.

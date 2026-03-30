@@ -70,7 +70,7 @@ export async function handleStudentMessage(sessionId, content) {
   }
 
   // Block bot responses if agent active
-  if (session.status === "active" || session.assignedAgentId) {
+  if (session.status === "active") {
     session.messages.push({
       sender: "student",
       content,
@@ -121,6 +121,21 @@ export async function handleStudentMessage(sessionId, content) {
       content: flowResult.answer,
       meta: botMeta,
     });
+
+    let autoEscalatedByFlow = false;
+    if (flowResult.needsAgent && session.status === "bot") {
+      session.status = "queued";
+      session.escalationRequestedAt = new Date();
+      autoEscalatedByFlow = true;
+      session.messages.push({
+        sender: "system",
+        content: "Your request needs a live admission counselor. A live agent has been notified.",
+        meta: {
+          escalationSuggested: true,
+        },
+      });
+    }
+
     await session.save();
     return {
       session,
@@ -128,12 +143,12 @@ export async function handleStudentMessage(sessionId, content) {
         answer: flowResult.answer,
         confidence: botMeta.confidence,
         sources: [],
-        escalationSuggested: false,
+        escalationSuggested: autoEscalatedByFlow,
         outOfScope: false,
         suggestions: botMeta.suggestions,
         cards: botMeta.cards,
       },
-      autoEscalated: false,
+      autoEscalated: autoEscalatedByFlow,
     };
   }
 
