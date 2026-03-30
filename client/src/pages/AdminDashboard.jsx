@@ -14,6 +14,7 @@ import {
   fetchStatusLogs,
   forceAssignSession,
   getAgentToken,
+  setAgentToken,
   reopenSession,
   runAdminReindex,
   runAdminStatusCheck,
@@ -78,7 +79,7 @@ function buildHighlightedPreview(text, query, currentMatchIndex) {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [authToken] = useState(() => getAgentToken());
+  const [authToken, setAuthToken] = useState(() => getAgentToken());
   const [readiness, setReadiness] = useState(null);
   const [knowledge, setKnowledge] = useState(null);
   const [overviewAnalytics, setOverviewAnalytics] = useState(null);
@@ -124,8 +125,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (authToken) return;
-    navigate("/agent", { replace: true });
+    navigate("/login", { replace: true });
   }, [authToken, navigate]);
+
+  function onLogout() {
+    setAgentToken("");
+    setAuthToken("");
+    navigate("/login", { replace: true });
+  }
 
   useEffect(() => {
     const refreshFunnel = () => setChatFunnel(getChatFunnelSnapshot());
@@ -711,6 +718,7 @@ export default function AdminDashboard() {
           <button className="pill-btn" onClick={() => navigate("/agent")}>Agent Dashboard</button>
           <button className="pill-btn" onClick={() => navigate("/status")}>Status Dashboard</button>
           <button className="pill-btn" onClick={() => navigate("/")}>Student Portal</button>
+          <button className="pill-btn" onClick={onLogout}>Logout</button>
           <label className="pill-btn upload-pill">
             Upload Dataset
             <input
