@@ -1,11 +1,14 @@
 :root {
-  --bg: #f6f3eb;
+  --sona-blue: #1e4175;
+  --sona-yellow: #fecc2a;
+  --sona-cream: #f7ef8d;
+  --bg: #f7ef8d;
   --ink: #1f2833;
-  --accent: #0f766e;
-  --accent-soft: #d2f4ef;
+  --accent: #1e4175;
+  --accent-soft: #f7ef8d;
   --panel: #ffffff;
-  --panel-soft: #f9fcfb;
-  --border-soft: #d7e8e5;
+  --panel-soft: #fffdf1;
+  --border-soft: #d9d3a6;
   --shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
 }
 
@@ -18,8 +21,8 @@ body {
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at 15% 10%, #fff4d0 0, transparent 35%),
-    radial-gradient(circle at 90% 20%, #d2f4ef 0, transparent 35%),
+    radial-gradient(circle at 15% 10%, rgba(254, 204, 42, 0.34) 0, transparent 35%),
+    radial-gradient(circle at 90% 20%, rgba(30, 65, 117, 0.18) 0, transparent 35%),
     var(--bg);
   min-height: 100vh;
 }
@@ -281,8 +284,47 @@ body.chatbot-embed-mode #root {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.8rem;
-  color: var(--accent);
+  color: var(--sona-blue);
   margin-bottom: 0.3rem;
+}
+
+/* Sona brand lock across admin/student surfaces */
+.pill-btn,
+.student-auth-form button,
+.chat-fab,
+.student-auth-tabs button.active,
+.admin-view-tab.active,
+.admin-report-download,
+.cc-agent-cta {
+  background: var(--sona-blue) !important;
+  color: #ffffff !important;
+  border-color: var(--sona-blue) !important;
+}
+
+.pill-btn:hover,
+.student-auth-form button:hover,
+.chat-fab:hover,
+.admin-report-download:hover,
+.cc-agent-cta:hover {
+  background: #17345d !important;
+  border-color: #17345d !important;
+}
+
+.student-secondary-btn,
+.student-dev-otp,
+.student-history-item,
+.admin-chip,
+.admin-kpi,
+.admin-live-queue,
+.ops-card {
+  background: #fffbe0 !important;
+  border-color: #e6d98e !important;
+}
+
+.student-link-btn,
+.top-nav a,
+.admin-note a {
+  color: var(--sona-blue) !important;
 }
 
 .chat-fab {

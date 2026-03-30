@@ -1380,6 +1380,77 @@
   backdrop-filter: none;
 }
 
+/* Sona brand lock: #FECC2A, #F7EF8D, #1E4175 */
+:root {
+  --cc-brand-blue: #1e4175;
+  --cc-brand-yellow: #fecc2a;
+  --cc-brand-cream: #f7ef8d;
+}
+
+.cc-widget {
+  background: linear-gradient(165deg, #fffef4 0%, #f7ef8d 52%, #fff7cd 100%) !important;
+  border-color: #d8ca84 !important;
+}
+
+.cc-shell {
+  background: linear-gradient(180deg, #fffdf2 0%, #fff9db 20%, #ffffff 100%) !important;
+}
+
+.cc-header {
+  background: #fffbe7 !important;
+  border-bottom-color: #e2d58f !important;
+}
+
+.cc-brand-copy h3,
+.cc-avatar-bot,
+.cc-action-btn,
+.cc-student-pill,
+.cc-channel-tab,
+.cc-bubble-time,
+.cc-markdown a {
+  color: var(--cc-brand-blue) !important;
+}
+
+.cc-agent-cta,
+.cc-send,
+.cc-channel-tab-agent.active,
+.cc-channel-tab-ai.active {
+  background: var(--cc-brand-blue) !important;
+  border-color: var(--cc-brand-blue) !important;
+  color: #ffffff !important;
+}
+
+.cc-action-btn:hover,
+.cc-send:hover:not(:disabled),
+.cc-agent-cta:hover {
+  background: #17345d !important;
+  border-color: #17345d !important;
+}
+
+.cc-hours-pill,
+.cc-bubble-system,
+.cc-resolved-card,
+.cc-chip,
+.cc-resume-banner {
+  background: #fff7cc !important;
+  border-color: #e5d27f !important;
+}
+
+.cc-bubble-student {
+  background: var(--cc-brand-blue) !important;
+  border-color: var(--cc-brand-blue) !important;
+}
+
+.cc-bubble-agent {
+  background: #fffbe2 !important;
+  border-color: #e5d78e !important;
+}
+
+.cc-input-wrap:focus-within {
+  border-color: var(--cc-brand-blue) !important;
+  box-shadow: 0 0 0 4px rgba(30, 65, 117, 0.16) !important;
+}
+
 .cc-header-main {
   display: flex;
   align-items: center;

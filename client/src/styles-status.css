@@ -1,3 +1,9 @@
+.status-layout {
+  --sona-blue: #1e4175;
+  --sona-yellow: #fecc2a;
+  --sona-cream: #f7ef8d;
+}
+
 /* Status Page Layout */
 .status-layout {
   display: grid;
@@ -9,8 +15,8 @@
 
 /* Sidebar */
 .status-sidebar {
-  background: linear-gradient(170deg, #f6f9fc 0%, #eef3f7 100%);
-  border: 1px solid #d8e1ea;
+  background: linear-gradient(170deg, #fffdf1 0%, #f7ef8d 100%);
+  border: 1px solid #e0d28d;
   border-radius: 16px;
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
   padding: 1rem;
@@ -35,7 +41,7 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.8rem;
-  color: #0f766e;
+  color: #1e4175;
   margin-bottom: 0.3rem;
   margin: 0;
 }
@@ -67,8 +73,8 @@
 }
 
 .status-item.info {
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-  border-left-color: #0f766e;
+  background: linear-gradient(135deg, #f7ef8d 0%, #fecc2a 100%);
+  border-left-color: #1e4175;
 }
 
 .status-item h4 {
@@ -101,9 +107,9 @@
 /* Navigation Buttons */
 .nav-btn {
   padding: 0.7rem 1.2rem;
-  border: 1px solid #0f766e;
+  border: 1px solid #1e4175;
   background: transparent;
-  color: #0f766e;
+  color: #1e4175;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
@@ -113,22 +119,22 @@
 }
 
 .nav-btn:hover {
-  background: #0f766e;
+  background: #1e4175;
   color: white;
 }
 
 .nav-btn.agent-btn {
-  background: #0f766e;
+  background: #1e4175;
   color: white;
 }
 
 .nav-btn.agent-btn:hover {
-  background: #0d5d5a;
+  background: #17345d;
 }
 
 /* Main Content Area */
 .status-main {
-  background: white;
+  background: #fffef7;
   border-radius: 16px;
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
   padding: 2rem;
@@ -144,8 +150,8 @@
 }
 
 .ops-card {
-  background: linear-gradient(160deg, #f7fafc 0%, #edf2f7 100%);
-  border: 1px solid #d7e1ea;
+  background: linear-gradient(160deg, #fffef4 0%, #f7ef8d 100%);
+  border: 1px solid #e3d797;
   border-radius: 12px;
   padding: 0.9rem;
 }
