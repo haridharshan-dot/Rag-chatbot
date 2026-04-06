@@ -493,18 +493,55 @@ function scoreFaqMatch(question, faq) {
   return score;
 }
 
+function buildSonaStarSuggestions(question) {
+  const q = String(question || "").toLowerCase();
+
+  if (/\b(difference|short|long|16|32)\b/.test(q)) {
+    return [
+      "Who can enroll in this course?",
+      "Do I need programming knowledge?",
+      "Will I get a certificate?",
+    ];
+  }
+
+  if (/\b(eligibility|enroll|join|who can)\b/.test(q)) {
+    return [
+      "What topics are in the 16-hour course?",
+      "What extra topics are in 32-hour course?",
+      "What career opportunities after this course?",
+    ];
+  }
+
+  if (/\b(certificate|practical|project|hands on)\b/.test(q)) {
+    return [
+      "Is this course practical or theory-based?",
+      "What learning outcomes can I expect?",
+      "Which course should I choose?",
+    ];
+  }
+
+  return [
+    "Difference between 16-hour and 32-hour courses",
+    "Who can enroll in Unreal Engine courses?",
+    "What career opportunities can this lead to?",
+  ];
+}
+
 function buildSonaStarOverview(parsed) {
   const datasetName = String(parsed?.dataset || "Sona Star Unreal Engine Programs").trim();
   const faqs = Array.isArray(parsed?.faqs) ? parsed.faqs : [];
-  const topQuestions = faqs.slice(0, 4).map((item) => `- ${String(item?.question || "").trim()}`).filter(Boolean);
+  const topQuestions = faqs
+    .slice(0, 4)
+    .map((item) => `- ${String(item?.question || "").trim()}`)
+    .filter(Boolean);
 
   const lines = [
-    `Yes, I know about ${datasetName}.`,
+    `Yes. I can help with ${datasetName}.`,
     "",
-    "I can help with:",
+    "Available support:",
     ...topQuestions,
     "",
-    "You can ask things like: short-term vs long-term course difference, eligibility, certificate, or career opportunities.",
+    "Ask me about course difference, eligibility, syllabus, certificate, practical training, or career outcomes.",
   ];
 
   return lines.join("\n");
@@ -527,6 +564,7 @@ async function buildSonaStarResponse(question, dataDirs) {
     return {
       answer: buildSonaStarOverview(dataset.parsed),
       source: dataset.source,
+      suggestions: buildSonaStarSuggestions(question),
     };
   }
 
@@ -539,12 +577,14 @@ async function buildSonaStarResponse(question, dataDirs) {
     return {
       answer: buildSonaStarOverview(dataset.parsed),
       source: dataset.source,
+      suggestions: buildSonaStarSuggestions(question),
     };
   }
 
   return {
-    answer: `## ${best.faq.question}\n${best.faq.answer}`,
+    answer: [`${best.faq.question}`, "", `${best.faq.answer}`].join("\n"),
     source: dataset.source,
+    suggestions: buildSonaStarSuggestions(question),
   };
 }
 
@@ -1183,6 +1223,7 @@ class RAGService {
         sources: [sonaStarResponse.source],
         escalationSuggested: false,
         outOfScope: false,
+        suggestions: Array.isArray(sonaStarResponse.suggestions) ? sonaStarResponse.suggestions : [],
       };
     }
 
