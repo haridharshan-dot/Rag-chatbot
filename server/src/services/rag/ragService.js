@@ -130,10 +130,17 @@ function isCollegeProfileQuestion(question) {
   const q = String(question || "").toLowerCase();
   if (!q) return false;
   if (isCutoffQuestion(q)) return false;
+  if (isSonaStarQuestion(q)) return false;
 
   return /\b(college|sona|ranking|rankings|facility|facilities|library|hostel|apple lab|industry|tie up|tie-up|rd|r&d|research|campus|admission)\b/.test(
     q
   );
+}
+
+function isSonaStarQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  if (!q) return false;
+  return /\b(sona\s*star|unreal\s*engine|ue\s*course|ue\s*program)\b/.test(q);
 }
 
 function isPrincipalQuestion(question) {
@@ -432,6 +439,113 @@ async function readStructuredCutoffDataset(dataDirs) {
   }
 
   return null;
+}
+
+async function readSonaStarFaqDataset(dataDirs) {
+  for (const dataDir of dataDirs) {
+    try {
+      const entries = await fs.readdir(dataDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isFile() || path.extname(entry.name).toLowerCase() !== ".json") continue;
+
+        const fullPath = path.join(dataDir, entry.name);
+        const content = await fs.readFile(fullPath, "utf8");
+        const parsed = JSON.parse(content);
+        const faqs = Array.isArray(parsed?.faqs) ? parsed.faqs : [];
+        if (!faqs.length) continue;
+
+        const marker = `${parsed?.dataset || ""} ${parsed?.provider || ""} ${parsed?.domain || ""}`.toLowerCase();
+        if (!/sona\s*star|unreal\s*engine/.test(marker)) continue;
+
+        return {
+          source: path.relative(process.cwd(), fullPath),
+          parsed,
+        };
+      }
+    } catch {
+      // Try next data directory candidate.
+    }
+  }
+
+  return null;
+}
+
+function scoreFaqMatch(question, faq) {
+  const q = String(question || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const combined = `${faq?.question || ""} ${faq?.answer || ""}`.toLowerCase();
+  if (!q || !combined) return 0;
+
+  const tokens = q
+    .split(" ")
+    .filter((token) => token.length > 2)
+    .filter((token) => !["sona", "star", "unreal", "engine", "course", "courses"].includes(token));
+
+  if (!tokens.length) return 0;
+
+  let score = 0;
+  for (const token of tokens) {
+    if (combined.includes(token)) score += 1;
+  }
+  return score;
+}
+
+function buildSonaStarOverview(parsed) {
+  const datasetName = String(parsed?.dataset || "Sona Star Unreal Engine Programs").trim();
+  const faqs = Array.isArray(parsed?.faqs) ? parsed.faqs : [];
+  const topQuestions = faqs.slice(0, 4).map((item) => `- ${String(item?.question || "").trim()}`).filter(Boolean);
+
+  const lines = [
+    `Yes, I know about ${datasetName}.`,
+    "",
+    "I can help with:",
+    ...topQuestions,
+    "",
+    "You can ask things like: short-term vs long-term course difference, eligibility, certificate, or career opportunities.",
+  ];
+
+  return lines.join("\n");
+}
+
+async function buildSonaStarResponse(question, dataDirs) {
+  if (!isSonaStarQuestion(question)) return null;
+
+  const dataset = await readSonaStarFaqDataset(dataDirs);
+  if (!dataset?.parsed) return null;
+
+  const faqs = Array.isArray(dataset.parsed.faqs) ? dataset.parsed.faqs : [];
+  if (!faqs.length) return null;
+
+  const q = String(question || "").toLowerCase();
+  const isGeneralPrompt = /\b(know|about|what is|what are|details|info|information|overview)\b/.test(q) &&
+    !/\b(difference|enroll|eligibility|programming|outcome|topics|certificate|practical|career|choose)\b/.test(q);
+
+  if (isGeneralPrompt) {
+    return {
+      answer: buildSonaStarOverview(dataset.parsed),
+      source: dataset.source,
+    };
+  }
+
+  const ranked = faqs
+    .map((faq) => ({ faq, score: scoreFaqMatch(question, faq) }))
+    .sort((a, b) => b.score - a.score);
+
+  const best = ranked[0];
+  if (!best || best.score <= 0) {
+    return {
+      answer: buildSonaStarOverview(dataset.parsed),
+      source: dataset.source,
+    };
+  }
+
+  return {
+    answer: `## ${best.faq.question}\n${best.faq.answer}`,
+    source: dataset.source,
+  };
 }
 
 async function readFaqTextDataset(dataDirs) {
@@ -1056,6 +1170,17 @@ class RAGService {
         answer: withOfficialWebsiteNote(faqIntentResponse.answer, question),
         confidence: 1,
         sources: [faqIntentResponse.source],
+        escalationSuggested: false,
+        outOfScope: false,
+      };
+    }
+
+    const sonaStarResponse = await buildSonaStarResponse(question, uniqueDataDirs);
+    if (sonaStarResponse) {
+      return {
+        answer: withOfficialWebsiteNote(sonaStarResponse.answer, question),
+        confidence: 1,
+        sources: [sonaStarResponse.source],
         escalationSuggested: false,
         outOfScope: false,
       };
