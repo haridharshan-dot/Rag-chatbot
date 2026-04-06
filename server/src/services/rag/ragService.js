@@ -536,15 +536,34 @@ function buildSonaStarOverview(parsed) {
     .filter(Boolean);
 
   const lines = [
-    `Yes. I can help with ${datasetName}.`,
+    `Sona Admissions Assistant here. I can help with ${datasetName}.`,
     "",
-    "Available support:",
+    "Here are common questions:",
     ...topQuestions,
     "",
-    "Ask me about course difference, eligibility, syllabus, certificate, practical training, or career outcomes.",
+    "Tell me your goal and I can suggest whether the 16-hour or 32-hour track is better for you.",
   ];
 
   return lines.join("\n");
+}
+
+function formatSonaStarCounselorAnswer(question, answer) {
+  const normalizedQuestion = String(question || "").trim();
+  const normalizedAnswer = String(answer || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const shortAnswer = normalizedAnswer.length > 560
+    ? `${normalizedAnswer.slice(0, 557).trim()}...`
+    : normalizedAnswer;
+
+  return [
+    `Sona Admissions Assistant: ${normalizedQuestion || "Here is the course detail."}`,
+    "",
+    shortAnswer,
+    "",
+    "Would you like a quick recommendation between the 16-hour and 32-hour Unreal Engine course?",
+  ].join("\n");
 }
 
 async function buildSonaStarResponse(question, dataDirs) {
@@ -582,7 +601,7 @@ async function buildSonaStarResponse(question, dataDirs) {
   }
 
   return {
-    answer: [`${best.faq.question}`, "", `${best.faq.answer}`].join("\n"),
+    answer: formatSonaStarCounselorAnswer(best.faq.question, best.faq.answer),
     source: dataset.source,
     suggestions: buildSonaStarSuggestions(question),
   };
