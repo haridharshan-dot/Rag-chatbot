@@ -12,6 +12,7 @@ import { getRuntimeSettings } from "../adminSettingsService.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const OFFICIAL_WEBSITE_URL = "https://www.sonatech.ac.in/";
+const SONA_STAR_WEBSITE_URL = "https://sonastar.com/";
 const GOOGLE_SEARCH_URL = "https://www.google.com/search?q=Sona+College+of+Technology";
 const GOOGLE_MAPS_URL = "https://www.google.com/maps/search/?api=1&query=Sona+College+of+Technology";
 const SONA_PRINCIPAL_NAME = "Dr.SRR Senthil Kumar";
@@ -140,7 +141,7 @@ function isCollegeProfileQuestion(question) {
 function isSonaStarQuestion(question) {
   const q = String(question || "").toLowerCase();
   if (!q) return false;
-  return /\b(sona\s*star|unreal\s*engine|ue\s*course|ue\s*program)\b/.test(q);
+  return /\b(sona\s*star|unreal\s*engine|ue\s*course|ue\s*program|which\s+course\s+should\s+i\s+choose)\b/.test(q);
 }
 
 function isPrincipalQuestion(question) {
@@ -542,6 +543,7 @@ function buildSonaStarOverview(parsed) {
     ...topQuestions,
     "",
     "Tell me your goal and I can suggest whether the 16-hour or 32-hour track is better for you.",
+    `Direct link: [Open Sona Star Website](${SONA_STAR_WEBSITE_URL})`,
   ];
 
   return lines.join("\n");
@@ -561,6 +563,8 @@ function formatSonaStarCounselorAnswer(question, answer) {
     `Sona Admissions Assistant: ${normalizedQuestion || "Here is the course detail."}`,
     "",
     shortAnswer,
+    "",
+    `Direct link: [Open Sona Star Website](${SONA_STAR_WEBSITE_URL})`,
     "",
     "Would you like a quick recommendation between the 16-hour and 32-hour Unreal Engine course?",
   ].join("\n");
