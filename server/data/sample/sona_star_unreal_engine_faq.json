@@ -1,0 +1,57 @@
+{
+  "dataset": "Sona Star Course FAQs - Unreal Engine Programs",
+  "provider": "Sona Star",
+  "domain": "Unreal Engine Training",
+  "faqs": [
+    {
+      "id": 1,
+      "question": "What is the difference between the short-term and long-term Unreal Engine courses?",
+      "answer": "The Introduction to Unreal Engine for Beginners (16 hours) is designed to provide foundational knowledge, covering installation, interface navigation, level creation, asset importing, lighting, cinematics, and rendering basics. The Comprehensive Unreal Engine Foundations (32 hours) course offers an in-depth beginner-to-intermediate learning path, including environment creation, Blueprints, physics systems, landscapes, VR integration, and advanced cinematic workflows."
+    },
+    {
+      "id": 2,
+      "question": "Who can enroll in these courses?",
+      "answer": "Both courses are designed for beginners with no prior experience in Unreal Engine. Students, working professionals, designers, architects, educators, and anyone interested in real-time 3D creation, game development, film, or visualization can enroll."
+    },
+    {
+      "id": 3,
+      "question": "Do I need prior programming knowledge?",
+      "answer": "No prior programming knowledge is required. The courses introduce Unreal Engine from the basics. In the long-term course, Blueprint visual scripting is taught in a beginner-friendly manner."
+    },
+    {
+      "id": 4,
+      "question": "What learning outcomes can I expect from this course?",
+      "answer": "By the end of the course, learners will be able to confidently navigate Unreal Engine, create interactive 3D environments, import and manage assets, set up lighting, build cinematic sequences, and render high-quality outputs. Participants of the long-term course will additionally gain hands-on experience with Blueprint visual scripting, physics systems, landscape creation, and basic VR integration, enabling them to develop complete real-time 3D scenes independently."
+    },
+    {
+      "id": 5,
+      "question": "What topics are covered in the short-term course?",
+      "answer": "The 16-hour course covers Unreal Engine installation and setup, interface navigation, level creation, asset importing, lighting fundamentals, basic cinematic creation, and rendering workflows. It focuses on building a strong foundation in real-time 3D development."
+    },
+    {
+      "id": 6,
+      "question": "What additional topics are covered in the long-term course?",
+      "answer": "In addition to foundational topics, the 32-hour course includes advanced environment creation, Blueprint visual scripting, physics systems, landscape creation, VR integration basics, and advanced cinematic rendering workflows. This course provides a broader and more practical understanding of Unreal Engine production pipelines."
+    },
+    {
+      "id": 7,
+      "question": "Will I receive a certificate after completing the course?",
+      "answer": "Yes. Upon successful completion of the course, participants will receive a course completion certificate from the Unreal Engine Authorised Center."
+    },
+    {
+      "id": 8,
+      "question": "Is the course practical or theory-based?",
+      "answer": "The courses are highly practical and project-oriented. Each session includes hands-on exercises to ensure students gain real-world experience using Unreal Engine tools and workflows."
+    },
+    {
+      "id": 9,
+      "question": "What career opportunities can these courses lead to?",
+      "answer": "Learning Unreal Engine opens opportunities in Game Development, Film and Virtual Production, Architectural Visualization, Simulation and Training, VR/AR Development, and real-time 3D content creation. The long-term course especially prepares learners for entry-level roles in these domains."
+    },
+    {
+      "id": 10,
+      "question": "Which course should I choose?",
+      "answer": "If you are looking for a quick introduction and foundational understanding, the 16-hour course is ideal. If you want deeper knowledge and practical exposure to Blueprints, physics, landscapes, and VR integration, the 32-hour comprehensive course is recommended."
+    }
+  ]
+}
